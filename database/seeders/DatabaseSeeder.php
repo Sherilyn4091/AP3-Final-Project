@@ -1,8 +1,9 @@
 <?php
 
+//database/seeders/DatabaseSeeder.php
+
 namespace Database\Seeders;
 
-use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
@@ -13,13 +14,31 @@ class DatabaseSeeder extends Seeder
     /**
      * Seed the application's database.
      */
-    public function run(): void
+     public function run(): void
     {
-        // User::factory(10)->create();
+        // REQUIRED: Lookup/Reference tables (must be seeded first)
+        $this->call([
+            InstrumentSeeder::class, // Seed instruments
+            SpecializationSeeder::class, // Seed specializations
+            GenreSeeder::class, // Seed genres
+            StudentStatusSeeder::class, // Seed student statuses
+            PaymentMethodSeeder::class, // Seed payment methods
+            PaymentStatusSeeder::class, // Seed payment statuses
+            ]);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+        // OPTIONAL: Test/Sample data (uncomment if you want sample data)
+        $this->call([
+            UserAccountSeeder::class,        // Sample admin/users
+        //     InstructorSeeder::class,         // Sample instructors
+        //     SalesStaffSeeder::class,         // Sample sales staff
+        //     AllAroundStaffSeeder::class,     // Sample all-around staff
+            StudentSeeder::class,            // Sample students
+        //     SupplierSeeder::class,           // Sample suppliers
+        //     InventorySeeder::class,          // Sample inventory items
+        //     LessonSessionSeeder::class,      // Sample lesson packages (5, 10, 20 sessions)
+        //     EnrollmentSeeder::class,         // Sample enrollments
+        //     ScheduleSeeder::class,           // Sample schedules
+        //     BookingSeeder::class,            // Sample room bookings
         ]);
     }
 }
