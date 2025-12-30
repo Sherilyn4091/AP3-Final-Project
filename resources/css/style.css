@@ -1,0 +1,392 @@
+/**
+ * ============================================================================
+ * MAIN STYLESHEET
+ * ============================================================================
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * ============================================================================
+ * CUSTOM PROPERTIES (CSS Variables)
+ * ============================================================================
+ */
+@layer base {
+    :root {
+        /* Primary Colors */
+        --color-primary-dark: #272829;
+        --color-primary-darker: #1a1b1c;
+        
+        /* Secondary Colors */
+        --color-secondary-blue: #61677A;
+        --color-secondary-blue-light: #7a8096;
+        --color-secondary-blue-dark: #4f5566;
+        
+        /* Background Colors */
+        --color-light-gray: #D8D9DA;
+        --color-light-gray-hover: #c9cacc;
+        
+        /* Accent Colors */
+        --color-accent-yellow: #FFF6E0;
+        --color-accent-yellow-light: #fffbf0;
+        
+        /* Neutral Colors */
+        --color-white: #FFFFFF;
+        --color-gray-100: #f7f7f8;
+        --color-gray-200: #e8e9ea;
+    }
+    
+    /* Font Family */
+    body {
+        font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+}
+
+/**
+ * ============================================================================
+ * CUSTOM UTILITY CLASSES
+ * Reusable component styles
+ * ============================================================================
+ */
+@layer components {
+    
+    /* Input Field Styles */
+    .input-field {
+        @apply w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg 
+               text-gray-900 placeholder-gray-500
+               focus:outline-none focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue
+               transition-all duration-300 ease-in-out;
+    }
+    
+    .input-field:hover {
+        @apply border-secondary-blue;
+    }
+    
+    /* Select Dropdown Styles */
+    .select-field {
+        @apply w-full pl-11 pr-4 py-3 border-2 border-gray-300 rounded-lg 
+               text-gray-900 bg-white cursor-pointer
+               focus:outline-none focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue
+               transition-all duration-300 ease-in-out;
+    }
+    
+    .select-field:hover {
+        @apply border-secondary-blue;
+    }
+    
+    /* Textarea Styles */
+    .textarea-field {
+        @apply w-full px-4 py-3 border-2 border-gray-300 rounded-lg 
+               text-gray-900 placeholder-gray-500
+               focus:outline-none focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue
+               transition-all duration-300 ease-in-out resize-none;
+    }
+    
+    .textarea-field:hover {
+        @apply border-secondary-blue;
+    }
+    
+    /* Primary Button */
+    .btn-primary {
+        @apply w-full bg-primary-dark text-accent-yellow font-bold py-3 px-6 rounded-lg
+               hover:bg-primary-darker hover:shadow-xl
+               focus:outline-none focus:ring-4 focus:ring-secondary-blue focus:ring-opacity-50
+               active:scale-95
+               transition-all duration-300 ease-in-out;
+    }
+    
+    /* Secondary Button */
+    .btn-secondary {
+        @apply w-full bg-white text-primary-dark font-semibold py-3 px-6 rounded-lg
+               border-2 border-gray-300 hover:border-secondary-blue hover:bg-gray-50
+               focus:outline-none focus:ring-4 focus:ring-secondary-blue focus:ring-opacity-50
+               active:scale-95
+               transition-all duration-300 ease-in-out;
+    }
+    
+    /* Card Container */
+    .card {
+        @apply bg-white rounded-2xl shadow-2xl overflow-hidden;
+    }
+    
+    /* Section Divider */
+    .section-divider {
+        @apply border-b-2 border-gray-200 pb-6 mb-6;
+    }
+    
+    /* Role Card (for selection page) */
+    .role-card {
+        @apply bg-white rounded-xl shadow-lg p-6 border-2 border-transparent
+               hover:border-secondary-blue hover:shadow-2xl hover:-translate-y-2
+               cursor-pointer
+               transition-all duration-300 ease-in-out;
+    }
+    
+    .role-card:active {
+        @apply scale-95;
+    }
+    
+    /* Checkbox Custom */
+    .checkbox-custom {
+        @apply w-5 h-5 text-secondary-blue border-2 border-gray-300 rounded
+               focus:ring-2 focus:ring-secondary-blue focus:ring-offset-0
+               cursor-pointer transition-all duration-200;
+    }
+    
+    .checkbox-custom:checked {
+        @apply bg-secondary-blue border-secondary-blue;
+    }
+    
+    /* Label with Required Asterisk */
+    .label-required::after {
+        content: ' *';
+        @apply text-red-500 font-bold;
+    }
+
+    .step-indicator .step-item.active .step-circle {
+        @apply bg-primary-dark text-white;
+    }
+    .step-indicator .step-item .step-circle {
+        @apply w-10 h-10 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center font-bold transition-all;
+    }
+    .step-indicator .step-line {
+        @apply w-24 h-1 bg-gray-300;
+    }
+    .step-indicator .step-label {
+        @apply ml-3 font-medium;
+    }
+    .step-indicator .step-item.active .step-label {
+        @apply text-primary-dark;
+    }
+    .checkbox-label {
+        @apply flex items-center space-x-3 p-4 border-2 border-gray-300 rounded-lg hover:bg-accent-yellow-light hover:border-secondary-blue cursor-pointer transition-all;
+    }
+    .error-text {
+        @apply mt-2 text-sm text-red-600;
+    }
+}
+
+/**
+ * ============================================================================
+ * CUSTOM ANIMATIONS
+ * ============================================================================
+ */
+@layer utilities {
+    /* Fade In Animation */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .animate-fade-in {
+        animation: fadeIn 0.5s ease-out;
+    }
+    
+    /* Slide In Animation */
+    @keyframes slideIn {
+        from {
+            transform: translateX(-100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    .animate-slide-in {
+        animation: slideIn 0.5s ease-out;
+    }
+    
+    /* Pulse Animation for Icons */
+    .icon-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    .capitalize-words {
+        text-transform: capitalize;
+    }
+
+    .step-panel {
+        @apply transition-all duration-500 ease-in-out;
+    }
+    .step-panel.active {
+        @apply block opacity-100;
+    }
+    .step-panel:not(.active) {
+    @apply opacity-0 pointer-events-none absolute;
+    }
+    .swipe-left {
+        @apply -translate-x-full blur-sm;
+    }
+    .swipe-right {
+        @apply translate-x-0;
+    }
+    .swipe-right-back {
+        @apply translate-x-full;
+    }
+    /* Blur overlay for multi-step */
+    .blur-overlay {
+        @apply fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm z-40 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-500;
+    }
+    .blur-overlay.active {
+        @apply opacity-100;
+    }
+    .motivation-text {
+        @apply text-white text-2xl md:text-3xl font-bold text-center px-8 animate-fade-in;
+    }
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.animate-shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.error-message {
+    @apply bg-red-50 border-2 border-red-500 text-red-700 px-4 py-3 rounded-lg mt-4 text-sm font-medium animate-fade-in;
+}
+
+/**
+ * ============================================================================
+ * CUSTOM COLOR CLASSES
+ * Using Tailwind's JIT mode
+ * ============================================================================
+ */
+@layer utilities {
+    /* Text Colors */
+    .text-primary-dark { color: var(--color-primary-dark); }
+    .text-primary-darker { color: var(--color-primary-darker); }
+    .text-secondary-blue { color: var(--color-secondary-blue); }
+    .text-secondary-blue-light { color: var(--color-secondary-blue-light); }
+    .text-accent-yellow { color: var(--color-accent-yellow); }
+    
+    /* Background Colors */
+    .bg-primary-dark { background-color: var(--color-primary-dark); }
+    .bg-primary-darker { background-color: var(--color-primary-darker); }
+    .bg-secondary-blue { background-color: var(--color-secondary-blue); }
+    .bg-light-gray { background-color: var(--color-light-gray); }
+    .bg-accent-yellow { background-color: var(--color-accent-yellow); }
+    .bg-accent-yellow-light { background-color: var(--color-accent-yellow-light); }
+    
+    /* Border Colors */
+    .border-primary-dark { border-color: var(--color-primary-dark); }
+    .border-secondary-blue { border-color: var(--color-secondary-blue); }
+    .border-light-gray { border-color: var(--color-light-gray); }
+    
+    /* Hover States */
+    .hover\:bg-accent-yellow-light:hover { background-color: var(--color-accent-yellow-light); }
+    .hover\:border-secondary-blue:hover { border-color: var(--color-secondary-blue); }
+}
+
+/**
+ * ============================================================================
+ * RESPONSIVE BREAKPOINTS CUSTOMIZATION
+ * Tailwind default: sm(640px), md(768px), lg(1024px), xl(1280px), 2xl(1536px)
+ * ============================================================================
+ */
+
+/* Small devices (mobile landscape) */
+@media (max-width: 640px) {
+    .card {
+        @apply rounded-xl;
+    }
+    
+    .input-field,
+    .select-field,
+    .textarea-field {
+        @apply text-base;
+    }
+}
+
+/**
+ * ============================================================================
+ * ACCESSIBILITY IMPROVEMENTS
+ * ============================================================================
+ */
+@layer base {
+    /* Focus visible for keyboard navigation */
+    *:focus-visible {
+        @apply outline-none ring-4 ring-secondary-blue ring-opacity-50;
+    }
+    
+    /* Reduce motion for users who prefer it */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+/**
+ * ============================================================================
+ * PRINT STYLES
+ * ============================================================================
+ */
+@media print {
+    body {
+        @apply bg-white;
+    }
+    
+    .no-print {
+        display: none !important;
+    }
+}
+
+/**
+ * ============================================================================
+ * FONT WEIGHT UTILITIES
+ * Poppins font weights: 400(Regular), 500(Medium), 600(SemiBold), 700(Bold)
+ * ============================================================================
+ */
+@layer utilities {
+    .font-poppins {
+        font-family: 'Poppins', sans-serif;
+    }
+}
+
+/**
+ * ============================================================================
+ * CUSTOM SCROLLBAR STYLING
+ * ============================================================================
+ */
+@layer utilities {
+    .scrollbar-custom {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-secondary-blue) var(--color-light-gray);
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-track {
+        background: var(--color-light-gray);
+        border-radius: 10px;
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: var(--color-secondary-blue);
+        border-radius: 10px;
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+        background: var(--color-secondary-blue-dark);
+    }
+}

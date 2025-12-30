@@ -3,10 +3,20 @@ module.exports = {
   content: [
     "./resources/**/*.blade.php",
     "./resources/**/*.js",
-    "./resources/**/*.vue",
+    // Removed "./resources/**/*.vue"
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'primary-dark': '#272829',
+        'secondary-blue': '#61677A',
+        'light-gray': '#D8D9DA',
+        'accent-yellow': '#FFF6E0',
+      },
+      fontFamily: {
+        poppins: ['Poppins', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }
