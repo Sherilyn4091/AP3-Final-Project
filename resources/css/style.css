@@ -36,6 +36,47 @@
         --color-white: #FFFFFF;
         --color-gray-100: #f7f7f8;
         --color-gray-200: #e8e9ea;
+
+        --color-warm-coral: #E07A5F;
+        --color-forest-green: #377357;
+        --color-golden-yellow: #C2922F;
+        
+        /* Hover states for new colors */
+        --color-warm-coral-dark: #d16850;
+        --color-forest-green-dark: #2d5f48;
+        --color-golden-yellow-dark: #a87d28;
+    
+        /**
+        * ============================================================================
+        * ACCESSIBILITY IMPROVEMENTS
+        * ============================================================================
+        */
+
+        /* NEW COLORS - Harmonized Palette */
+        --color-warm-coral: #E07A5F;
+        --color-forest-green: #377357;
+        --color-golden-yellow: #C2922F;
+        
+        /* Hover states for new colors */
+        --color-warm-coral-dark: #d16850;
+        --color-forest-green-dark: #2d5f48;
+        --color-golden-yellow-dark: #a87d28;
+    }
+    
+    /* Focus visible for keyboard navigation */
+    *:focus-visible {
+        @apply outline-none ring-4 ring-secondary-blue ring-opacity-50;
+    }
+    
+    /* Reduce motion for users who prefer it */
+    @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
     }
     
     /* Font Family */
@@ -243,6 +284,36 @@
     .motivation-text {
         @apply text-white text-2xl md:text-3xl font-bold text-center px-8 animate-fade-in;
     }
+
+
+    /**
+    * ============================================================================
+    * CUSTOM SCROLLBAR STYLING
+    * ============================================================================
+    */
+
+    .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-secondary-blue) var(--color-light-gray);
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-track {
+        background: var(--color-light-gray);
+        border-radius: 10px;
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-thumb {
+        background: var(--color-secondary-blue);
+        border-radius: 10px;
+    }
+    
+    .scrollbar-custom::-webkit-scrollbar-thumb:hover {
+        background: var(--color-secondary-blue-dark);
+    }
 }
 
 @keyframes shake {
@@ -289,6 +360,41 @@
     /* Hover States */
     .hover\:bg-accent-yellow-light:hover { background-color: var(--color-accent-yellow-light); }
     .hover\:border-secondary-blue:hover { border-color: var(--color-secondary-blue); }
+
+    .font-poppins {
+    font-family: 'Poppins', sans-serif;
+    }
+
+    /**
+    * ============================================================================
+    * NEW UTILITY CLASSES FOR HARMONIZED COLORS
+    * Append to existing @layer utilities
+    * ============================================================================
+    */
+
+     /* Text Colors */
+    .text-warm-coral { color: var(--color-warm-coral); }
+    .text-forest-green { color: var(--color-forest-green); }
+    .text-golden-yellow { color: var(--color-golden-yellow); }
+    
+    /* Background Colors */
+    .bg-warm-coral { background-color: var(--color-warm-coral); }
+    .bg-forest-green { background-color: var(--color-forest-green); }
+    .bg-golden-yellow { background-color: var(--color-golden-yellow); }
+    
+    /* Border Colors */
+    .border-warm-coral { border-color: var(--color-warm-coral); }
+    .border-forest-green { border-color: var(--color-forest-green); }
+    .border-golden-yellow { border-color: var(--color-golden-yellow); }
+    
+    /* Hover States */
+    .hover\:bg-warm-coral-dark:hover { background-color: var(--color-warm-coral-dark); }
+    .hover\:bg-forest-green-dark:hover { background-color: var(--color-forest-green-dark); }
+    .hover\:bg-golden-yellow-dark:hover { background-color: var(--color-golden-yellow-dark); }
+    
+    .hover\:text-warm-coral:hover { color: var(--color-warm-coral); }
+    .hover\:text-forest-green:hover { color: var(--color-forest-green); }
+    .hover\:text-golden-yellow:hover { color: var(--color-golden-yellow); }
 }
 
 /**
@@ -311,28 +417,6 @@
     }
 }
 
-/**
- * ============================================================================
- * ACCESSIBILITY IMPROVEMENTS
- * ============================================================================
- */
-@layer base {
-    /* Focus visible for keyboard navigation */
-    *:focus-visible {
-        @apply outline-none ring-4 ring-secondary-blue ring-opacity-50;
-    }
-    
-    /* Reduce motion for users who prefer it */
-    @media (prefers-reduced-motion: reduce) {
-        *,
-        *::before,
-        *::after {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-        }
-    }
-}
 
 /**
  * ============================================================================
@@ -346,47 +430,5 @@
     
     .no-print {
         display: none !important;
-    }
-}
-
-/**
- * ============================================================================
- * FONT WEIGHT UTILITIES
- * Poppins font weights: 400(Regular), 500(Medium), 600(SemiBold), 700(Bold)
- * ============================================================================
- */
-@layer utilities {
-    .font-poppins {
-        font-family: 'Poppins', sans-serif;
-    }
-}
-
-/**
- * ============================================================================
- * CUSTOM SCROLLBAR STYLING
- * ============================================================================
- */
-@layer utilities {
-    .scrollbar-custom {
-        scrollbar-width: thin;
-        scrollbar-color: var(--color-secondary-blue) var(--color-light-gray);
-    }
-    
-    .scrollbar-custom::-webkit-scrollbar {
-        width: 8px;
-    }
-    
-    .scrollbar-custom::-webkit-scrollbar-track {
-        background: var(--color-light-gray);
-        border-radius: 10px;
-    }
-    
-    .scrollbar-custom::-webkit-scrollbar-thumb {
-        background: var(--color-secondary-blue);
-        border-radius: 10px;
-    }
-    
-    .scrollbar-custom::-webkit-scrollbar-thumb:hover {
-        background: var(--color-secondary-blue-dark);
     }
 }
