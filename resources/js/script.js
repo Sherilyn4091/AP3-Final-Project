@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * MAIN JAVASCRIPT FILE
- * Client-side functionality for authentication pages
+ * \resources\js\script.js
  * ============================================================================
  */
 

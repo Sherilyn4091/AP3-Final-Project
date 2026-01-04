@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Admin\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -91,6 +92,84 @@ Route::middleware('auth')->group(function () {
     Route::get('/staff/dashboard', function () {
         return view('dashboards.staff');
     })->name('staff.dashboard');
+
+    // ============================================================================
+    // ADMIN ROUTES
+    // ============================================================================
+    
+    Route::prefix('admin')->name('admin.')->group(function () {
+        
+        // Dashboard
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        
+        // Users Management
+        Route::prefix('users')->name('users.')->group(function () {
+            Route::get('/', function () {
+                return view('admin.users.index');
+            })->name('index');
+            
+            Route::get('/create', function () {
+                return view('admin.users.create');
+            })->name('create');
+            
+            Route::get('/students', function () {
+                return view('admin.users.students');
+            })->name('students');
+            
+            Route::get('/instructors', function () {
+                return view('admin.users.instructors');
+            })->name('instructors');
+            
+            Route::get('/sales-staff', function () {
+                return view('admin.users.sales-staff');
+            })->name('sales-staff');
+            
+            Route::get('/all-around-staff', function () {
+                return view('admin.users.all-around-staff');
+            })->name('all-around-staff');
+        });
+        
+        // Lessons Management
+        Route::get('/lessons', function () {
+            return view('admin.lessons.index');
+        })->name('lessons.index');
+        
+        // Instruments Management
+        Route::get('/instruments', function () {
+            return view('admin.instruments.index');
+        })->name('instruments.index');
+        
+        // Payments Management
+        Route::get('/payments', function () {
+            return view('admin.payments.index');
+        })->name('payments.index');
+        
+        // Inventory Management
+        Route::get('/inventory', function () {
+            return view('admin.inventory.index');
+        })->name('inventory.index');
+        
+        // Reports
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', function () {
+                return view('admin.reports.index');
+            })->name('index');
+            
+            Route::get('/financial', function () {
+                return view('admin.reports.financial');
+            })->name('financial');
+        });
+        
+        // Schedules Management
+        Route::get('/schedules', function () {
+            return view('admin.schedules.index');
+        })->name('schedules.index');
+        
+        // Settings
+        Route::get('/settings', function () {
+            return view('admin.settings.index');
+        })->name('settings.index');
+    });
 });
 
 // ============================================================================
