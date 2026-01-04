@@ -46,10 +46,10 @@ Route::middleware('guest')->group(function () {
     Route::post('/register/sales-staff', [RegistrationController::class, 'registerSalesStaff'])
         ->name('register.sales.process');
 
-    // All-Around Staff Registration
-    Route::get('/register/staff', [RegistrationController::class, 'showStaffRegistrationForm'])
+    // All-Around Staff Registration (UPDATED ROUTE)
+    Route::get('/register/all-around-staff', [RegistrationController::class, 'showAllAroundStaffRegistrationForm'])
         ->name('register.staff.form');
-    Route::post('/register/staff', [RegistrationController::class, 'registerStaff'])
+    Route::post('/register/all-around-staff', [RegistrationController::class, 'registerAllAroundStaff'])
         ->name('register.staff.process');
 
     // ============================================================================

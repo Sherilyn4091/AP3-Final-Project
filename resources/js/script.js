@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Phone validation (11 digits for Philippines)
-        if (field.name === 'phone' && field.value) {
+        if ((field.name === 'phone' || field.name === 'emergency_contact_phone' || field.name === 'parent_guardian_phone') && field.value) {
             const phoneRegex = /^[0-9]{11}$/;
             if (!phoneRegex.test(field.value)) {
                 field.classList.add('border-red-500');
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function() {
      * Phone Number Formatting
      * Only allow numbers, limit to 11 digits
      */
-    const phoneInputs = document.querySelectorAll('input[name="phone"], input[name="emergency_contact_phone"]');
+    const phoneInputs = document.querySelectorAll('input[name="phone"], input[name="emergency_contact_phone"], input[name="parent_guardian_phone"]');
     phoneInputs.forEach(input => {
         input.addEventListener('input', function(e) {
             // Remove any non-numeric characters
@@ -167,7 +167,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const primarySpecializationSelect = document.querySelector('select[name="primary_specialization"]');
     
     if (specializationCheckboxes.length > 0 && primarySpecializationSelect) {
-        // Update primary specialization dropdown based on checked boxes
         specializationCheckboxes.forEach(checkbox => {
             checkbox.addEventListener('change', function() {
                 updatePrimarySpecializationOptions();
@@ -175,12 +174,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         function updatePrimarySpecializationOptions() {
-            // Get all checked specialization values
             const checkedValues = Array.from(specializationCheckboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
             
-            // Enable/disable options in primary specialization dropdown
             const options = primarySpecializationSelect.querySelectorAll('option');
             options.forEach(option => {
                 if (option.value && !checkedValues.includes(option.value)) {
@@ -190,16 +187,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
             
-            // If current selection is now disabled, reset to default
-            if (primarySpecializationSelect.value && 
-                !checkedValues.includes(primarySpecializationSelect.value)) {
+            if (primarySpecializationSelect.value && !checkedValues.includes(primarySpecializationSelect.value)) {
                 primarySpecializationSelect.value = '';
             }
         }
     }
 
     // General loading state for other forms (login, etc.)
-    document.querySelectorAll('form:not(#instructorForm)').forEach(form => {
+    document.querySelectorAll('form:not(#instructorForm):not(#studentForm)').forEach(form => {
         form.addEventListener('submit', function () {
             const submitBtn = this.querySelector('button[type="submit"]');
             if (submitBtn) {
@@ -226,13 +221,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const blurOverlay = document.getElementById('blurOverlay');
     const motivationText = document.getElementById('motivationText');
 
-    const motivations = [
+    const instructorMotivations = [
         "Almost there! Let's complete your emergency contact...",
         "Great progress! Just one more step to showcase your expertise...",
     ];
 
     function validateStep(step) {
-        // Remove any existing error messages
         const existingError = step.querySelector('.error-message');
         if (existingError) existingError.remove();
 
@@ -245,7 +239,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.classList.add('border-red-500', 'animate-shake');
                 setTimeout(() => input.classList.remove('animate-shake'), 500);
                 
-                // Get field label
                 const label = input.closest('div').querySelector('label');
                 if (label) {
                     emptyFields.push(label.textContent.replace(' *', ''));
@@ -266,16 +259,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 </ul>
             `;
             step.querySelector('.grid').insertAdjacentElement('afterend', errorDiv);
-            
-            // Scroll to error
             errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         return valid;
     }
 
-    function showMotivation(index) {
-        motivationText.textContent = motivations[index];
+    function showMotivation(index, motivationsArray) {
+        motivationText.textContent = motivationsArray[index];
         blurOverlay.classList.add('active');
         setTimeout(() => blurOverlay.classList.remove('active'), 2000);
     }
@@ -283,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (nextBtn1 && nextBtn2 && prevBtn2 && prevBtn3) {
         nextBtn1.addEventListener('click', () => {
             if (!validateStep(step1)) return;
-            showMotivation(0);
+            showMotivation(0, instructorMotivations);
             setTimeout(() => {
                 step1.classList.remove('active');
                 step1.classList.add('swipe-left');
@@ -295,7 +286,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         nextBtn2.addEventListener('click', () => {
             if (!validateStep(step2)) return;
-            showMotivation(1);
+            showMotivation(1, instructorMotivations);
             setTimeout(() => {
                 step2.classList.remove('active', 'swipe-right');
                 step2.classList.add('swipe-left');
@@ -330,6 +321,70 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // === STUDENT MULTI-STEP FORM ===
+    const studentStep1 = document.getElementById('step1');
+    const studentStep2 = document.getElementById('step2');
+    const studentStep3 = document.getElementById('step3');
+    const studentNextBtn1 = document.getElementById('nextStepBtn1');
+    const studentNextBtn2 = document.getElementById('nextStepBtn2');
+    const studentPrevBtn2 = document.getElementById('prevStepBtn2');
+    const studentPrevBtn3 = document.getElementById('prevStepBtn3');
+
+    const studentMotivations = [
+        "Great! Now let's add your emergency contacts...",
+        "Almost done! Time to share your musical background...",
+    ];
+
+    if (studentNextBtn1 && studentNextBtn2 && studentPrevBtn2 && studentPrevBtn3) {
+        studentNextBtn1.addEventListener('click', () => {
+            if (!validateStep(studentStep1)) return;
+            showMotivation(0, studentMotivations);
+            setTimeout(() => {
+                studentStep1.classList.remove('active');
+                studentStep1.classList.add('swipe-left');
+                studentStep2.classList.remove('hidden');
+                studentStep2.classList.add('active', 'swipe-right');
+                document.querySelectorAll('.step-item')[1].classList.add('active');
+            }, 500);
+        });
+
+        studentNextBtn2.addEventListener('click', () => {
+            if (!validateStep(studentStep2)) return;
+            showMotivation(1, studentMotivations);
+            setTimeout(() => {
+                studentStep2.classList.remove('active', 'swipe-right');
+                studentStep2.classList.add('swipe-left');
+                studentStep3.classList.remove('hidden');
+                studentStep3.classList.add('active', 'swipe-right');
+                document.querySelectorAll('.step-item')[2].classList.add('active');
+            }, 500);
+        });
+
+        studentPrevBtn2.addEventListener('click', () => {
+            studentStep2.classList.remove('active', 'swipe-right');
+            studentStep2.classList.add('swipe-right-back');
+            studentStep1.classList.remove('swipe-left');
+            studentStep1.classList.add('active');
+            setTimeout(() => {
+                studentStep2.classList.add('hidden');
+                studentStep2.classList.remove('swipe-right-back');
+            }, 600);
+            document.querySelectorAll('.step-item')[1].classList.remove('active');
+        });
+
+        studentPrevBtn3.addEventListener('click', () => {
+            studentStep3.classList.remove('active', 'swipe-right');
+            studentStep3.classList.add('swipe-right-back');
+            studentStep2.classList.remove('swipe-left');
+            studentStep2.classList.add('active');
+            setTimeout(() => {
+                studentStep3.classList.add('hidden');
+                studentStep3.classList.remove('swipe-right-back');
+            }, 600);
+            document.querySelectorAll('.step-item')[2].classList.remove('active');
+        });
+    }
+
     // Age calculation
     const dobInput = document.getElementById('date_of_birth');
     const ageDisplay = document.getElementById('age-display');
@@ -359,7 +414,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Dynamic certifications
+    // Dynamic certifications (Instructor)
     const certContainer = document.getElementById('certifications-container');
     const addCertBtn = document.getElementById('add-cert-btn');
 
@@ -376,20 +431,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // Dynamic secondary instruments (Student)
+    const secondaryInstrContainer = document.getElementById('secondary-instruments-container');
+    const addInstrumentBtn = document.getElementById('add-instrument-btn');
+
+    if (addInstrumentBtn && secondaryInstrContainer) {
+        addInstrumentBtn.addEventListener('click', () => {
+            const div = document.createElement('div');
+            div.className = 'flex gap-4 mb-4';
+            div.innerHTML = `
+                <input type="text" name="secondary_instruments[]" class="input-field flex-1 text-sm capitalize-words" placeholder="Instrument name">
+                <button type="button" class="text-red-600 hover:text-red-800 font-medium text-sm">Remove</button>
+            `;
+            secondaryInstrContainer.appendChild(div);
+            div.querySelector('button').addEventListener('click', () => div.remove());
+        });
+    }
+
+    // Lowercase parent/guardian email
+    const parentGuardianEmail = document.querySelector('input[name="parent_guardian_email"]');
+    if (parentGuardianEmail) {
+        parentGuardianEmail.addEventListener('input', function() {
+            this.value = this.value.toLowerCase();
+        });
+    }
+
     // === FINAL FORM SUBMISSION (Instructor Registration) ===
     const instructorForm = document.getElementById('instructorForm');
-
     if (instructorForm) {
         instructorForm.addEventListener('submit', function (e) {
-            // Clean empty certification fields before submit
             document.querySelectorAll('#certifications-container > div').forEach(div => {
                 const input = div.querySelector('input');
-                if (input && !input.value.trim()) {
-                    div.remove();
-                }
+                if (input && !input.value.trim()) div.remove();
             });
 
-            // Optional: Client-side check for specializations (prevents empty submit)
             const checkedSpecs = document.querySelectorAll('input[name="specializations[]"]:checked');
             if (checkedSpecs.length === 0) {
                 alert('Please select at least one specialization.');
@@ -404,7 +479,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Show loading spinner on submit button
             const submitBtn = this.querySelector('button[type="submit"]');
             if (submitBtn) {
                 submitBtn.disabled = true;
@@ -415,17 +489,274 @@ document.addEventListener('DOMContentLoaded', function() {
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                 `;
-                // Re-enable after timeout (fallback)
                 setTimeout(() => {
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalText;
                 }, 10000);
             }
-
-            // Form submits normally — Laravel handles full validation
         });
     }
-        
+
+    // === FINAL FORM SUBMISSION (Student Registration) ===
+    const studentForm = document.getElementById('studentForm');
+    if (studentForm) {
+        studentForm.addEventListener('submit', function (e) {
+            document.querySelectorAll('#secondary-instruments-container > div').forEach(div => {
+                const input = div.querySelector('input');
+                if (input && !input.value.trim()) div.remove();
+            });
+
+            const requiredFields = [
+                'first_name', 'last_name', 'phone', 'user_email',
+                'address_line1', 'city', 'province', 'postal_code', 'country',
+                'date_of_birth', 'gender',
+                'emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_phone',
+                'parent_guardian_name', 'parent_guardian_relationship', 'parent_guardian_phone',
+                'instrument_id', 'skill_level'
+            ];
+
+            let allValid = true;
+            requiredFields.forEach(fieldName => {
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field && !field.value.trim()) {
+                    alert(`Please fill in: ${fieldName.replace(/_/g, ' ')}`);
+                    allValid = false;
+                }
+            });
+
+            if (!allValid) {
+                e.preventDefault();
+                return;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                `;
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }, 10000);
+            }
+        });
+    }
+
+    /**
+     * ============================================================================
+     * SALES STAFF MULTI-STEP FORM
+     * Handles navigation and submission for the Sales Staff registration form
+     * ============================================================================
+     */
+    const salesStaffForm = document.getElementById('salesStaffForm');
+
+    if (salesStaffForm) {
+        // Select all step panels and navigation buttons within the sales staff form
+        const salesStep1 = salesStaffForm.querySelector('#step1');
+        const salesStep2 = salesStaffForm.querySelector('#step2');
+        const salesStep3 = salesStaffForm.querySelector('#step3');
+        const salesNextBtn1 = salesStaffForm.querySelector('#nextStepBtn1');
+        const salesNextBtn2 = salesStaffForm.querySelector('#nextStepBtn2');
+        const salesPrevBtn2 = salesStaffForm.querySelector('#prevStepBtn2');
+        const salesPrevBtn3 = salesStaffForm.querySelector('#prevStepBtn3');
+
+        // Motivational messages shown when moving to the next step
+        const staffMotivations = [
+            "Almost there! Let's add your emergency contact...",
+            "Great progress! Just one more step to complete your profile...",
+        ];
+
+        // Next button: Step 1 → Step 2
+        if (salesNextBtn1) {
+            salesNextBtn1.addEventListener('click', () => {
+                if (!validateStep(salesStep1)) return; // Validate current step
+                showMotivation(0, staffMotivations);   // Show motivational overlay
+                setTimeout(() => {
+                    salesStep1.classList.remove('active');
+                    salesStep1.classList.add('swipe-left');
+                    salesStep2.classList.remove('hidden');
+                    salesStep2.classList.add('active', 'swipe-right');
+                    salesStaffForm.querySelectorAll('.step-item')[1].classList.add('active');
+                }, 500);
+            });
+        }
+
+        // Next button: Step 2 → Step 3
+        if (salesNextBtn2) {
+            salesNextBtn2.addEventListener('click', () => {
+                if (!validateStep(salesStep2)) return;
+                showMotivation(1, staffMotivations);
+                setTimeout(() => {
+                    salesStep2.classList.remove('active', 'swipe-right');
+                    salesStep2.classList.add('swipe-left');
+                    salesStep3.classList.remove('hidden');
+                    salesStep3.classList.add('active', 'swipe-right');
+                    salesStaffForm.querySelectorAll('.step-item')[2].classList.add('active');
+                }, 500);
+            });
+        }
+
+        // Previous button: Step 2 → Step 1
+        if (salesPrevBtn2) {
+            salesPrevBtn2.addEventListener('click', () => {
+                salesStep2.classList.remove('active', 'swipe-right');
+                salesStep2.classList.add('swipe-right-back');
+                salesStep1.classList.remove('swipe-left');
+                salesStep1.classList.add('active');
+                setTimeout(() => {
+                    salesStep2.classList.add('hidden');
+                    salesStep2.classList.remove('swipe-right-back');
+                }, 600);
+                salesStaffForm.querySelectorAll('.step-item')[1].classList.remove('active');
+            });
+        }
+
+        // Previous button: Step 3 → Step 2
+        if (salesPrevBtn3) {
+            salesPrevBtn3.addEventListener('click', () => {
+                salesStep3.classList.remove('active', 'swipe-right');
+                salesStep3.classList.add('swipe-right-back');
+                salesStep2.classList.remove('swipe-left');
+                salesStep2.classList.add('active');
+                setTimeout(() => {
+                    salesStep3.classList.add('hidden');
+                    salesStep3.classList.remove('swipe-right-back');
+                }, 600);
+                salesStaffForm.querySelectorAll('.step-item')[2].classList.remove('active');
+            });
+        }
+
+        // Final form submission for Sales Staff
+        salesStaffForm.addEventListener('submit', function (e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                `;
+                // Fallback: re-enable button after 10 seconds in case of network issues
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }, 10000);
+            }
+        });
+    }
+
+    /**
+     * ============================================================================
+     * ALL-AROUND STAFF MULTI-STEP FORM
+     * Handles navigation and submission for the All-Around Staff registration form
+     * ============================================================================
+     */
+    const allAroundStaffForm = document.getElementById('allAroundStaffForm');
+
+    if (allAroundStaffForm) {
+        // Select all step panels and navigation buttons within the all-around staff form
+        const staffStep1 = allAroundStaffForm.querySelector('#step1');
+        const staffStep2 = allAroundStaffForm.querySelector('#step2');
+        const staffStep3 = allAroundStaffForm.querySelector('#step3');
+        const staffNextBtn1 = allAroundStaffForm.querySelector('#nextStepBtn1');
+        const staffNextBtn2 = allAroundStaffForm.querySelector('#nextStepBtn2');
+        const staffPrevBtn2 = allAroundStaffForm.querySelector('#prevStepBtn2');
+        const staffPrevBtn3 = allAroundStaffForm.querySelector('#prevStepBtn3');
+
+        // Motivational messages shown when moving to the next step
+        const allAroundMotivations = [
+            "Almost there! Let's add your emergency contact...",
+            "Great progress! Just one more step to complete your profile...",
+        ];
+
+        // Next button: Step 1 → Step 2
+        if (staffNextBtn1) {
+            staffNextBtn1.addEventListener('click', () => {
+                if (!validateStep(staffStep1)) return;
+                showMotivation(0, allAroundMotivations);
+                setTimeout(() => {
+                    staffStep1.classList.remove('active');
+                    staffStep1.classList.add('swipe-left');
+                    staffStep2.classList.remove('hidden');
+                    staffStep2.classList.add('active', 'swipe-right');
+                    allAroundStaffForm.querySelectorAll('.step-item')[1].classList.add('active');
+                }, 500);
+            });
+        }
+
+        // Next button: Step 2 → Step 3
+        if (staffNextBtn2) {
+            staffNextBtn2.addEventListener('click', () => {
+                if (!validateStep(staffStep2)) return;
+                showMotivation(1, allAroundMotivations);
+                setTimeout(() => {
+                    staffStep2.classList.remove('active', 'swipe-right');
+                    staffStep2.classList.add('swipe-left');
+                    staffStep3.classList.remove('hidden');
+                    staffStep3.classList.add('active', 'swipe-right');
+                    allAroundStaffForm.querySelectorAll('.step-item')[2].classList.add('active');
+                }, 500);
+            });
+        }
+
+        // Previous button: Step 2 → Step 1
+        if (staffPrevBtn2) {
+            staffPrevBtn2.addEventListener('click', () => {
+                staffStep2.classList.remove('active', 'swipe-right');
+                staffStep2.classList.add('swipe-right-back');
+                staffStep1.classList.remove('swipe-left');
+                staffStep1.classList.add('active');
+                setTimeout(() => {
+                    staffStep2.classList.add('hidden');
+                    staffStep2.classList.remove('swipe-right-back');
+                }, 600);
+                allAroundStaffForm.querySelectorAll('.step-item')[1].classList.remove('active');
+            });
+        }
+
+        // Previous button: Step 3 → Step 2
+        if (staffPrevBtn3) {
+            staffPrevBtn3.addEventListener('click', () => {
+                staffStep3.classList.remove('active', 'swipe-right');
+                staffStep3.classList.add('swipe-right-back');
+                staffStep2.classList.remove('swipe-left');
+                staffStep2.classList.add('active');
+                setTimeout(() => {
+                    staffStep3.classList.add('hidden');
+                    staffStep3.classList.remove('swipe-right-back');
+                }, 600);
+                allAroundStaffForm.querySelectorAll('.step-item')[2].classList.remove('active');
+            });
+        }
+
+        // Final form submission for All-Around Staff
+        allAroundStaffForm.addEventListener('submit', function (e) {
+            const submitBtn = this.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                `;
+                // Fallback: re-enable button after 10 seconds in case of network issues
+                setTimeout(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }, 10000);
+            }
+        });
+    }
+
 }); // End of DOMContentLoaded
 
 /**
@@ -454,7 +785,6 @@ document.addEventListener('keypress', function(e) {
         const form = e.target.closest('form');
         if (form && e.target.tagName !== 'TEXTAREA' && e.target.tagName !== 'BUTTON') {
             e.preventDefault();
-            // Don't submit on Enter in regular inputs - let the form submit naturally
         }
     }
 });

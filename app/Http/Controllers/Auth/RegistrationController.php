@@ -43,7 +43,12 @@ class RegistrationController extends Controller
             ->orderBy('instrument_name')
             ->get();
 
-        return view('auth.register.student', compact('instruments'));
+        $genres = DB::table('genre')
+            ->where('is_active', true)
+            ->orderBy('genre_name')
+            ->get();
+
+        return view('auth.register.student', compact('instruments', 'genres'));
     }
 
     /**
@@ -53,23 +58,73 @@ class RegistrationController extends Controller
     {
         // Validate ALL data including email uniqueness
         $validated = $request->validate([
+            // Account
             'user_email' => 'required|email|unique:user_account,user_email',
+            
+            // Personal Information
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
-            'phone' => 'required|regex:/^[0-9]{11}$/',
             'middle_name' => 'nullable|string|max:100',
             'suffix' => 'nullable|string|max:20',
-            'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:Male,Female,Other,Prefer not to say',
-            'instrument_id' => 'nullable|exists:instrument,instrument_id',
-            'skill_level' => 'nullable|in:beginner,intermediate,advanced,expert',
+            'phone' => 'required|regex:/^[0-9]{11}$/',
+            
+            // Address (ALL REQUIRED)
+            'address_line1' => 'required|string|max:255',
+            'address_line2' => 'nullable|string|max:255',
+            'city' => 'required|string|max:100',
+            'province' => 'required|string|max:100',
+            'postal_code' => 'required|string|max:20',
+            'country' => 'required|string|max:100',
+            
+            // Personal Details
+            'date_of_birth' => 'required|date',
+            'gender' => 'required|in:Male,Female,Other,Prefer not to say',
+            'nationality' => 'nullable|string|max:100',
+            
+            // Medical Information (Optional)
+            'medical_conditions' => 'nullable|string',
+            'allergies' => 'nullable|string',
+            'special_needs' => 'nullable|string',
+            
+            // Emergency Contact (ALL REQUIRED)
+            'emergency_contact_name' => 'required|string|max:200',
+            'emergency_contact_relationship' => 'required|string|max:100',
+            'emergency_contact_phone' => 'required|regex:/^[0-9]{11}$/',
+            
+            // Parent/Guardian (ALL REQUIRED)
+            'parent_guardian_name' => 'required|string|max:200',
+            'parent_guardian_relationship' => 'required|string|max:50',
+            'parent_guardian_phone' => 'required|regex:/^[0-9]{11}$/',
+            'parent_guardian_email' => 'nullable|email|max:255',
+            'parent_guardian_address' => 'nullable|string',
+            
+            // Musical Background
+            'instrument_id' => 'required|exists:instrument,instrument_id',
+            'secondary_instruments' => 'nullable|array',
+            'secondary_instruments.*' => 'nullable|string|max:100',
+            'previous_music_experience' => 'nullable|string',
+            'skill_level' => 'required|in:beginner,intermediate,advanced,expert',
             'music_goals' => 'nullable|string',
+            'preferred_genre_id' => 'nullable|exists:genre,genre_id',
+            
+            // Educational Background
+            'school_name' => 'nullable|string|max:200',
+            'grade_level' => 'nullable|string|max:50',
         ], [
             'user_email.unique' => 'This email is already registered.',
             'phone.regex' => 'Phone number must be exactly 11 digits.',
+            'emergency_contact_phone.regex' => 'Emergency contact phone must be exactly 11 digits.',
+            'parent_guardian_phone.regex' => 'Parent/Guardian phone must be exactly 11 digits.',
+            'instrument_id.required' => 'Please select your primary instrument.',
+            'skill_level.required' => 'Please select your skill level.',
         ]);
 
-        //STORE IN SESSION - NOT DATABASE YET
+        // Convert secondary instruments array to comma-separated string
+        if (isset($validated['secondary_instruments']) && is_array($validated['secondary_instruments'])) {
+            $validated['secondary_instruments'] = implode(', ', array_filter($validated['secondary_instruments']));
+        }
+
+        // ✅ STORE ALL DATA IN SESSION - NOT DATABASE YET
         session([
             'registration_data' => $validated,
             'registration_role' => 'student'
@@ -362,8 +417,9 @@ class RegistrationController extends Controller
     // HELPER METHODS - CREATE ROLE-SPECIFIC RECORDS
     // ============================================================================
 
-    /**
+    /*
      * Create student record in database
+     * Called from processCreateAccount() after password is set
      */
     private function createStudentRecord($userId, $data)
     {
@@ -377,20 +433,60 @@ class RegistrationController extends Controller
 
         DB::table('student')->insert([
             'user_id' => $userId,
+            
+            // Personal Information
             'first_name' => $data['first_name'],
             'middle_name' => $data['middle_name'] ?? null,
             'last_name' => $data['last_name'],
             'suffix' => $data['suffix'] ?? null,
             'phone' => $data['phone'],
             'email' => $data['user_email'],
-            'date_of_birth' => $data['date_of_birth'] ?? null,
-            'gender' => $data['gender'] ?? null,
-            'instrument_id' => $data['instrument_id'] ?? null,
-            'skill_level' => $data['skill_level'] ?? null,
+            
+            // Address
+            'address_line1' => $data['address_line1'],
+            'address_line2' => $data['address_line2'] ?? null,
+            'city' => $data['city'],
+            'province' => $data['province'],
+            'postal_code' => $data['postal_code'],
+            'country' => $data['country'],
+            
+            // Personal Details
+            'date_of_birth' => $data['date_of_birth'],
+            'gender' => $data['gender'],
+            'nationality' => $data['nationality'] ?? null,
+            
+            // Medical Information
+            'medical_conditions' => $data['medical_conditions'] ?? null,
+            'allergies' => $data['allergies'] ?? null,
+            'special_needs' => $data['special_needs'] ?? null,
+            
+            // Emergency Contact
+            'emergency_contact_name' => $data['emergency_contact_name'],
+            'emergency_contact_relationship' => $data['emergency_contact_relationship'],
+            'emergency_contact_phone' => $data['emergency_contact_phone'],
+            
+            // Parent/Guardian
+            'parent_guardian_name' => $data['parent_guardian_name'],
+            'parent_guardian_relationship' => $data['parent_guardian_relationship'],
+            'parent_guardian_phone' => $data['parent_guardian_phone'],
+            'parent_guardian_email' => $data['parent_guardian_email'] ?? null,
+            'parent_guardian_address' => $data['parent_guardian_address'] ?? null,
+            
+            // Musical Background
+            'instrument_id' => $data['instrument_id'],
+            'secondary_instruments' => $data['secondary_instruments'] ?? null,
+            'previous_music_experience' => $data['previous_music_experience'] ?? null,
+            'skill_level' => $data['skill_level'],
             'music_goals' => $data['music_goals'] ?? null,
+            'preferred_genre_id' => $data['preferred_genre_id'] ?? null,
+            
+            // Educational Background
+            'school_name' => $data['school_name'] ?? null,
+            'grade_level' => $data['grade_level'] ?? null,
+            
+            // System Fields
             'student_status_id' => $activeStatusId,
             'enrollment_date' => now()->format('Y-m-d'),
-            'country' => 'Philippines',
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
