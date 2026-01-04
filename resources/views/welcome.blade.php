@@ -1,3 +1,14 @@
+{{-- 
+/**
+ * 
+ * This is the main welcome/landing page view file for the application.
+ * Located in the Laravel resources/views directory and uses Blade templating engine.
+ * 
+ * @file welcome.blade.php
+ * @path resources/views/welcome.blade.php
+ */ 
+--}}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
