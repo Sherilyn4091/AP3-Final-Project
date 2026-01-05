@@ -1,19 +1,19 @@
 {{-- resources/views/admin/dashboard.blade.php --}}
 {{-- 
     ============================================================================
-    SUPER ADMIN DASHBOARD
+    SUPER ADMIN DASHBOARD - Music Lab
     Main control center for system-wide overview and management
+    Updated: January 2026 - Live React/JavaScript chart integration ready
     ============================================================================
 --}}
-
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <title>Admin Dashboard - Music Lab</title>
+    @vite(['resources/css/style.css', 'resources/js/script.js', 'resources/js/admin.js'])
 </head>
 <body class="bg-light-gray">
 
@@ -167,11 +167,12 @@
         </div>
 
         {{-- ============================================================================
-            CHARTS SECTION (Placeholders for React Integration)
+            CHARTS SECTION - Live Data Visualizations (React/JS Mount Points)
+            These empty divs are targets for JavaScript chart libraries (Chart.js, Recharts, etc.)
             ============================================================================ --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
             
-            {{-- Enrollment Trend Chart --}}
+            {{-- Enrollment Trend Chart (Line Chart) --}}
             <div class="card p-4 lg:p-6">
                 <h3 class="text-base lg:text-lg font-semibold text-secondary-blue mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,41 +180,21 @@
                     </svg>
                     Enrollment Trend (Last 30 Days)
                 </h3>
-                <div id="enrollment-trend-chart" 
-                     data-chart-type="line" 
-                     class="h-48 lg:h-64 bg-accent-yellow bg-opacity-20 rounded-lg flex items-center justify-center text-secondary-blue border-2 border-dashed border-secondary-blue">
-                    <div class="text-center p-4">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
-                        </svg>
-                        <p class="font-medium text-sm">React Chart Component</p>
-                        <p class="text-xs mt-1 opacity-70">Enrollment trend visualization</p>
-                    </div>
-                </div>
+                <div id="enrollment-trend-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
             </div>
 
-            {{-- Revenue Chart --}}
+            {{-- Revenue Chart (Bar Chart) --}}
             <div class="card p-4 lg:p-6">
                 <h3 class="text-base lg:text-lg font-semibold text-secondary-blue mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
-                    Revenue (Last 12 Months)
+                    Weekly Revenue (Last 30 Days)
                 </h3>
-                <div id="revenue-chart" 
-                     data-chart-type="bar" 
-                     class="h-48 lg:h-64 bg-accent-yellow bg-opacity-20 rounded-lg flex items-center justify-center text-secondary-blue border-2 border-dashed border-secondary-blue">
-                    <div class="text-center p-4">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/>
-                        </svg>
-                        <p class="font-medium text-sm">React Chart Component</p>
-                        <p class="text-xs mt-1 opacity-70">Monthly revenue visualization</p>
-                    </div>
-                </div>
+                <div id="revenue-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
             </div>
 
-            {{-- Instrument Popularity Chart --}}
+            {{-- Instrument Popularity Chart (Pie Chart) --}}
             <div class="card p-4 lg:p-6">
                 <h3 class="text-base lg:text-lg font-semibold text-secondary-blue mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,38 +203,18 @@
                     </svg>
                     Instrument Popularity
                 </h3>
-                <div id="instrument-popularity-chart" 
-                     data-chart-type="pie" 
-                     class="h-48 lg:h-64 bg-accent-yellow bg-opacity-20 rounded-lg flex items-center justify-center text-secondary-blue border-2 border-dashed border-secondary-blue">
-                    <div class="text-center p-4">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/>
-                        </svg>
-                        <p class="font-medium text-sm">React Chart Component</p>
-                        <p class="text-xs mt-1 opacity-70">Instrument distribution</p>
-                    </div>
-                </div>
+                <div id="instrument-popularity-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
             </div>
 
-            {{-- Instructor Performance Chart --}}
+            {{-- Instructor Performance Chart (Bar Chart) --}}
             <div class="card p-4 lg:p-6">
                 <h3 class="text-base lg:text-lg font-semibold text-secondary-blue mb-4 flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                     </svg>
-                    Instructor Performance
+                    Top 10 Instructors (Students Taught)
                 </h3>
-                <div id="instructor-performance-chart" 
-                     data-chart-type="bar" 
-                     class="h-48 lg:h-64 bg-accent-yellow bg-opacity-20 rounded-lg flex items-center justify-center text-secondary-blue border-2 border-dashed border-secondary-blue">
-                    <div class="text-center p-4">
-                        <svg class="w-12 h-12 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                        </svg>
-                        <p class="font-medium text-sm">React Chart Component</p>
-                        <p class="text-xs mt-1 opacity-70">Students per instructor</p>
-                    </div>
-                </div>
+                <div id="instructor-performance-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
             </div>
         </div>
 
@@ -458,14 +419,6 @@
                     Add New User
                 </a>
 
-                {{-- View Reports Button --}}
-                <a href="{{ route('admin.reports.index') }}" class="btn-secondary py-3 text-center text-sm hover:scale-105 transition-transform">
-                    <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                    View Reports
-                </a>
-
                 {{-- User Management Button --}}
                 <a href="{{ route('admin.users.index') }}" class="btn-secondary py-3 text-center text-sm hover:scale-105 transition-transform">
                     <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -480,6 +433,22 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
                     Schedule
+                </a>
+
+                {{-- Lessons Button --}}
+                <a href="{{ route('admin.lessons.index') }}" class="btn-secondary py-3 text-center text-sm hover:scale-105 transition-transform">
+                    <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                    Lessons
+                </a>
+
+                {{-- View Reports Button --}}
+                <a href="{{ route('admin.reports.index') }}" class="btn-secondary py-3 text-center text-sm hover:scale-105 transition-transform">
+                    <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    View Reports
                 </a>
 
                 {{-- Financial Reports Button --}}
@@ -505,14 +474,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
                     Settings
-                </a>
-
-                {{-- Lessons Button --}}
-                <a href="{{ route('admin.lessons.index') }}" class="btn-secondary py-3 text-center text-sm hover:scale-105 transition-transform">
-                    <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                    </svg>
-                    Lessons
                 </a>
             </div>
         </div>

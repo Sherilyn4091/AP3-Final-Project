@@ -8,7 +8,7 @@
 /**
  * Toggle Password Visibility
  * Switches between showing and hiding password text
- * Used in: Login, All Registration Forms
+ * ***********Used in: Login, All Registration Forms**************
  */
 function togglePassword() {
     // Get the password input element

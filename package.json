@@ -24,11 +24,13 @@
         "test": "tests"
     },
     "dependencies": {
+        "@vitejs/plugin-react": "^5.1.2",
         "ansi-regex": "^5.0.1",
         "ansi-styles": "^4.3.0",
         "asynckit": "^0.4.0",
         "call-bind-apply-helpers": "^1.0.2",
         "chalk": "^4.1.2",
+        "chart.js": "^4.5.1",
         "cliui": "^8.0.1",
         "color-convert": "^2.0.1",
         "color-name": "^1.1.4",
@@ -69,6 +71,9 @@
         "picocolors": "^1.1.1",
         "picomatch": "^4.0.3",
         "proxy-from-env": "^1.1.0",
+        "react": "^19.2.3",
+        "react-dom": "^19.2.3",
+        "recharts": "^3.6.0",
         "require-directory": "^2.1.1",
         "rollup": "^4.54.0",
         "rxjs": "^7.8.2",

@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -104,29 +105,27 @@ Route::middleware('auth')->group(function () {
         
         // Users Management
         Route::prefix('users')->name('users.')->group(function () {
-            Route::get('/', function () {
-                return view('admin.users.index');
-            })->name('index');
+            // Must be first to avoid conflict with /create, /students, etc.
+            Route::get('/{id}', [UserController::class, 'show'])->name('show');
             
-            Route::get('/create', function () {
-                return view('admin.users.create');
-            })->name('create');
+            Route::get('/', [UserController::class, 'index'])->name('index');
             
-            Route::get('/students', function () {
-                return view('admin.users.students');
-            })->name('students');
+            Route::post('/{id}/reset-password', [UserController::class, 'resetPassword'])->name('reset-password');
+            Route::post('/{id}/deactivate', [UserController::class, 'deactivate'])->name('deactivate');
+            Route::post('/{id}/activate', [UserController::class, 'activate'])->name('activate');
+            Route::delete('/{id}', [UserController::class, 'destroy'])->name('destroy');
             
-            Route::get('/instructors', function () {
-                return view('admin.users.instructors');
-            })->name('instructors');
+            Route::get('/{id}/deletion-impact', [UserController::class, 'getDeletionImpact'])->name('deletion-impact');
             
-            Route::get('/sales-staff', function () {
-                return view('admin.users.sales-staff');
-            })->name('sales-staff');
-            
-            Route::get('/all-around-staff', function () {
-                return view('admin.users.all-around-staff');
-            })->name('all-around-staff');
+            Route::post('/bulk-deactivate', [UserController::class, 'bulkDeactivate'])->name('bulk-deactivate');
+            Route::post('/bulk-delete', [UserController::class, 'bulkDestroy'])->name('bulk-destroy'); // Added
+
+            // Static pages
+            Route::get('/create', fn() => view('admin.users.create'))->name('create');
+            Route::get('/students', fn() => view('admin.users.students'))->name('students');
+            Route::get('/instructors', fn() => view('admin.users.instructors'))->name('instructors');
+            Route::get('/sales-staff', fn() => view('admin.users.sales-staff'))->name('sales-staff');
+            Route::get('/all-around-staff', fn() => view('admin.users.all-around-staff'))->name('all-around-staff');
         });
         
         // Lessons Management
@@ -169,6 +168,17 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings', function () {
             return view('admin.settings.index');
         })->name('settings.index');
+    });
+
+    // ============================================================================
+    // CHART API ENDPOINTS (Admin only)
+    // ============================================================================
+    
+    Route::prefix('api/admin/charts')->middleware('auth')->group(function () {
+        Route::get('/revenue-weekly', [DashboardController::class, 'getWeeklyRevenue']);
+        Route::get('/enrollment-trend', [DashboardController::class, 'getEnrollmentTrend']);
+        Route::get('/instrument-popularity', [DashboardController::class, 'getInstrumentPopularity']);
+        Route::get('/instructor-performance', [DashboardController::class, 'getInstructorPerformance']);
     });
 });
 
