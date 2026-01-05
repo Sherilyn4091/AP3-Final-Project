@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -149,5 +150,111 @@ class DashboardController extends Controller
             'todaysSchedule',
             'todaysBookings'
         ));
+    }
+
+    // ============================================================================
+    // CHART API ENDPOINTS
+    // ============================================================================
+
+    /**
+     * Get weekly revenue for the last 30 days (~4 weeks)
+     */
+    public function getWeeklyRevenue()
+    {
+        $paidStatusId = DB::table('payment_status')
+            ->where('status_name', 'Paid')
+            ->value('status_id');
+
+        $startDate = Carbon::now()->subDays(30);
+        
+        $weeklyData = DB::table('payment')
+            ->where('payment_status_id', $paidStatusId)
+            ->where('payment_date', '>=', $startDate)
+            ->select(
+                DB::raw("DATE_TRUNC('week', payment_date) as week_start"),
+                DB::raw("SUM(amount) as revenue")
+            )
+            ->groupBy('week_start')
+            ->orderBy('week_start', 'asc')
+            ->get();
+
+        $formattedData = $weeklyData->map(function($item) {
+            $weekStart = Carbon::parse($item->week_start);
+            $weekEnd = $weekStart->copy()->addDays(6);
+            
+            return [
+                'week_label' => $weekStart->format('M d') . ' - ' . $weekEnd->format('M d'),
+                'revenue' => (float) $item->revenue
+            ];
+        });
+
+        return response()->json(['data' => $formattedData]);
+    }
+
+    /**
+     * Get daily enrollment trend for the last 30 days
+     */
+    public function getEnrollmentTrend()
+    {
+        $startDate = Carbon::now()->subDays(30);
+        
+        $dailyData = DB::table('enrollment')
+            ->where('enrollment_date', '>=', $startDate)
+            ->select(
+                DB::raw("DATE(enrollment_date) as date"),
+                DB::raw("COUNT(*) as count")
+            )
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        $formattedData = $dailyData->map(function($item) {
+            return [
+                'date_label' => Carbon::parse($item->date)->format('M d'),
+                'count' => (int) $item->count,
+                'full_date' => $item->date
+            ];
+        });
+
+        return response()->json(['data' => $formattedData]);
+    }
+
+    /**
+     * Get instrument popularity (total students per instrument)
+     */
+    public function getInstrumentPopularity()
+    {
+        $data = DB::table('student')
+            ->join('instrument', 'student.instrument_id', '=', 'instrument.instrument_id')
+            ->select(
+                'instrument.instrument_name as name',
+                DB::raw("COUNT(*) as count")
+            )
+            ->where('student.is_active', true)
+            ->groupBy('instrument.instrument_name')
+            ->orderBy('count', 'desc')
+            ->get();
+
+        return response()->json(['data' => $data]);
+    }
+
+    /**
+     * Get instructor performance (total students taught)
+     */
+    public function getInstructorPerformance()
+    {
+        $data = DB::table('instructor')
+            ->leftJoin('enrollment', 'instructor.instructor_id', '=', 'enrollment.instructor_id')
+            ->select(
+                DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name"),
+                DB::raw("COUNT(DISTINCT enrollment.student_id) as total_students")
+            )
+            ->where('instructor.is_active', true)
+            ->groupBy('instructor.instructor_id', 'instructor.first_name', 'instructor.last_name')
+            ->orderBy('total_students', 'desc')
+            ->limit(10)
+            ->get();
+
+        return response()->json(['data' => $data]);
     }
 }
