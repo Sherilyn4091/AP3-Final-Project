@@ -47,6 +47,7 @@ class UserController extends Controller
                 'ua.is_super_admin', // Select the super admin flag
                 DB::raw("
                     CASE
+                        WHEN ua.is_super_admin = TRUE THEN 'super_admin'
                         WHEN s.user_id IS NOT NULL THEN 'student'
                         WHEN i.user_id IS NOT NULL THEN 'instructor'
                         WHEN ss.user_id IS NOT NULL THEN 'sales'
