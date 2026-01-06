@@ -107,6 +107,8 @@ Route::middleware('auth')->group(function () {
         Route::prefix('users')->name('users.')->group(function () {
             // Must be first to avoid conflict with /create, /students, etc.
             Route::get('/{id}', [UserController::class, 'show'])->name('show');
+
+            Route::put('/{id}', [UserController::class, 'update'])->name('update');
             
             Route::get('/', [UserController::class, 'index'])->name('index');
             
@@ -118,7 +120,7 @@ Route::middleware('auth')->group(function () {
             Route::get('/{id}/deletion-impact', [UserController::class, 'getDeletionImpact'])->name('deletion-impact');
             
             Route::post('/bulk-deactivate', [UserController::class, 'bulkDeactivate'])->name('bulk-deactivate');
-            Route::post('/bulk-delete', [UserController::class, 'bulkDestroy'])->name('bulk-destroy'); // Added
+            Route::post('/bulk-delete', [UserController::class, 'bulkDestroy'])->name('bulk-delete'); // Added
 
             // Static pages
             Route::get('/create', fn() => view('admin.users.create'))->name('create');

@@ -10,7 +10,8 @@ export default defineConfig({
                 'resources/css/style.css',
                 'resources/js/script.js',
                 'resources/js/app.js',
-                'resources/js/admin.js'
+                'resources/js/admin.jsx',
+                'resources/js/admin-pages.js'
             ],
             refresh: true,
         }),

@@ -1,4 +1,4 @@
-// resources/js/admin.js
+// resources/js/admin.jsx
 // Mount point for all *****React chart***** components on the Admin Dashboard
 
 import React from 'react';
