@@ -89,8 +89,7 @@
 /**
  * ============================================================================
  * CUSTOM UTILITY CLASSES
- * Reusable component styles
- * ============================================================================
+* ============================================================================
  */
 @layer components {
     
@@ -424,12 +423,93 @@
  * PRINT STYLES
  * ============================================================================
  */
-@media print {
-    body {
-        @apply bg-white;
+@media print { 
+    body {@apply bg-white;}
+    .no-print {display: none !important;}
+}
+
+@layer components {
+    /**
+     * ============================================================================
+     * ACTION BUTTON TOOLTIPS - resources/views/admin/users/index.blade.php
+     * ============================================================================
+     */
+    .action-btn {
+        @apply relative p-2 rounded-lg transition-all duration-200 
+               hover:bg-secondary-blue hover:text-white 
+               focus:outline-none focus:ring-2 focus:ring-secondary-blue focus:ring-opacity-50
+               active:scale-95;
+               position: relative; /* Establishes a positioning context for the tooltip */
+    }
+
+    .action-btn .tooltip {
+        position: absolute;
+        bottom: 125%; /* Position above the button */
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.2s, visibility 0.2s;
+        pointer-events: none; /* The tooltip itself shouldn't be interactive */
+        z-index: 10;
     }
     
-    .no-print {
-        display: none !important;
+    .tooltip {
+        @apply absolute z-50 px-3 py-2 text-xs font-medium text-white 
+               bg-gray-900 rounded-lg shadow-lg opacity-0 pointer-events-none
+               transition-opacity duration-200 whitespace-nowrap;
+    }
+    
+    .action-btn:hover .tooltip {
+        @apply opacity-100;
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    /* Tooltip positioning and arrows */
+    .tooltip::before {
+        content: '';
+        @apply absolute w-0 h-0 border-4 border-transparent;
+    }
+    
+    .tooltip-left {
+        right: 100%;
+        top: 50%;
+        transform: translateY(-50%) translateX(-8px);
+    }
+    
+    .tooltip-left::before {
+        @apply border-l-gray-900;
+        right: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    .tooltip-right {
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%) translateX(8px);
+    }
+    
+    .tooltip-right::before {
+        @apply border-r-gray-900;
+        left: -8px;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+    
+    /**
+     * ============================================================================
+     * TOAST SUCCESS COLOR - Custom hex #377357
+     * ============================================================================
+     */
+    .toast-success {
+        background-color: #377357 !important;
     }
 }
