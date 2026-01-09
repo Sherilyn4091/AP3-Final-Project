@@ -1,4 +1,7 @@
+/* Custom styles
+*\\resources\\css\\app.css
+*/
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-/* Custom styles */

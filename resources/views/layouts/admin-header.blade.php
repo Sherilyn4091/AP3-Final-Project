@@ -1,7 +1,7 @@
 {{-- resources/views/layouts/admin-header.blade.php --}} 
 {{--  
     ============================================================================ 
-    ADMIN HEADER WITH SIDEBAR NAVIGATION - REVISED 
+    ADMIN HEADER WITH SIDEBAR NAVIGATION
     - Logo clicks to dashboard 
     - All Quick Actions included in sidebar 
     - Scrollable dropdowns (max 300px) 
