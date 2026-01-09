@@ -1,11 +1,16 @@
 <?php
 
+// app/Models/InstructorSpecialization.php
+
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class InstructorSpecialization extends Model
 {
+    use HasFactory;
+
     protected $table = 'instructor_specialization';
     protected $primaryKey = 'instructor_specialization_id';
     
