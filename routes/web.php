@@ -122,11 +122,15 @@ Route::middleware('auth')->group(function () {
             // Route to handle the submission of the new user form. 
             Route::post('/', [UserController::class, 'store'])->name('store'); 
              
-            // Static routes for filtered views of users by role. 
-            Route::get('/students', fn() => view('admin.users.students'))->name('students'); 
+            // Redirect old student route to new student management page
+            Route::get('/students', function() {
+                return redirect()->route('admin.students.index');
+            })->name('students');
+
+            // These views might not exist yet - create them or redirect as needed
             Route::get('/sales-staff', fn() => view('admin.users.sales-staff'))->name('sales-staff'); 
-            Route::get('/all-around-staff', fn() => view('admin.users.all-around-staff'))->name('all-around-staff'); 
-             
+            Route::get('/all-around-staff', fn() => view('admin.users.all-around-staff'))->name('all-around-staff');
+
             // Routes for bulk actions that operate on multiple users. 
             Route::post('/bulk-deactivate', [UserController::class, 'bulkDeactivate'])->name('bulk-deactivate'); 
             Route::post('/bulk-delete', [UserController::class, 'bulkDestroy'])->name('bulk-delete'); 
@@ -204,6 +208,16 @@ Route::middleware('auth')->group(function () {
              
             // Performance report 
             Route::get('/{id}/performance', [InstructorController::class, 'performanceReport'])->name('performance-report'); 
+        });
+
+         // Student Management Routes (inside admin group)
+        Route::prefix('students')->name('students.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Admin\StudentController::class, 'index'])->name('index');
+            Route::get('/{id}', [App\Http\Controllers\Admin\StudentController::class, 'show'])->name('show');
+            Route::put('/{id}', [App\Http\Controllers\Admin\StudentController::class, 'update'])->name('update');
+            Route::post('/bulk-status', [App\Http\Controllers\Admin\StudentController::class, 'bulkUpdateStatus'])->name('bulk-status');
+            Route::get('/{id}/attendance', [App\Http\Controllers\Admin\StudentController::class, 'getAttendance'])->name('attendance');
+            Route::get('/{id}/progress', [App\Http\Controllers\Admin\StudentController::class, 'getProgress'])->name('progress');
         });
     }); // End of admin prefix group
  
