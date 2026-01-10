@@ -1,5 +1,5 @@
 // resources/js/charts/InstrumentChart.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const COLORS = ['#377357', '#C2922F', '#E07A5F', '#61677A', '#272829', '#D8D9DA'];

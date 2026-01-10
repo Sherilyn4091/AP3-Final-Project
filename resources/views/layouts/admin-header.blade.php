@@ -51,10 +51,10 @@
                 {{-- Scrollable Dropdown with max-height 300px --}} 
                 <ul class="hidden mt-1 ml-4 space-y-1 border-l-2 border-secondary-blue pl-4 max-h-[300px] overflow-y-auto scrollbar-custom"> 
                     <li><a href="{{ route('admin.users.index') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">All Users</a></li> 
-                    <li><a href="{{ route('admin.users.students') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Students</a></li> 
-                    <li><a href="{{ route('admin.users.instructors') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Instructors</a></li> 
-                    <li><a href="{{ route('admin.users.sales-staff') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Sales Staff</a></li> 
-                    <li><a href="{{ route('admin.users.all-around-staff') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">All-Around Staff</a></li> 
+                    <li><a href="{{ route('admin.users.students') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Students</a></li>
+                    <li><a href="{{ route('admin.instructors.index') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Instructors</a></li>
+                    <li><a href="{{ route('admin.users.sales-staff') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Sales Staff</a></li>
+                    <li><a href="{{ route('admin.users.all-around-staff') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">All-Around Staff</a></li>
                     <li class="border-t border-secondary-blue pt-1 mt-1"> 
                         <a href="{{ route('admin.users.create') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm font-semibold"> 
                             + Add New User 

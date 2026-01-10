@@ -689,7 +689,8 @@ window.closePerfModal = closePerfModal;
 window.assignSpecialization = assignSpecialization;  
 window.removeSpecialization = removeSpecialization;  
 window.setPrimarySpec = setPrimarySpec;  
-window.updateAvailability = updateAvailability;  
+window.updateAvailability = updateAvailability;
+window.editAvailability = editAvailability;
   
 /**  
  * View instructor details in modal  
@@ -1111,9 +1112,124 @@ async function viewPerformance(instructorId) {
 /**  
  * Close performance modal  
  */  
-function closePerfModal() {  
+function closePerfModal() {
     const modal = document.getElementById('performance-modal');  
     modal.classList.add('hidden');  
     modal.classList.remove('flex');  
-}  
+}
+
+/**
+ * Edit instructor availability
+ * Opens a modal to update availability settings
+ */
+function editAvailability(instructorId) {
+    // Fetch current availability data
+    fetch(`/admin/instructors/${instructorId}`, {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const instructor = data.instructor;
+        
+        // Create availability edit modal
+        const modal = document.getElementById('instructor-detail-modal');
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg max-w-2xl w-full p-6 shadow-2xl animate-fade-in">
+                <h3 class="text-xl font-bold text-primary-dark mb-4">Edit Availability</h3>
+                
+                <form onsubmit="updateAvailability(event, ${instructorId})">
+                    <!-- Availability Toggle -->
+                    <div class="mb-4">
+                        <label class="flex items-center gap-3">
+                            <input type="checkbox" id="is-available" class="checkbox-custom" ${instructor.is_available ? 'checked' : ''}>
+                            <span class="font-semibold text-gray-700">Currently Available for Teaching</span>
+                        </label>
+                    </div>
+                    
+                    <!-- Available Days -->
+                    <div class="mb-4">
+                        <label class="block font-semibold text-gray-700 mb-2">Available Days</label>
+                        <input type="text" id="available-days" value="${instructor.available_days || ''}" 
+                               placeholder="e.g., Monday, Wednesday, Friday"
+                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                    </div>
+                    
+                    <!-- Preferred Time Slots -->
+                    <div class="mb-4">
+                        <label class="block font-semibold text-gray-700 mb-2">Preferred Time Slots</label>
+                        <input type="text" id="preferred-time" value="${instructor.preferred_time_slots || ''}" 
+                               placeholder="e.g., 9:00 AM - 12:00 PM, 2:00 PM - 5:00 PM"
+                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                    </div>
+                    
+                    <!-- Max Students Per Day -->
+                    <div class="mb-6">
+                        <label class="block font-semibold text-gray-700 mb-2">Max Students Per Day</label>
+                        <input type="number" id="max-students" value="${instructor.max_students_per_day || ''}" 
+                               min="1" max="20"
+                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3">
+                        <button type="submit" class="bg-forest-green text-white px-6 py-2 rounded-lg hover:bg-forest-green-dark flex-1">
+                            Save Changes
+                        </button>
+                        <button type="button" onclick="closeInstructorModal()" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 flex-1">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    })
+    .catch(error => {
+        showToast(error.message, 'error');
+    });
+}
+
+/**
+ * Update instructor availability (form submission handler)
+ */
+async function updateAvailability(event, instructorId) {
+    event.preventDefault();
+    
+    const isAvailable = document.getElementById('is-available').checked;
+    const availableDays = document.getElementById('available-days').value;
+    const preferredTime = document.getElementById('preferred-time').value;
+    const maxStudents = document.getElementById('max-students').value;
+    
+    try {
+        const response = await fetch(`/admin/instructors/${instructorId}/availability`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                is_available: isAvailable,
+                available_days: availableDays,
+                preferred_time_slots: preferredTime,
+                max_students_per_day: maxStudents
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(data.message || 'Failed to update availability');
+        }
+        
+        showToast(data.message, 'success');
+        closeInstructorModal();
+        setTimeout(() => window.location.reload(), 1500);
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
   
