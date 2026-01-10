@@ -124,7 +124,6 @@ Route::middleware('auth')->group(function () {
              
             // Static routes for filtered views of users by role. 
             Route::get('/students', fn() => view('admin.users.students'))->name('students'); 
-            Route::get('/instructors', fn() => view('admin.users.instructors'))->name('instructors'); 
             Route::get('/sales-staff', fn() => view('admin.users.sales-staff'))->name('sales-staff'); 
             Route::get('/all-around-staff', fn() => view('admin.users.all-around-staff'))->name('all-around-staff'); 
              
@@ -185,30 +184,32 @@ Route::middleware('auth')->group(function () {
         // Settings 
         Route::get('/settings', function () { 
             return view('admin.settings.index'); 
-        })->name('settings.index'); 
-    }); 
- 
-    // Instructors Management (NEW SECTION) 
-    Route::prefix('instructors')->name('instructors.')->group(function () { 
-        Route::get('/', [InstructorController::class, 'index'])->name('index'); 
-        Route::get('/{id}', [InstructorController::class, 'show'])->name('show'); 
-        Route::put('/{id}', [InstructorController::class, 'update'])->name('update'); 
-         
-        // Specialization management 
-        Route::post('/{id}/specializations', [InstructorController::class, 'assignSpecialization'])->name('assign-specialization'); 
-        Route::delete('/{id}/specializations/{specializationId}', [InstructorController::class, 'removeSpecialization'])->name('remove-specialization'); 
-        Route::put('/{id}/specializations/{specializationId}/primary', [InstructorController::class, 'setPrimarySpecialization'])->name('set-primary-specialization'); 
-         
-        // Availability management 
-        Route::put('/{id}/availability', [InstructorController::class, 'updateAvailability'])->name('update-availability'); 
-         
-        // Performance report 
-        Route::get('/{id}/performance', [InstructorController::class, 'performanceReport'])->name('performance-report'); 
-    }); 
+        })->name('settings.index');
+        
+        // ============================================================================
+        // INSTRUCTORS MANAGEMENT (MOVED INSIDE ADMIN GROUP)
+        // ============================================================================
+        Route::prefix('instructors')->name('instructors.')->group(function () { 
+            Route::get('/', [InstructorController::class, 'index'])->name('index'); 
+            Route::get('/{id}', [InstructorController::class, 'show'])->name('show'); 
+            Route::put('/{id}', [InstructorController::class, 'update'])->name('update'); 
+             
+            // Specialization management 
+            Route::post('/{id}/specializations', [InstructorController::class, 'assignSpecialization'])->name('assign-specialization'); 
+            Route::delete('/{id}/specializations/{specializationId}', [InstructorController::class, 'removeSpecialization'])->name('remove-specialization'); 
+            Route::put('/{id}/specializations/{specializationId}/primary', [InstructorController::class, 'setPrimarySpecialization'])->name('set-primary-specialization'); 
+             
+            // Availability management 
+            Route::put('/{id}/availability', [InstructorController::class, 'updateAvailability'])->name('update-availability'); 
+             
+            // Performance report 
+            Route::get('/{id}/performance', [InstructorController::class, 'performanceReport'])->name('performance-report'); 
+        });
+    }); // End of admin prefix group
  
     // ============================================================================ 
     // CHART API ENDPOINTS (Admin only) 
-    // ============================================================================ 
+    // ============================================================================
      
     Route::prefix('api/admin/charts')->middleware('auth')->group(function () { 
         Route::get('/revenue-weekly', [DashboardController::class, 'getWeeklyRevenue']); 

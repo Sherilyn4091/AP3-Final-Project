@@ -1,5 +1,5 @@
 // resources/js/charts/RevenueChart.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const RevenueChart = () => {
