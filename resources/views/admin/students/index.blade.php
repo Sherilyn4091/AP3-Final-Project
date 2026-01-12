@@ -19,7 +19,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Student Management - Admin Dashboard</title>
     @vite(['resources/css/style.css', 'resources/js/app.js', 'resources/js/admin-pages.js'])
+
+    <!-- FullCalendar CSS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+
 </head>
+
 <body class="bg-light-gray">
 
 @include('layouts.admin-header')
@@ -342,6 +347,10 @@
 
 {{-- Toast Container --}}
 <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
+
+
+<!-- FullCalendar JS-->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 
 </body>
 </html>
