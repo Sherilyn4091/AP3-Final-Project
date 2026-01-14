@@ -1,7 +1,10 @@
 <?php
+cat > routes/migrate.php << 'EOF'
+<?php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schema;
 
 Route::get('/run-migrations-secret-key-2026', function () {
     try {
@@ -9,8 +12,8 @@ Route::get('/run-migrations-secret-key-2026', function () {
         if (Schema::hasTable('users')) {
             return response()->json([
                 'status' => 'already_migrated',
-                'message' => 'Database tables already exist. Migrations were previously run.',
-                'timestamp' => now()
+                'message' => 'Database tables already exist.',
+                'tables' => Schema::getAllTables()
             ]);
         }
 
@@ -20,15 +23,14 @@ Route::get('/run-migrations-secret-key-2026', function () {
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Migrations completed successfully!',
-            'output' => $output,
-            'timestamp' => now()
+            'message' => 'Migrations completed!',
+            'output' => $output
         ]);
     } catch (\Exception $e) {
         return response()->json([
             'status' => 'error',
             'message' => $e->getMessage(),
-            'timestamp' => now()
+            'trace' => $e->getTraceAsString()
         ], 500);
     }
 });
