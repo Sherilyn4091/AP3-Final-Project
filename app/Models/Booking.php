@@ -1,8 +1,11 @@
 <?php
 
+// app/Models/Booking.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Booking extends Model
 {
@@ -12,7 +15,6 @@ class Booking extends Model
     protected $keyType = 'string';
     
     protected $fillable = [
-        'booking_id',
         'user_id',
         'room_number',
         'booking_date',
@@ -46,6 +48,25 @@ class Booking extends Model
         'confirmed_at' => 'datetime',
         'cancelled_at' => 'datetime',
     ];
+    
+    // Auto-fetch generated ID after insert
+    protected static function booted()
+    {
+        static::created(function ($booking) {
+            if (!$booking->booking_id) {
+                $latest = DB::table('booking')
+                    ->where('user_id', $booking->user_id)
+                    ->whereNotNull('booking_id')
+                    ->latest('created_at')
+                    ->first();
+                
+                if ($latest) {
+                    $booking->booking_id = $latest->booking_id;
+                    $booking->syncOriginal(['booking_id']);
+                }
+            }
+        });
+    }
     
     // Relationships
     public function user()

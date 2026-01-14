@@ -1,5 +1,7 @@
 <?php
 
+// database/seeders/StudentSeeder.php
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;

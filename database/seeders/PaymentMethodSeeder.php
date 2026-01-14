@@ -1,7 +1,5 @@
 <?php
-
 namespace Database\Seeders;
-
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -21,10 +19,10 @@ class PaymentMethodSeeder extends Seeder
         ];
 
         foreach ($paymentMethods as $paymentMethod) {
-            if (!DB::table('payment_method')->where('method_name', $paymentMethod['method_name'])->exists()) {
+            if (!DB::table('payment_methods')->where('method_name', $paymentMethod['method_name'])->exists()) {
                 $paymentMethod['created_at'] = now();
                 $paymentMethod['updated_at'] = now();
-                DB::table('payment_method')->insert($paymentMethod);
+                DB::table('payment_methods')->insert($paymentMethod);
             }
         }
     }
