@@ -20,8 +20,17 @@ export default defineConfig({
                 'resources/css/style.css',
                 'resources/js/script.js',
                 'resources/js/app.js',
+
                 'resources/js/admin.jsx',
-                'resources/js/admin-pages.js'
+
+                'resources/js/admin-pages.js',
+
+                'resources/js/admin-pages/instrument.js',
+                'resources/js/admin-pages/specialization.js',
+                'resources/js/admin-pages/genre.js',
+                'resources/js/admin-pages/payment-method.js',
+                'resources/js/admin-pages/payment-status.js',
+                'resources/js/admin-pages/lesson-session.js',
             ],
             refresh: true,
         }),

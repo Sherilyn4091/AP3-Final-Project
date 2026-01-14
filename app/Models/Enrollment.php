@@ -1,8 +1,11 @@
 <?php
 
+// app/Models/Enrollment.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class Enrollment extends Model
 {
@@ -12,7 +15,6 @@ class Enrollment extends Model
     protected $keyType = 'string';
     
     protected $fillable = [
-        'enrollment_id',
         'student_id',
         'session_id',
         'instructor_id',
@@ -39,6 +41,25 @@ class Enrollment extends Model
         'total_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
     ];
+    
+    // Auto-fetch generated ID after insert
+    protected static function booted()
+    {
+        static::created(function ($enrollment) {
+            if (!$enrollment->enrollment_id) {
+                $latest = DB::table('enrollment')
+                    ->where('student_id', $enrollment->student_id)
+                    ->whereNotNull('enrollment_id')
+                    ->latest('created_at')
+                    ->first();
+                
+                if ($latest) {
+                    $enrollment->enrollment_id = $latest->enrollment_id;
+                    $enrollment->syncOriginal(['enrollment_id']);
+                }
+            }
+        });
+    }
     
     // Relationships
     public function student()

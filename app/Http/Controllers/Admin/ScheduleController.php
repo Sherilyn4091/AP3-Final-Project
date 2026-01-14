@@ -26,10 +26,10 @@ class ScheduleController extends Controller
      */
     public function index(Request $request)
     {
-        // Fetch filter options
+        // Fetch all active rooms for the view (dropdown, display, etc.)
         $rooms = DB::table('room')
             ->where('is_active', true)
-            ->orderBy('room_number')
+            ->orderBy('room_name', 'asc')
             ->get();
 
         $instructors = DB::table('instructor')

@@ -1,0 +1,283 @@
+{{--
+    ============================================================================
+    LESSON SESSION PACKAGE MANAGEMENT PAGE
+    resources/views/admin/lesson-sessions/index.blade.php
+    ============================================================================
+    Features:
+    - CRUD operations for lesson packages (5, 10, 20 sessions)
+    - Statistics cards (Total, Active, Inactive, Most Popular)
+    - Search and filter functionality
+    - Usage checking before deletion (prevents delete if used in enrollments)
+    - Toggle active/inactive status
+    - Auto-generates session names (e.g., "5 Session Package")
+    ============================================================================
+--}}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Lesson packages - Admin dashboard</title>
+    @vite(['resources/css/style.css', 'resources/js/admin-pages/lesson-session.js'])
+</head>
+
+<body class="bg-light-gray">
+
+@include('layouts.admin-header')
+
+<main class="lg:ml-64 min-h-screen bg-light-gray">
+
+    {{-- Page Header --}}
+    <header class="bg-white shadow-sm p-6 border-b-4 border-secondary-blue">
+        <div class="flex items-center justify-between flex-wrap gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-primary-dark">Lesson Package Management</h1>
+                <p class="text-secondary-blue mt-1">Manage session packages for student enrollments</p>
+            </div>
+            <button onclick="openAddModal()" class="bg-forest-green text-white px-6 py-3 rounded-lg font-semibold hover:bg-forest-green-dark transition-all shadow-lg">
+                <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add package
+            </button>
+        </div>
+    </header>
+
+    <div class="p-4 lg:p-6">
+
+        {{-- Statistics Cards --}}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div class="card p-6 border-l-4 border-secondary-blue">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 font-semibold">Total packages</p>
+                        <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['total'] }}</p>
+                    </div>
+                    <div class="bg-secondary-blue bg-opacity-20 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-secondary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 border-l-4 border-forest-green">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 font-semibold">Active</p>
+                        <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['active'] }}</p>
+                    </div>
+                    <div class="bg-forest-green bg-opacity-20 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-forest-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 border-l-4 border-warm-coral">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 font-semibold">Inactive</p>
+                        <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['inactive'] }}</p>
+                    </div>
+                    <div class="bg-warm-coral bg-opacity-20 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-warm-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-6 border-l-4 border-golden-yellow">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600 font-semibold">Most popular</p>
+                        <p class="text-lg font-bold text-primary-dark mt-1">{{ $stats['most_popular_name'] ?? 'N/A' }}</p>
+                        <p class="text-xs text-gray-500">
+                            {{ $stats['most_popular_count'] ?? 0 }} {{ ($stats['most_popular_count'] ?? 0) === 1 ? 'enrollment' : 'enrollments' }}
+                        </p>
+                    </div>
+                    <div class="bg-golden-yellow bg-opacity-20 p-3 rounded-full">
+                        <svg class="w-8 h-8 text-golden-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Filters --}}
+        <div class="card p-6 mb-6">
+            <form method="GET" action="{{ route('admin.lesson-sessions.index') }}" class="flex flex-wrap gap-4">
+                <div class="flex-1 min-w-[200px]">
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
+                    <input type="text" name="search" value="{{ request('search') }}"
+                           placeholder="Search by name, count, or description..."
+                           class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
+                    <select name="status" class="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                        <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All statuses</option>
+                        <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active only</option>
+                        <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive only</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Sort by</label>
+                    <select name="sort_by" class="px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                        <option value="session_count" {{ request('sort_by') == 'session_count' ? 'selected' : '' }}>Session count</option>
+                        <option value="usage" {{ request('sort_by') == 'usage' ? 'selected' : '' }}>Most used</option>
+                        <option value="price_asc" {{ request('sort_by') == 'price_asc' ? 'selected' : '' }}>Price (low to high)</option>
+                        <option value="price_desc" {{ request('sort_by') == 'price_desc' ? 'selected' : '' }}>Price (high to low)</option>
+                        <option value="newest" {{ request('sort_by') == 'newest' ? 'selected' : '' }}>Newest first</option>
+                        <option value="oldest" {{ request('sort_by') == 'oldest' ? 'selected' : '' }}>Oldest first</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end gap-2">
+                    <button type="submit" class="bg-secondary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-secondary-blue-dark transition-all">
+                        Apply
+                    </button>
+                    <a href="{{ route('admin.lesson-sessions.index') }}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-all">
+                        Clear
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        {{-- Lesson Packages Table --}}
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-primary-dark">
+                        <tr>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Package details</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Sessions × Duration</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Usage</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Created</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse($sessions as $session)
+                            <tr class="hover:bg-accent-yellow-light transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-12 w-12 bg-gradient-to-br from-secondary-blue to-forest-green rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                            {{ $session->session_count }}
+                                        </div>
+                                        <div class="ml-4">
+                                            <div class="text-sm font-bold text-gray-900">{{ $session->session_name }}</div>
+                                            @if($session->description)
+                                                <div class="text-xs text-gray-500 mt-1">{{ Str::limit($session->description, 50) }}</div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4">
+                                    <div>
+                                        <span class="text-sm text-gray-700 font-semibold">{{ $session->session_count }} × {{ $session->duration_minutes }} min</span>
+                                        <span class="text-xs text-gray-500 block mt-1">
+                                            Total: {{ number_format($session->total_hours, 1) }} {{ $session->total_hours == 1 ? 'hour' : 'hours' }}
+                                        </span>
+                                    </div>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="text-sm font-bold text-primary-dark">₱{{ number_format($session->price, 2) }}</span>
+                                    <span class="text-xs text-gray-500 block">₱{{ number_format($session->price / $session->session_count, 2) }}/session</span>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @if($session->usage_count > 0)
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-secondary-blue text-white">
+                                            {{ $session->usage_count }} {{ $session->usage_count == 1 ? 'enrollment' : 'enrollments' }}
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">
+                                            Not used yet
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $session->is_active ? 'bg-forest-green text-white' : 'bg-gray-400 text-white' }}">
+                                        {{ $session->is_active ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ date('M d, Y', strtotime($session->created_at)) }}
+                                </td>
+
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    <div class="flex gap-2">
+                                        <button onclick="editSession({{ $session->session_id }})" class="action-btn text-secondary-blue">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            <span class="tooltip">Edit</span>
+                                        </button>
+
+                                        <button onclick="toggleSession({{ $session->session_id }})" class="action-btn {{ $session->is_active ? 'text-warm-coral' : 'text-forest-green' }}">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                @if($session->is_active)
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
+                                                @else
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                @endif
+                                            </svg>
+                                            <span class="tooltip">{{ $session->is_active ? 'Deactivate' : 'Activate' }}</span>
+                                        </button>
+
+                                        <button onclick="deleteSession({{ $session->session_id }})" class="action-btn text-red-600">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                            <span class="tooltip">Delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                    </svg>
+                                    <p class="text-lg font-semibold">No lesson packages found</p>
+                                    <p class="text-sm mt-2">Try adjusting your filters or add a new package</p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Pagination --}}
+            @if($sessions->hasPages())
+                <div class="px-6 py-4 border-t border-gray-200 bg-gray-50">
+                    {{ $sessions->links() }}
+                </div>
+            @endif
+        </div>
+    </div>
+</main>
+
+{{-- Modal Container (populated by JS) --}}
+<div id="session-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4"></div>
+
+{{-- Toast Container --}}
+<div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
+
+</body>
+</html>
