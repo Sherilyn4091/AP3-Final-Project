@@ -13,13 +13,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Trust all proxies for Render
-        $middleware->trustProxies(at: '*', headers: [
-            'X-Forwarded-For',
-            'X-Forwarded-Host',
-            'X-Forwarded-Proto',
-            'X-Forwarded-Port',
-        ]);
+        // Trust all proxies for Render deployment
+        $middleware->trustProxies(at: '*');
+        
+        // Note: In Laravel 11, web middleware (sessions, CSRF, cookies) 
+        // is automatically included by default. No need to append manually.
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
