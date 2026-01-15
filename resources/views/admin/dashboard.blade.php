@@ -13,7 +13,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Music Lab</title>
-    @vite(['resources/css/style.css', 'resources/js/script.js', 'resources/js/admin.jsxX'])
+    @vite(['resources/css/style.css', 'resources/js/script.js', 'resources/js/admin.jsx'])
 </head>
 <body class="bg-light-gray">
 
