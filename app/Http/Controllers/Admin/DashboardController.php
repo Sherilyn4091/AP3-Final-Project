@@ -69,16 +69,16 @@ class DashboardController extends Controller
 
         // Recent Activity
         $recentEnrollments = DB::table('enrollment')
-            ->join('student', 'enrollment.student_id', '=', 'student.student_id')
-            ->join('lesson_type', 'enrollment.lesson_type_id', '=', 'lesson_type.lesson_type_id')
-            ->select(
-                'enrollment.*',
-                DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
-                'lesson_type.type_name as lesson_type'
-            )
-            ->orderBy('enrollment.enrollment_date', 'desc')
-            ->limit(5)
-            ->get();
+        ->join('student', 'enrollment.student_id', '=', 'student.student_id')
+        ->join('lesson_session', 'enrollment.session_id', '=', 'lesson_session.session_id')
+        ->select(
+            'enrollment.*',
+            DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
+            'lesson_session.session_name as lesson_type'
+        )
+        ->orderBy('enrollment.enrollment_date', 'desc')
+        ->limit(5)
+        ->get();
 
         $recentPayments = DB::table('payment')
             ->join('enrollment', 'payment.enrollment_id', '=', 'enrollment.enrollment_id')
