@@ -2740,3 +2740,15 @@ function formatDateTime(date) {
  * END OF SCHEDULE MANAGEMENT FUNCTIONS
  * ============================================================================
  */
+
+// ============================================================================
+// GLOBAL EXPORTS - Make functions available to inline onclick handlers
+// ============================================================================
+if (typeof window !== 'undefined') {
+    // Schedule functions
+    window.openRoomAvailabilityChecker = openRoomAvailabilityChecker;
+    window.checkRoomAvailability = checkRoomAvailability;
+    window.closeScheduleModal = closeScheduleModal;
+    window.closeEventModal = closeEventModal;
+    window.closeAvailabilityModal = closeAvailabilityModal;
+}

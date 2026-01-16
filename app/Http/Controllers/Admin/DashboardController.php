@@ -143,76 +143,68 @@ class DashboardController extends Controller
      */
     public function getWeeklyRevenue()
     {
-        return Cache::remember('weekly_revenue', 300, function () {
-            $paidStatusId = DB::table('payment_status')
-                ->where('status_name', 'Paid')
-                ->value('status_id');
+        $paidStatusId = DB::table('payment_status')
+            ->where('status_name', 'Paid')
+            ->value('status_id');
 
-            $weeklyData = DB::table('payment')
-                ->select(
-                    DB::raw("DATE_TRUNC('week', payment_date) as week_start"),
-                    DB::raw("SUM(amount) as revenue")
-                )
-                ->where('payment_status_id', $paidStatusId)
-                ->where('payment_date', '>=', now()->subWeeks(8))
-                ->groupBy('week_start')
-                ->orderBy('week_start')
-                ->get();
+        $weeklyData = DB::table('payment')
+            ->select(
+                DB::raw("DATE_TRUNC('week', payment_date) as week_start"),
+                DB::raw("SUM(amount) as revenue")
+            )
+            ->where('payment_status_id', $paidStatusId)
+            ->where('payment_date', '>=', now()->subWeeks(8))
+            ->groupBy('week_start')
+            ->orderBy('week_start')
+            ->get();
 
-            return response()->json($weeklyData);
-        });
+        return response()->json($weeklyData);
     }
 
     public function getEnrollmentTrend()
     {
-        return Cache::remember('enrollment_trend', 300, function () {
-            $dailyData = DB::table('enrollment')
-                ->select(
-                    DB::raw("DATE(enrollment_date) as date"),
-                    DB::raw("COUNT(*) as count")
-                )
-                ->where('enrollment_date', '>=', now()->subDays(30))
-                ->groupBy('date')
-                ->orderBy('date')
-                ->get();
+        $dailyData = DB::table('enrollment')
+            ->select(
+                DB::raw("DATE(enrollment_date) as date"),
+                DB::raw("COUNT(*) as count")
+            )
+            ->where('enrollment_date', '>=', now()->subDays(30))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
 
-            return response()->json($dailyData);
-        });
+        return response()->json($dailyData);
     }
 
     public function getInstrumentPopularity()
     {
-        return Cache::remember('instrument_popularity', 300, function () {
-            $data = DB::table('student')
-                ->join('genre', 'student.preferred_genre_id', '=', 'genre.genre_id')
-                ->select(
-                    'genre.genre_name',
-                    DB::raw("COUNT(*) as count")
-                )
-                ->groupBy('genre.genre_id', 'genre.genre_name')
-                ->orderBy('count', 'desc')
-                ->get();
+        $data = DB::table('student')
+            ->join('genre', 'student.preferred_genre_id', '=', 'genre.genre_id')
+            ->select(
+                'genre.genre_name',
+                DB::raw("COUNT(*) as count")
+            )
+            ->groupBy('genre.genre_id', 'genre.genre_name')
+            ->orderBy('count', 'desc')
+            ->get();
 
-            return response()->json($data);
-        });
+        return response()->json($data);
     }
 
     public function getInstructorPerformance()
     {
-        return Cache::remember('instructor_performance', 300, function () {
-            $data = DB::table('instructor')
-                ->leftJoin('schedule', 'instructor.instructor_id', '=', 'schedule.instructor_id')
-                ->leftJoin('enrollment', 'schedule.enrollment_id', '=', 'enrollment.enrollment_id')
-                ->select(
-                    DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name"),
-                    DB::raw("COUNT(DISTINCT enrollment.student_id) as total_students")
-                )
-                ->groupBy('instructor.instructor_id', 'instructor.first_name', 'instructor.last_name')
-                ->orderBy('total_students', 'desc')
-                ->limit(10)
-                ->get();
+        $data = DB::table('instructor')
+            ->leftJoin('schedule', 'instructor.instructor_id', '=', 'schedule.instructor_id')
+            ->leftJoin('enrollment', 'schedule.enrollment_id', '=', 'enrollment.enrollment_id')
+            ->select(
+                DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name"),
+                DB::raw("COUNT(DISTINCT enrollment.student_id) as total_students")
+            )
+            ->groupBy('instructor.instructor_id', 'instructor.first_name', 'instructor.last_name')
+            ->orderBy('total_students', 'desc')
+            ->limit(10)
+            ->get();
 
-            return response()->json($data);
-        });
+        return response()->json($data);
     }
 }

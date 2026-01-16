@@ -22,7 +22,7 @@
     @vite(['resources/css/style.css', 'resources/js/app.js', 'resources/js/admin-pages.js'])
 
     <!-- FullCalendar CSS -->
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css' rel='stylesheet' />
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet' />
     
     <!-- Mobile-specific styles -->
     <style>
@@ -181,7 +181,7 @@
 <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
 
 <!-- FullCalendar JS -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
 
 </body>
 </html>
