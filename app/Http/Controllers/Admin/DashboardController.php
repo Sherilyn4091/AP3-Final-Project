@@ -179,18 +179,18 @@ class DashboardController extends Controller
     public function getInstrumentPopularity()
     {
         $data = DB::table('student')
-            ->join('genre', 'student.preferred_genre_id', '=', 'genre.genre_id')
+            ->join('instrument', 'student.instrument_id', '=', 'instrument.instrument_id')
             ->select(
-                'genre.genre_name',
+                'instrument.instrument_name',
                 DB::raw("COUNT(*) as count")
             )
-            ->groupBy('genre.genre_id', 'genre.genre_name')
+            ->whereNotNull('student.instrument_id')
+            ->groupBy('instrument.instrument_id', 'instrument.instrument_name')
             ->orderBy('count', 'desc')
             ->get();
 
         return response()->json($data);
     }
-
     public function getInstructorPerformance()
     {
         $data = DB::table('instructor')
