@@ -113,6 +113,11 @@ class DashboardController extends Controller
             ->get();
 
         $todaysBookings = DB::table('booking')
+        ->select(
+            'booking.*',
+            DB::raw('contact_name as customer'),
+            DB::raw('booking_status as status')
+        )
         ->whereDate('booking_date', $today)
         ->get();
 
