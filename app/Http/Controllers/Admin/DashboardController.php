@@ -113,8 +113,8 @@ class DashboardController extends Controller
             ->get();
 
         $todaysBookings = DB::table('booking')
-            ->whereDate('booking_date', $today)
-            ->count();
+        ->whereDate('booking_date', $today)
+        ->get();
 
         return [
             'totalUsers' => $totalUsers,
