@@ -7,10 +7,16 @@ const RevenueChart = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/admin/charts/revenue-weekly')
+        fetch('/api/admin/charts/revenue-weekly', {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then(response => response.json())
             .then(result => {
-                setData(result.data);
+                setData(Array.isArray(result) ? result : []);
                 setLoading(false);
             })
             .catch(error => {
@@ -27,40 +33,23 @@ const RevenueChart = () => {
         );
     }
 
+    if (!data || data.length === 0) {
+        return (
+            <div className="h-64 flex items-center justify-center text-gray-500">
+                No revenue data available
+            </div>
+        );
+    }
+
     return (
         <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#D8D9DA" />
-                <XAxis 
-                    dataKey="week_label" 
-                    tick={{ fill: '#61677A', fontSize: 12 }}
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                />
-                <YAxis 
-                    tick={{ fill: '#61677A', fontSize: 12 }}
-                    tickFormatter={(value) => `₱${value.toLocaleString()}`}
-                />
-                <Tooltip 
-                    formatter={(value) => [`₱${value.toLocaleString()}`, 'Revenue']}
-                    contentStyle={{ 
-                        backgroundColor: '#272829', 
-                        border: 'none', 
-                        borderRadius: '8px',
-                        color: '#FFF6E0'
-                    }}
-                />
-                <Legend 
-                    wrapperStyle={{ paddingTop: '20px' }}
-                    iconType="circle"
-                />
-                <Bar 
-                    dataKey="revenue" 
-                    fill="#C2922F" 
-                    name="Weekly Revenue"
-                    radius={[8, 8, 0, 0]}
-                />
+            <BarChart data={data}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="week_start" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="revenue" fill="#C2922F" name="Weekly Revenue (₱)" />
             </BarChart>
         </ResponsiveContainer>
     );

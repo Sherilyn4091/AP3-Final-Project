@@ -9,10 +9,16 @@ const InstrumentChart = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetch('/api/admin/charts/instrument-popularity')
+        fetch('/api/admin/charts/instrument-popularity', {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
             .then(response => response.json())
             .then(result => {
-                setData(result.data);
+                setData(Array.isArray(result) ? result : []);
                 setLoading(false);
             })
             .catch(error => {
@@ -29,25 +35,13 @@ const InstrumentChart = () => {
         );
     }
 
-    const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
-        const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-        const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-        const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
-
+    if (!data || data.length === 0) {
         return (
-            <text 
-                x={x} 
-                y={y} 
-                fill="white" 
-                textAnchor={x > cx ? 'start' : 'end'} 
-                dominantBaseline="central"
-                fontSize="14"
-                fontWeight="bold"
-            >
-                {`${(percent * 100).toFixed(0)}%`}
-            </text>
+            <div className="h-64 flex items-center justify-center text-gray-500">
+                No instrument data available
+            </div>
         );
-    };
+    }
 
     return (
         <ResponsiveContainer width="100%" height={300}>
@@ -57,8 +51,8 @@ const InstrumentChart = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={renderCustomLabel}
-                    outerRadius={100}
+                    label={({ genre_name, count }) => `${genre_name}: ${count}`}
+                    outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
                 >
@@ -66,21 +60,8 @@ const InstrumentChart = () => {
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                 </Pie>
-                <Tooltip 
-                    formatter={(value, name, props) => [value, props.payload.name]}
-                    contentStyle={{ 
-                        backgroundColor: '#272829', 
-                        border: 'none', 
-                        borderRadius: '8px',
-                        color: '#FFF6E0'
-                    }}
-                />
-                <Legend 
-                    verticalAlign="bottom" 
-                    height={36}
-                    iconType="circle"
-                    formatter={(value, entry) => `${entry.payload.name} (${entry.payload.count})`}
-                />
+                <Tooltip />
+                <Legend />
             </PieChart>
         </ResponsiveContainer>
     );
