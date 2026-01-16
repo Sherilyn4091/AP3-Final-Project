@@ -58,7 +58,7 @@ class DashboardController extends Controller
 
         $todaysRevenue = DB::table('payment')
             ->whereDate('payment_date', $today)
-            ->where('status_id', $paidStatusId)
+            ->where('payment_status_id', $paidStatusId)
             ->sum('amount') ?? 0;
 
         $pendingPayments = DB::table('enrollment')
@@ -148,7 +148,7 @@ class DashboardController extends Controller
                     DB::raw("DATE_TRUNC('week', payment_date) as week_start"),
                     DB::raw("SUM(amount) as revenue")
                 )
-                ->where('status_id', $paidStatusId)
+                ->where('payment_status_id', $paidStatusId)
                 ->where('payment_date', '>=', now()->subWeeks(8))
                 ->groupBy('week_start')
                 ->orderBy('week_start')
