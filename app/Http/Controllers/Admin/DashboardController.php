@@ -98,16 +98,16 @@ class DashboardController extends Controller
 
         // Today's Schedule
         $todaysSchedule = DB::table('schedule')
-            ->join('enrollment', 'schedule.enrollment_id', '=', 'enrollment.enrollment_id')
-            ->join('student', 'enrollment.student_id', '=', 'student.student_id')
-            ->join('instructor', 'schedule.instructor_id', '=', 'instructor.instructor_id')
-            ->join('room', 'schedule.room_id', '=', 'room.room_id')
-            ->select(
-                'schedule.*',
-                DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
-                DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name"),
-                'room.room_name'
-            )
+        ->join('enrollment', 'schedule.enrollment_id', '=', 'enrollment.enrollment_id')
+        ->join('student', 'enrollment.student_id', '=', 'student.student_id')
+        ->join('instructor', 'schedule.instructor_id', '=', 'instructor.instructor_id')
+        ->leftJoin('room', 'schedule.room_number', '=', 'room.room_number')
+        ->select(
+            'schedule.*',
+            DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
+            DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name"),
+            'room.room_name'
+        )
             ->whereDate('schedule.schedule_date', $today)
             ->orderBy('schedule.start_time')
             ->get();
