@@ -13,8 +13,18 @@
  * ============================================================================  
  */  
   
-document.addEventListener('DOMContentLoaded', function() {  
+document.addEventListener('DOMContentLoaded', function() {
+
+       const calendarEl = document.getElementById('calendar');
+    
+    if (!calendarEl) return; 
+    
     // Make functions globally accessible so they can be called from Blade templates  
+
+    window.openAddScheduleModal = openAddScheduleModal;
+    window.openEventDetailModal = openEventDetailModal;
+    window.openRoomAvailabilityChecker = openRoomAvailabilityChecker;
+    
     window.toggleSelectAll = toggleSelectAll;  
     window.updateBulkActions = updateBulkActions;  
     window.clearSelection = clearSelection;  
@@ -528,14 +538,17 @@ async function resetPassword(userId) {
 // ============================================================================  
   
 function toggleSelectAll(checkbox) {
-    // Selects both .user-checkbox AND .student-checkbox at once
-    const selectors = '.user-checkbox, .student-checkbox';
+    // Only select checkboxes that exist on current page
+    const userCheckboxes = document.querySelectorAll('.user-checkbox');
+    const studentCheckboxes = document.querySelectorAll('.student-checkbox');
     
-    document.querySelectorAll(selectors).forEach(cb => {
-        cb.checked = checkbox.checked;
-    });
-    
-    updateBulkActions();
+    if (userCheckboxes.length > 0) {
+        userCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+        updateBulkActions();
+    } else if (studentCheckboxes.length > 0) {
+        studentCheckboxes.forEach(cb => cb.checked = checkbox.checked);
+        updateBulkActionsStudents();
+    }
 }
   
 function updateBulkActions() {  
@@ -2018,8 +2031,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!calendarEl) return; // Not on schedule page
     
     // Make functions globally accessible
-    window.openAddScheduleModal = openAddScheduleModal;
-    window.openEventDetailModal = openEventDetailModal;
+    
     window.openRoomAvailabilityChecker = openRoomAvailabilityChecker;
     window.applyFilters = applyFilters;
     window.closeScheduleModal = closeScheduleModal;
@@ -2751,4 +2763,5 @@ if (typeof window !== 'undefined') {
     window.closeScheduleModal = closeScheduleModal;
     window.closeEventModal = closeEventModal;
     window.closeAvailabilityModal = closeAvailabilityModal;
+    window.applyFilters = applyFilters;
 }

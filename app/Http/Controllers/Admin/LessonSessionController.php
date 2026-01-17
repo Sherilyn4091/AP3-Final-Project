@@ -105,7 +105,7 @@ class LessonSessionController extends Controller
     {
         // Total, active, and inactive counts
         $total = DB::table('lesson_session')->count();
-        $active = DB::table('lesson_session')->where('is_active', true)->count();
+        $active = DB::table('lesson_session')->whereRaw('is_active = TRUE')->count();
         $inactive = $total - $active;
 
         // Most popular package (by enrollment count)

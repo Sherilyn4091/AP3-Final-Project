@@ -14,7 +14,6 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     plugins: [
-        react(),
         laravel({
             input: [
                 'resources/css/app.css',
@@ -31,6 +30,10 @@ export default defineConfig({
                 'resources/js/admin-pages/lesson-session.js',
             ],
             refresh: true,
+        }),
+        react({
+            jsxRuntime: 'automatic',
+            fastRefresh: false,
         }),
     ],
     server: {

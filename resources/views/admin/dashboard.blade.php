@@ -3,7 +3,7 @@
     ============================================================================
     SUPER ADMIN DASHBOARD - Music Lab
     Main control center for system-wide overview and management
-    Updated: January 2026 - Live React/JavaScript chart integration ready
+    Live React/JavaScript chart integration ready
     ============================================================================
 --}}
 
@@ -12,6 +12,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Admin Dashboard - Music Lab</title>
     @vite(['resources/css/style.css', 'resources/js/script.js', 'resources/js/admin.jsx'])
 </head>

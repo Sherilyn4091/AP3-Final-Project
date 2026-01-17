@@ -40,12 +40,12 @@ class DashboardController extends Controller
     {
         $today = now()->format('Y-m-d');
 
-        // User Statistics
+        // User Statistics (FIX: Use whereRaw for PostgreSQL boolean)
         $totalUsers = DB::table('user_account')->count();
-        $activeStudents = DB::table('student')->where('is_active', true)->count();
-        $activeInstructors = DB::table('instructor')->where('is_active', true)->count();
-        $totalStaff = DB::table('sales_staff')->where('is_active', true)->count() +
-                      DB::table('all_around_staff')->where('is_active', true)->count();
+        $activeStudents = DB::table('student')->whereRaw('is_active = TRUE')->count();
+        $activeInstructors = DB::table('instructor')->whereRaw('is_active = TRUE')->count();
+        $totalStaff = DB::table('sales_staff')->whereRaw('is_active = TRUE')->count() +
+                    DB::table('all_around_staff')->whereRaw('is_active = TRUE')->count();
 
         // Today's Activity
         $todaysEnrollments = DB::table('enrollment')
@@ -61,81 +61,85 @@ class DashboardController extends Controller
             ->where('payment_status_id', $paidStatusId)
             ->sum('amount') ?? 0;
 
-        $pendingPayments = DB::table('enrollment')
-            ->where('payment_status', '!=', 'Paid')
+        $pendingStatusId = DB::table('payment_status')
+            ->where('status_name', 'Pending')
+            ->value('status_id');
+
+        $pendingPayments = DB::table('payment')
+            ->where('payment_status_id', $pendingStatusId)
             ->count();
 
-        $lowStockAlerts = DB::table('v_low_stock_items')->count();
-
-        // Recent Activity
-        $recentEnrollments = DB::table('enrollment')
-        ->join('student', 'enrollment.student_id', '=', 'student.student_id')
-        ->join('lesson_session', 'enrollment.session_id', '=', 'lesson_session.session_id')
-        ->select(
-            'enrollment.*',
-            DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
-            'lesson_session.session_name as lesson_type'
-        )
-        ->orderBy('enrollment.enrollment_date', 'desc')
-        ->limit(5)
-        ->get();
-
-        $recentPayments = DB::table('payment')
-            ->join('enrollment', 'payment.enrollment_id', '=', 'enrollment.enrollment_id')
-            ->join('student', 'enrollment.student_id', '=', 'student.student_id')
-            ->select(
-                'payment.*',
-                DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name")
-            )
-            ->orderBy('payment.payment_date', 'desc')
-            ->limit(5)
-            ->get();
-
-        $recentReports = DB::table('report')
-            ->orderBy('created_at', 'desc')
-            ->limit(5)
-            ->get();
+        // Low Stock Alerts
+        $lowStockAlerts = DB::table('inventory')
+            ->whereRaw('quantity <= low_stock_threshold')
+            ->whereRaw('is_active = TRUE')
+            ->count();
 
         // Today's Schedule
         $todaysSchedule = DB::table('schedule')
-        ->join('enrollment', 'schedule.enrollment_id', '=', 'enrollment.enrollment_id')
-        ->join('student', 'enrollment.student_id', '=', 'student.student_id')
-        ->join('instructor', 'schedule.instructor_id', '=', 'instructor.instructor_id')
-        ->leftJoin('room', 'schedule.room_number', '=', 'room.room_number')
-        ->select(
-            'schedule.*',
-            DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
-            DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name"),
-            'room.room_name'
-        )
+            ->join('student', 'schedule.student_id', '=', 'student.student_id')
+            ->leftJoin('instructor', 'schedule.instructor_id', '=', 'instructor.instructor_id')
+            ->select(
+                'schedule.*',
+                DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
+                DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name")
+            )
             ->whereDate('schedule.schedule_date', $today)
             ->orderBy('schedule.start_time')
             ->get();
 
+        // Today's Bookings
         $todaysBookings = DB::table('booking')
-        ->select(
-            'booking.*',
-            DB::raw('contact_name as customer'),
-            DB::raw('booking_status as status')
-        )
-        ->whereDate('booking_date', $today)
-        ->get();
+            ->select('booking.*', 'booking.contact_name as customer')
+            ->whereDate('booking_date', $today)
+            ->orderBy('start_time')
+            ->get();
 
-        return [
-            'totalUsers' => $totalUsers,
-            'activeStudents' => $activeStudents,
-            'activeInstructors' => $activeInstructors,
-            'totalStaff' => $totalStaff,
-            'todaysEnrollments' => $todaysEnrollments,
-            'todaysRevenue' => $todaysRevenue,
-            'pendingPayments' => $pendingPayments,
-            'lowStockAlerts' => $lowStockAlerts,
-            'recentEnrollments' => $recentEnrollments,
-            'recentPayments' => $recentPayments,
-            'recentReports' => $recentReports,
-            'todaysSchedule' => $todaysSchedule,
-            'todaysBookings' => $todaysBookings,
-        ];
+        // Recent Activity
+        $recentEnrollments = DB::table('enrollment')
+            ->join('student', 'enrollment.student_id', '=', 'student.student_id')
+            ->select(
+                'enrollment.enrollment_id',
+                'enrollment.created_at',
+                DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name")
+            )
+            ->orderBy('enrollment.created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $recentPayments = DB::table('payment')
+            ->join('student', 'payment.student_id', '=', 'student.student_id')
+            ->join('payment_method', 'payment.payment_method_id', '=', 'payment_method.method_id')
+            ->select(
+                'payment.*',
+                DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
+                'payment_method.method_name'
+            )
+            ->orderBy('payment.created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $recentReports = DB::table('report')
+            ->select('report_id', 'report_type', 'report_title', 'generated_at')
+            ->orderBy('generated_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return compact(
+            'totalUsers',
+            'activeStudents',
+            'activeInstructors',
+            'totalStaff',
+            'todaysEnrollments',
+            'todaysRevenue',
+            'pendingPayments',
+            'lowStockAlerts',
+            'todaysSchedule',
+            'todaysBookings',
+            'recentEnrollments',
+            'recentPayments',
+            'recentReports'
+        );
     }
 
     /**

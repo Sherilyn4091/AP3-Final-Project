@@ -47,8 +47,8 @@ class PaymentMethodController extends Controller
         // Statistics
         $stats = [
             'total' => DB::table('payment_method')->count(),
-            'active' => DB::table('payment_method')->where('is_active', true)->count(),
-            'inactive' => DB::table('payment_method')->where('is_active', false)->count(),
+            'active' => DB::table('payment_method')->whereRaw('is_active = TRUE')->count(),
+            'inactive' => DB::table('payment_method')->whereRaw('is_active = FALSE')->count(),
             'most_used' => DB::table('payment_method')
                 ->select('method_name', DB::raw('COUNT(payment.payment_id) as count'))
                 ->leftJoin('payment', 'payment_method.method_id', '=', 'payment.payment_method_id')

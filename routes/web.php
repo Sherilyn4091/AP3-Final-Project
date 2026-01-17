@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\SpecializationController;
 use App\Http\Controllers\Admin\GenreController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentStatusController;
+use App\Http\Controllers\Api\ChartController;
 
 /*
 |--------------------------------------------------------------------------
@@ -300,11 +301,12 @@ Route::middleware('auth')->group(function () {
     // ============================================================================
 
     Route::prefix('api/admin/charts')->middleware('auth')->group(function () {
-        Route::get('/revenue-weekly', [DashboardController::class, 'getWeeklyRevenue']);
-        Route::get('/enrollment-trend', [DashboardController::class, 'getEnrollmentTrend']);
-        Route::get('/instrument-popularity', [DashboardController::class, 'getInstrumentPopularity']);
-        Route::get('/instructor-performance', [DashboardController::class, 'getInstructorPerformance']);
+        Route::get('/enrollment-trend', [App\Http\Controllers\Api\ChartController::class, 'enrollmentTrend']);
+        Route::get('/revenue-weekly', [App\Http\Controllers\Api\ChartController::class, 'revenueWeekly']);
+        Route::get('/instrument-popularity', [App\Http\Controllers\Api\ChartController::class, 'instrumentPopularity']);
+        Route::get('/instructor-performance', [App\Http\Controllers\Api\ChartController::class, 'instructorPerformance']);
     });
+
 });
 
 // ============================================================================

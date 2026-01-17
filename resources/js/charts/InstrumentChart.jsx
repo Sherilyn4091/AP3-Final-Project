@@ -1,4 +1,6 @@
 // resources/js/charts/InstrumentChart.jsx
+
+import React from 'react';
 import { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -13,7 +15,8 @@ const InstrumentChart = () => {
             credentials: 'same-origin',
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
             }
         })
             .then(response => response.json())
@@ -51,7 +54,7 @@ const InstrumentChart = () => {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ genre_name, count }) => `${genre_name}: ${count}`}
+                    label={({ instrument_name, count }) => `${instrument_name}: ${count}`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"

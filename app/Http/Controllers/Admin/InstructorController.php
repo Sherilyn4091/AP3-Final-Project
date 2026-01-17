@@ -133,7 +133,7 @@ class InstructorController extends Controller
 
         // Get all specializations for filter dropdown
         $specializations = DB::table('specialization')
-            ->where('is_active', true)
+            ->whereRaw('is_active = TRUE')
             ->orderBy('specialization_name')
             ->get();
 

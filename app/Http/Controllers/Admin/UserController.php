@@ -128,7 +128,7 @@ class UserController extends Controller
     public function create()  
     {  
         $specializations = DB::table('specialization')  
-            ->where('is_active', true)  
+            ->whereRaw('is_active = TRUE')  
             ->orderBy('specialization_name')  
             ->get();  
           

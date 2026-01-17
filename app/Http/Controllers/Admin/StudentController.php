@@ -148,17 +148,17 @@ class StudentController extends Controller
         // Get filter dropdown data
         // ====================================================================
         $statuses = DB::table('student_status')
-            ->where('is_active', true)
+            ->whereRaw('is_active = TRUE')
             ->orderBy('status_name')
             ->get();
 
         $instruments = DB::table('instrument')
-            ->where('is_active', true)
+            ->whereRaw('is_active = TRUE')
             ->orderBy('instrument_name')
             ->get();
 
         $genres = DB::table('genre')
-            ->where('is_active', true)
+            ->whereRaw('is_active = TRUE')
             ->orderBy('genre_name')
             ->get();
 

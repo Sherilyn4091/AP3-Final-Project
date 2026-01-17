@@ -80,8 +80,8 @@ class SpecializationController extends Controller
         // Calculate statistics (separate queries - more efficient)
         $stats = [
             'total' => DB::table('specialization')->count(),
-            'active' => DB::table('specialization')->where('is_active', true)->count(),
-            'inactive' => DB::table('specialization')->where('is_active', false)->count(),
+            'active' => DB::table('specialization')->whereRaw('is_active = TRUE')->count(),
+            'inactive' => DB::table('specialization')->whereRaw('is_active = FALSE')->count(),
             'most_used' => DB::table('instructor_specialization')
                 ->select('specialization_id', DB::raw('COUNT(*) as count'))
                 ->groupBy('specialization_id')

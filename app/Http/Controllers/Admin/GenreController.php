@@ -81,8 +81,8 @@ class GenreController extends Controller
         // Calculate statistics (separate queries - more efficient)
         $stats = [
             'total' => DB::table('genre')->count(),
-            'active' => DB::table('genre')->where('is_active', true)->count(),
-            'inactive' => DB::table('genre')->where('is_active', false)->count(),
+            'active' => DB::table('genre')->whereRaw('is_active = TRUE')->count(),
+            'inactive' => DB::table('genre')->whereRaw('is_active = FALSE')->count(),
             'most_used' => DB::table('student')
                 ->select('preferred_genre_id', DB::raw('COUNT(*) as count'))
                 ->whereNotNull('preferred_genre_id')

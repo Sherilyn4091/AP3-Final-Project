@@ -64,8 +64,8 @@ class PaymentStatusController extends Controller
         // Calculate statistics
         $stats = [
             'total' => DB::table('payment_status')->count(),
-            'active' => DB::table('payment_status')->where('is_active', true)->count(),
-            'inactive' => DB::table('payment_status')->where('is_active', false)->count(),
+            'active' => DB::table('payment_status')->whereRaw('is_active = TRUE')->count(),
+            'inactive' => DB::table('payment_status')->whereRaw('is_active = FALSE')->count(),
         ];
 
         // Get most used status

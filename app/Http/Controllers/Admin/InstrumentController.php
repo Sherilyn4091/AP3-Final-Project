@@ -150,7 +150,7 @@ class InstrumentController extends Controller
             // Get student count (active students only)
             $studentsCount = DB::table('student')
                 ->where('instrument_id', $id)
-                ->where('is_active', true)
+                ->whereRaw('is_active = TRUE')
                 ->count();
 
             return response()->json([
@@ -380,7 +380,7 @@ class InstrumentController extends Controller
         // Count active students using this instrument
         $activeStudentsCount = DB::table('student')
             ->where('instrument_id', $instrumentId)
-            ->where('is_active', true)
+            ->whereRaw('is_active = TRUE')
             ->count();
 
         $usageDetails = [];

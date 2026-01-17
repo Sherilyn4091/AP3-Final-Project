@@ -1,26 +1,26 @@
 // resources/js/admin.jsx
-// Mount point for all *****React chart***** components on the Admin Dashboard
 
 import React from 'react';
+
 import { createRoot } from 'react-dom/client';
-import EnrollmentChart from './charts/EnrollmentChart.jsx';
-import RevenueChart from './charts/RevenueChart.jsx';
-import InstrumentChart from './charts/InstrumentChart.jsx';
-import InstructorChart from './charts/InstructorChart.jsx';
+
+import EnrollmentChart from './charts/EnrollmentChart';
+import RevenueChart from './charts/RevenueChart';
+import InstrumentChart from './charts/InstrumentChart';
+import InstructorChart from './charts/InstructorChart';
 
 document.addEventListener('DOMContentLoaded', () => {
-    const containers = [
-        { id: 'enrollment-trend-chart', component: EnrollmentChart },
-        { id: 'revenue-chart', component: RevenueChart },
-        { id: 'instrument-popularity-chart', component: InstrumentChart },
-        { id: 'instructor-performance-chart', component: InstructorChart },
+    const mounts = [
+        { id: 'enrollment-trend-chart', Component: EnrollmentChart },
+        { id: 'revenue-chart', Component: RevenueChart },
+        { id: 'instrument-popularity-chart', Component: InstrumentChart },
+        { id: 'instructor-performance-chart', Component: InstructorChart },
     ];
 
-    containers.forEach(({ id, component: Component }) => {
-        const container = document.getElementById(id);
-        if (container) {
-            const root = createRoot(container);
-            root.render(<Component />);
+    mounts.forEach(({ id, Component }) => {
+        const el = document.getElementById(id);
+        if (el) {
+            createRoot(el).render(<Component />);
         }
     });
 });
