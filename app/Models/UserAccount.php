@@ -12,7 +12,7 @@ class UserAccount extends Authenticatable
     // === Database Configuration ===
     protected $table = 'user_account';
     protected $primaryKey = 'user_id';
-    public $timestamps = true; // ✅ Enable Laravel's automatic timestamp management
+    public $timestamps = true; // Enable Laravel's automatic timestamp management
     
     // === Authentication Configuration ===
     // Tell Laravel which column to use for authentication identifier

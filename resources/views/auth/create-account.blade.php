@@ -17,7 +17,7 @@
 <body class="bg-light-gray min-h-screen flex items-center justify-center px-8 py-10">
 
     <div class="card max-w-md w-full animate-fade-in">
-        <div class="p-8 md:p-10">
+        <div class="p-6 md:p-8">
 
             {{-- Header with Logo --}}
             <div class="text-center mb-8">
@@ -26,10 +26,10 @@
                         <img 
                             src="https://res.cloudinary.com/dibojpqg2/image/upload/v1766933637/music-lab-logo_1_lfcsqw.png" 
                             alt="Music Lab - Lessons & Instruments" 
-                            class="mx-auto h-28 md:h-40 object-contain drop-shadow-2xl">
+                            class="mx-auto h-20 md:h-28 object-contain drop-shadow-2xl">
                     </a>
-                <h1 class="text-2xl font-bold text-primary-dark">Create Your Account</h1>
-                <p class="text-secondary-blue mt-2">Final step to activate your account</p>
+                <h1 class="text-xl font-bold text-primary-dark">Create your account</h1>
+                <p class="text-sm text-secondary-blue mt-1">Final step to activate your account</p>
             </div>
 
             {{-- Success Message --}}
@@ -66,7 +66,7 @@
                 
                 {{-- Email (Read-only - from session) --}}
                 <div class="mb-6">
-                    <label for="user_email" class="block text-sm font-semibold text-primary-dark mb-2">
+                    <label for="user_email" class="block text-xs font-semibold text-primary-dark mb-1">
                         Your Email Address
                     </label>
                     <div class="relative">
@@ -80,7 +80,7 @@
                                name="user_email" 
                                value="{{ $email }}" 
                                readonly 
-                               class="input-field bg-gray-100 cursor-not-allowed font-semibold text-primary-dark">
+                               class="input-field text-sm bg-gray-100 cursor-not-allowed font-semibold text-primary-dark">
                     </div>
                     <p class="text-xs text-secondary-blue mt-2">
                         ✓ This is the email you registered with. You'll use it to login.
@@ -88,7 +88,7 @@
                 </div>
 
                 {{-- Password Requirements Notice --}}
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
                     <h3 class="text-sm font-semibold text-blue-900 mb-2">Password Requirements:</h3>
                     <ul class="text-xs text-blue-800 space-y-1">
                         <li class="flex items-center">
@@ -108,8 +108,8 @@
 
                 {{-- Password --}}
                 <div class="mb-6">
-                    <label for="user_password" class="block text-sm font-semibold text-primary-dark mb-2 label-required">
-                        Choose a Password
+                    <label for="user_password" class="block text-xs font-semibold text-primary-dark mb-1 label-required">
+                        Create a Password
                     </label>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -121,26 +121,25 @@
                                id="user_password" 
                                name="user_password" 
                                required 
-                               class="input-field @error('user_password') border-red-500 @enderror" 
+                               class="input-field text-sm @error('user_password') border-red-500 @enderror" 
                                placeholder="Minimum 8 characters"
                                autocomplete="new-password">
                         <button type="button" 
-                                onclick="togglePassword()" 
-                                class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                            <svg id="eye-icon" class="h-5 w-5 text-secondary-blue hover:text-primary-dark transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                class="password-toggle absolute inset-y-0 right-0 pr-3 flex items-center z-10 cursor-pointer">
+                            <svg class="h-5 w-5 text-secondary-blue hover:text-primary-dark transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
                         </button>
                     </div>
                     @error('user_password')
-                        <p class="error-text">{{ $message }}</p>
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Confirm Password --}}
                 <div class="mb-8">
-                    <label for="user_password_confirmation" class="block text-sm font-semibold text-primary-dark mb-2 label-required">
+                    <label for="user_password_confirmation" class="block text-xs font-semibold text-primary-dark mb-1 label-required">
                         Confirm Your Password
                     </label>
                     <div class="relative">
@@ -153,17 +152,17 @@
                                id="user_password_confirmation" 
                                name="user_password_confirmation" 
                                required 
-                               class="input-field @error('user_password_confirmation') border-red-500 @enderror" 
+                               class="input-field text-sm @error('user_password_confirmation') border-red-500 @enderror" 
                                placeholder="Re-enter your password"
                                autocomplete="new-password">
                     </div>
                     @error('user_password_confirmation')
-                        <p class="error-text">{{ $message }}</p>
+                        <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 {{-- Submit Button --}}
-                <button type="submit" class="btn-primary w-full flex items-center justify-center group">
+                <button type="submit" class="btn-primary w-full flex items-center justify-center group text-sm py-2">
                     <span>Create Account & Login</span>
                     <svg class="w-5 h-5 ml-2 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>

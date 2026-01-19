@@ -219,73 +219,6 @@ class RegistrationController extends Controller
             ->with('success', 'Please create your password to complete registration.');
     }
 
-    // ============================================================================
-    // SALES STAFF REGISTRATION - SESSION-BASED
-    // ============================================================================
-
-    public function showSalesStaffRegistrationForm()
-    {
-        return view('auth.register.sales-staff');
-    }
-
-    public function registerSalesStaff(Request $request)
-    {
-        $validated = $request->validate([
-            'user_email' => 'required|email|unique:user_account,user_email',
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'phone' => 'required|regex:/^[0-9]{11}$/',
-            'middle_name' => 'nullable|string|max:100',
-            'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:Male,Female,Other,Prefer not to say',
-        ], [
-            'user_email.unique' => 'This email is already registered.',
-            'phone.regex' => 'Phone number must be exactly 11 digits.',
-        ]);
-
-        //STORE IN SESSION
-        session([
-            'registration_data' => $validated,
-            'registration_role' => 'sales_staff'
-        ]);
-
-        return redirect()->route('account.create')
-            ->with('success', 'Please create your password to complete registration.');
-    }
-
-    // ============================================================================
-    // ALL-AROUND STAFF REGISTRATION - SESSION-BASED
-    // ============================================================================
-
-    public function showStaffRegistrationForm()
-    {
-        return view('auth.register.staff');
-    }
-
-    public function registerStaff(Request $request)
-    {
-        $validated = $request->validate([
-            'user_email' => 'required|email|unique:user_account,user_email',
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'phone' => 'required|regex:/^[0-9]{11}$/',
-            'middle_name' => 'nullable|string|max:100',
-            'date_of_birth' => 'nullable|date',
-            'gender' => 'nullable|in:Male,Female,Other,Prefer not to say',
-        ], [
-            'user_email.unique' => 'This email is already registered.',
-            'phone.regex' => 'Phone number must be exactly 11 digits.',
-        ]);
-
-        //STORE IN SESSION
-        session([
-            'registration_data' => $validated,
-            'registration_role' => 'all_around_staff'
-        ]);
-
-        return redirect()->route('account.create')
-            ->with('success', 'Please create your password to complete registration.');
-    }
 
     // ============================================================================
     // PASSWORD SETUP (CREATE ACCOUNT) - THIS IS WHERE DATABASE INSERTION HAPPENS
@@ -363,7 +296,6 @@ class RegistrationController extends Controller
             $user = UserAccount::create([
                 'user_email' => $email,
                 'user_password' => $passwordValidated['user_password'], // Will be hashed by mutator
-                'is_super_admin' => false,
             ]);
 
             // Step 2: Create role-specific record based on registration type
@@ -376,16 +308,6 @@ class RegistrationController extends Controller
                 case 'instructor':
                     $this->createInstructorRecord($user->user_id, $registrationData);
                     $dashboardRoute = 'instructor.dashboard';
-                    break;
-
-                case 'sales_staff':
-                    $this->createSalesStaffRecord($user->user_id, $registrationData);
-                    $dashboardRoute = 'sales.dashboard';
-                    break;
-
-                case 'all_around_staff':
-                    $this->createAllAroundStaffRecord($user->user_id, $registrationData);
-                    $dashboardRoute = 'staff.dashboard';
                     break;
 
                 default:
@@ -405,10 +327,18 @@ class RegistrationController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Account creation failed: ' . $e->getMessage());
+            
+            // Log detailed error for developers
+            \Log::error('Registration failed', [
+                'email' => $email,
+                'role' => $role,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
+            // User-friendly error message
             return back()
-                ->withErrors(['error' => 'Account creation failed: ' . $e->getMessage()])
+                ->withErrors(['error' => 'We encountered a problem creating your account. Please try again or contact support if the issue persists.'])
                 ->withInput();
         }
     }
@@ -487,7 +417,6 @@ class RegistrationController extends Controller
             // System Fields
             'student_status_id' => $activeStatusId,
             'enrollment_date' => now()->format('Y-m-d'),
-            'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -534,8 +463,6 @@ class RegistrationController extends Controller
             
             'hire_date' => now(),
             'employment_status' => 'active',
-            'is_available' => true,
-            'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -561,49 +488,4 @@ class RegistrationController extends Controller
         }
     }
 
-    /**
-     * Create sales staff record in database
-     */
-    private function createSalesStaffRecord($userId, $data)
-    {
-        DB::table('sales_staff')->insert([
-            'user_id' => $userId,
-            'first_name' => $data['first_name'],
-            'middle_name' => $data['middle_name'] ?? null,
-            'last_name' => $data['last_name'],
-            'phone' => $data['phone'],
-            'email' => $data['user_email'],
-            'date_of_birth' => $data['date_of_birth'] ?? null,
-            'gender' => $data['gender'] ?? null,
-            'hire_date' => now(),
-            'employment_status' => 'active',
-            'country' => 'Philippines',
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
-
-    /**
-     * Create all-around staff record in database
-     */
-    private function createAllAroundStaffRecord($userId, $data)
-    {
-        DB::table('all_around_staff')->insert([
-            'user_id' => $userId,
-            'first_name' => $data['first_name'],
-            'middle_name' => $data['middle_name'] ?? null,
-            'last_name' => $data['last_name'],
-            'phone' => $data['phone'],
-            'email' => $data['user_email'],
-            'date_of_birth' => $data['date_of_birth'] ?? null,
-            'gender' => $data['gender'] ?? null,
-            'hire_date' => now(),
-            'employment_status' => 'active',
-            'country' => 'Philippines',
-            'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-    }
 }
