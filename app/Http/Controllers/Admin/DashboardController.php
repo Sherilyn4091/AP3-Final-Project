@@ -109,11 +109,11 @@ class DashboardController extends Controller
 
         $recentPayments = DB::table('payment')
             ->join('student', 'payment.student_id', '=', 'student.student_id')
-            ->join('payment_method', 'payment.payment_method_id', '=', 'payment_method.method_id')
+            ->join('payment_methods', 'payment.payment_method_id', '=', 'payment_methods.method_id')
             ->select(
                 'payment.*',
                 DB::raw("CONCAT(student.first_name, ' ', student.last_name) as student_name"),
-                'payment_method.method_name'
+                'payment_methods.method_name'
             )
             ->orderBy('payment.created_at', 'desc')
             ->limit(5)

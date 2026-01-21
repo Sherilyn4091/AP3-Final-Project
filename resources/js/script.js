@@ -8,15 +8,16 @@
 /**
  * Toggle Password Visibility
  * Switches between showing and hiding password text
- * ***********Used in: Login, All Registration Forms**************
+ * Works with any password field by finding the closest parent and toggling the input
+ * ***********Used in: Login, Registration Forms**************
  */
-function togglePassword() {
-    // Get the password input element
-    const passwordInput = document.getElementById('user_password');
-    // Get the eye icon SVG element
-    const eyeIcon = document.getElementById('eye-icon');
+window.togglePassword = function(buttonElement) {
+    // Find the password input - it's a sibling in the same parent div
+    const container = buttonElement.closest('div');
+    const passwordInput = container.querySelector('input[type="password"], input[type="text"]');
+    const eyeIcon = buttonElement.querySelector('svg');
     
-    if (!passwordInput) return; // Safety check
+    if (!passwordInput || !eyeIcon) return; // Safety check
     
     // Toggle between 'password' and 'text' input types
     if (passwordInput.type === 'password') {
@@ -24,25 +25,21 @@ function togglePassword() {
         passwordInput.type = 'text';
         
         // Change icon to "eye-off" (crossed eye)
-        if (eyeIcon) {
-            eyeIcon.innerHTML = `
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
-            `;
-        }
+        eyeIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+        `;
     } else {
         // Hide password
         passwordInput.type = 'password';
         
         // Change icon back to regular "eye"
-        if (eyeIcon) {
-            eyeIcon.innerHTML = `
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-            `;
-        }
+        eyeIcon.innerHTML = `
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+        `;
     }
 }
 
@@ -51,6 +48,13 @@ function togglePassword() {
  * Adds real-time validation feedback
  */
 document.addEventListener('DOMContentLoaded', function() {
+
+    // Password toggle buttons
+    document.querySelectorAll('.password-toggle').forEach(btn => {
+        btn.addEventListener('click', function() {
+            togglePassword(this);
+        });
+    });
     
     // Get all input fields
     const inputs = document.querySelectorAll('input[required], select[required], textarea[required]');
@@ -547,223 +551,13 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * ============================================================================
-     * SALES STAFF MULTI-STEP FORM
-     * Handles navigation and submission for the Sales Staff registration form
-     * ============================================================================
-     */
-    const salesStaffForm = document.getElementById('salesStaffForm');
-
-    if (salesStaffForm) {
-        // Select all step panels and navigation buttons within the sales staff form
-        const salesStep1 = salesStaffForm.querySelector('#step1');
-        const salesStep2 = salesStaffForm.querySelector('#step2');
-        const salesStep3 = salesStaffForm.querySelector('#step3');
-        const salesNextBtn1 = salesStaffForm.querySelector('#nextStepBtn1');
-        const salesNextBtn2 = salesStaffForm.querySelector('#nextStepBtn2');
-        const salesPrevBtn2 = salesStaffForm.querySelector('#prevStepBtn2');
-        const salesPrevBtn3 = salesStaffForm.querySelector('#prevStepBtn3');
-
-        // Motivational messages shown when moving to the next step
-        const staffMotivations = [
-            "Almost there! Let's add your emergency contact...",
-            "Great progress! Just one more step to complete your profile...",
-        ];
-
-        // Next button: Step 1 → Step 2
-        if (salesNextBtn1) {
-            salesNextBtn1.addEventListener('click', () => {
-                if (!validateStep(salesStep1)) return; // Validate current step
-                showMotivation(0, staffMotivations);   // Show motivational overlay
-                setTimeout(() => {
-                    salesStep1.classList.remove('active');
-                    salesStep1.classList.add('swipe-left');
-                    salesStep2.classList.remove('hidden');
-                    salesStep2.classList.add('active', 'swipe-right');
-                    salesStaffForm.querySelectorAll('.step-item')[1].classList.add('active');
-                }, 500);
-            });
-        }
-
-        // Next button: Step 2 → Step 3
-        if (salesNextBtn2) {
-            salesNextBtn2.addEventListener('click', () => {
-                if (!validateStep(salesStep2)) return;
-                showMotivation(1, staffMotivations);
-                setTimeout(() => {
-                    salesStep2.classList.remove('active', 'swipe-right');
-                    salesStep2.classList.add('swipe-left');
-                    salesStep3.classList.remove('hidden');
-                    salesStep3.classList.add('active', 'swipe-right');
-                    salesStaffForm.querySelectorAll('.step-item')[2].classList.add('active');
-                }, 500);
-            });
-        }
-
-        // Previous button: Step 2 → Step 1
-        if (salesPrevBtn2) {
-            salesPrevBtn2.addEventListener('click', () => {
-                salesStep2.classList.remove('active', 'swipe-right');
-                salesStep2.classList.add('swipe-right-back');
-                salesStep1.classList.remove('swipe-left');
-                salesStep1.classList.add('active');
-                setTimeout(() => {
-                    salesStep2.classList.add('hidden');
-                    salesStep2.classList.remove('swipe-right-back');
-                }, 600);
-                salesStaffForm.querySelectorAll('.step-item')[1].classList.remove('active');
-            });
-        }
-
-        // Previous button: Step 3 → Step 2
-        if (salesPrevBtn3) {
-            salesPrevBtn3.addEventListener('click', () => {
-                salesStep3.classList.remove('active', 'swipe-right');
-                salesStep3.classList.add('swipe-right-back');
-                salesStep2.classList.remove('swipe-left');
-                salesStep2.classList.add('active');
-                setTimeout(() => {
-                    salesStep3.classList.add('hidden');
-                    salesStep3.classList.remove('swipe-right-back');
-                }, 600);
-                salesStaffForm.querySelectorAll('.step-item')[2].classList.remove('active');
-            });
-        }
-
-        // Final form submission for Sales Staff
-        salesStaffForm.addEventListener('submit', function (e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = `
-                    <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                `;
-                // Fallback: re-enable button after 10 seconds in case of network issues
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }, 10000);
-            }
-        });
-    }
-
-    /**
-     * ============================================================================
-     * ALL-AROUND STAFF MULTI-STEP FORM
-     * Handles navigation and submission for the All-Around Staff registration form
-     * ============================================================================
-     */
-    const allAroundStaffForm = document.getElementById('allAroundStaffForm');
-
-    if (allAroundStaffForm) {
-        // Select all step panels and navigation buttons within the all-around staff form
-        const staffStep1 = allAroundStaffForm.querySelector('#step1');
-        const staffStep2 = allAroundStaffForm.querySelector('#step2');
-        const staffStep3 = allAroundStaffForm.querySelector('#step3');
-        const staffNextBtn1 = allAroundStaffForm.querySelector('#nextStepBtn1');
-        const staffNextBtn2 = allAroundStaffForm.querySelector('#nextStepBtn2');
-        const staffPrevBtn2 = allAroundStaffForm.querySelector('#prevStepBtn2');
-        const staffPrevBtn3 = allAroundStaffForm.querySelector('#prevStepBtn3');
-
-        // Motivational messages shown when moving to the next step
-        const allAroundMotivations = [
-            "Almost there! Let's add your emergency contact...",
-            "Great progress! Just one more step to complete your profile...",
-        ];
-
-        // Next button: Step 1 → Step 2
-        if (staffNextBtn1) {
-            staffNextBtn1.addEventListener('click', () => {
-                if (!validateStep(staffStep1)) return;
-                showMotivation(0, allAroundMotivations);
-                setTimeout(() => {
-                    staffStep1.classList.remove('active');
-                    staffStep1.classList.add('swipe-left');
-                    staffStep2.classList.remove('hidden');
-                    staffStep2.classList.add('active', 'swipe-right');
-                    allAroundStaffForm.querySelectorAll('.step-item')[1].classList.add('active');
-                }, 500);
-            });
-        }
-
-        // Next button: Step 2 → Step 3
-        if (staffNextBtn2) {
-            staffNextBtn2.addEventListener('click', () => {
-                if (!validateStep(staffStep2)) return;
-                showMotivation(1, allAroundMotivations);
-                setTimeout(() => {
-                    staffStep2.classList.remove('active', 'swipe-right');
-                    staffStep2.classList.add('swipe-left');
-                    staffStep3.classList.remove('hidden');
-                    staffStep3.classList.add('active', 'swipe-right');
-                    allAroundStaffForm.querySelectorAll('.step-item')[2].classList.add('active');
-                }, 500);
-            });
-        }
-
-        // Previous button: Step 2 → Step 1
-        if (staffPrevBtn2) {
-            staffPrevBtn2.addEventListener('click', () => {
-                staffStep2.classList.remove('active', 'swipe-right');
-                staffStep2.classList.add('swipe-right-back');
-                staffStep1.classList.remove('swipe-left');
-                staffStep1.classList.add('active');
-                setTimeout(() => {
-                    staffStep2.classList.add('hidden');
-                    staffStep2.classList.remove('swipe-right-back');
-                }, 600);
-                allAroundStaffForm.querySelectorAll('.step-item')[1].classList.remove('active');
-            });
-        }
-
-        // Previous button: Step 3 → Step 2
-        if (staffPrevBtn3) {
-            staffPrevBtn3.addEventListener('click', () => {
-                staffStep3.classList.remove('active', 'swipe-right');
-                staffStep3.classList.add('swipe-right-back');
-                staffStep2.classList.remove('swipe-left');
-                staffStep2.classList.add('active');
-                setTimeout(() => {
-                    staffStep3.classList.add('hidden');
-                    staffStep3.classList.remove('swipe-right-back');
-                }, 600);
-                allAroundStaffForm.querySelectorAll('.step-item')[2].classList.remove('active');
-            });
-        }
-
-        // Final form submission for All-Around Staff
-        allAroundStaffForm.addEventListener('submit', function (e) {
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = `
-                    <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                `;
-                // Fallback: re-enable button after 10 seconds in case of network issues
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }, 10000);
-            }
-        });
-    }
-
 }); // End of DOMContentLoaded
 
 /**
  * Smooth Scroll Behavior
  * For anchor links
  */
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+document.querySelectorAll('a[href^="#"]:not([href="#"])').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
         const target = document.querySelector(this.getAttribute('href'));
@@ -803,4 +597,159 @@ if (typeof window !== 'undefined') {
     window.musicLab = {
         togglePassword,
     };
+}
+
+/**
+ * ============================================================================
+ * FORGOT PASSWORD MODAL FUNCTIONS
+ * Handles password reset flow with email verification
+ * ============================================================================
+ */
+
+/**
+ * Open forgot password modal with smooth animation
+ */
+window.openForgotPasswordModal = function(event) {
+    event.preventDefault();
+    const modal = document.getElementById('forgotPasswordModal');
+    const content = document.getElementById('modalContent');
+    
+    modal.classList.remove('hidden');
+    modal.style.backgroundColor = 'rgba(39, 40, 41, 0.6)'; // Force background color
+    
+    // Trigger animation after modal is visible
+    setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        modal.classList.add('opacity-100');
+        content.classList.remove('scale-95', 'opacity-0');
+        content.classList.add('scale-100', 'opacity-100');
+    }, 10);
+    
+    // Reset form state
+    document.getElementById('emailStep').classList.remove('hidden');
+    document.getElementById('successStep').classList.add('hidden');
+    document.getElementById('reset_email').value = '';
+    document.getElementById('modalError').classList.add('hidden');
+}
+
+/**
+ * Close forgot password modal with smooth animation
+ */
+window.closeForgotPasswordModal = function() {
+    const modal = document.getElementById('forgotPasswordModal');
+    const content = document.getElementById('modalContent');
+    
+    // Animate out
+    modal.classList.remove('opacity-100');
+    modal.classList.add('opacity-0');
+    content.classList.remove('scale-100', 'opacity-100');
+    content.classList.add('scale-95', 'opacity-0');
+    
+    // Hide after animation completes
+    setTimeout(() => {
+        modal.classList.add('hidden');
+    }, 300);
+}
+
+/**
+ * Handle forgot password form submission
+ */
+window.handleForgotPassword = async function(event) {
+    event.preventDefault();
+    
+    const submitBtn = document.getElementById('submitBtnText');
+    const loader = document.getElementById('submitBtnLoader');
+    const btnIcon = document.getElementById('submitBtnIcon');
+    const errorDiv = document.getElementById('modalError');
+    const submitButton = event.target.querySelector('button[type="submit"]');
+    const email = document.getElementById('reset_email').value;
+    
+    // Safety check - ensure elements exist
+    if (!submitBtn || !loader || !btnIcon || !errorDiv || !submitButton) {
+        console.error('Required modal elements not found');
+        return;
+    }
+    
+    // Show loading state
+    submitBtn.textContent = 'Sending...';
+    btnIcon.classList.add('hidden');
+    loader.classList.remove('hidden');
+    submitButton.disabled = true;
+    errorDiv.classList.add('hidden');
+    
+    try {
+        const response = await fetch('/forgot-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Show success step
+            document.getElementById('emailStep').classList.add('hidden');
+            document.getElementById('successStep').classList.remove('hidden');
+            document.getElementById('newPasswordDisplay').value = data.password;
+            document.getElementById('userEmail').textContent = data.email;
+        } else {
+            // Show error
+            errorDiv.classList.remove('hidden');
+            const errorText = errorDiv.querySelector('p');
+            if (errorText) {
+                errorText.textContent = data.message || 'Email not found';
+            }
+        }
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        errorDiv.classList.remove('hidden');
+        const errorText = errorDiv.querySelector('p');
+        if (errorText) {
+            errorText.textContent = 'An error occurred. Please try again.';
+        }
+    } finally {
+        // Reset button state
+        submitBtn.textContent = 'Reset Password';
+        btnIcon.classList.remove('hidden');
+        loader.classList.add('hidden');
+        submitButton.disabled = false;
+    }
+}
+
+/**
+ * Copy password
+ */
+window.copyPassword = function() {
+    const passwordInput = document.getElementById('newPasswordDisplay');
+    const copyBtn = event.target.closest('button');
+    
+    passwordInput.select();
+    passwordInput.setSelectionRange(0, 99999);
+    
+    try {
+        document.execCommand('copy');
+        
+        // Enhanced success feedback - change to blue with white checkmark
+        copyBtn.style.backgroundColor = '#61677A';
+        copyBtn.innerHTML = `
+            <svg class="w-5 h-5" style="color: #FFFFFF;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+        `;
+        
+        setTimeout(() => {
+            copyBtn.style.backgroundColor = '#377357';
+            copyBtn.innerHTML = `
+                <svg class="w-5 h-5" style="color: #FFFFFF;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+            `;
+        }, 2000);
+    } catch (err) {
+        alert('Copy failed. Please select and copy manually.');
+    }
 }

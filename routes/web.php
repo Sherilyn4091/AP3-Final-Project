@@ -19,6 +19,11 @@ use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentStatusController;
 use App\Http\Controllers\Api\ChartController;
 
+
+use App\Http\Controllers\Admin\ReportsController;
+use App\Http\Controllers\Admin\InventoryController;
+use App\Http\Controllers\Admin\SupplierController;
+
 /*
 |--------------------------------------------------------------------------
 | Authentication & Public Routes
@@ -35,10 +40,11 @@ Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login'])->name('login.process');
 
+    // Password reset route
+    Route::post('/forgot-password', [LoginController::class, 'resetPassword']);
+
     // Role Selection Page
-    Route::get('/register', function () {
-        return view('auth.register.select-role');
-    })->name('register');
+    Route::get('/register', function () {return view('auth.register.select-role');})->name('register');
 
     // Student Registration
     Route::get('/register/student', [RegistrationController::class, 'showStudentRegistrationForm'])
@@ -51,18 +57,6 @@ Route::middleware('guest')->group(function () {
         ->name('register.instructor.form');
     Route::post('/register/instructor', [RegistrationController::class, 'registerInstructor'])
         ->name('register.instructor.process');
-
-    // Sales Staff Registration
-    Route::get('/register/sales-staff', [RegistrationController::class, 'showSalesStaffRegistrationForm'])
-        ->name('register.sales.form');
-    Route::post('/register/sales-staff', [RegistrationController::class, 'registerSalesStaff'])
-        ->name('register.sales.process');
-
-    // All-Around Staff Registration (UPDATED ROUTE)
-    Route::get('/register/all-around-staff', [RegistrationController::class, 'showAllAroundStaffRegistrationForm'])
-        ->name('register.staff.form');
-    Route::post('/register/all-around-staff', [RegistrationController::class, 'registerAllAroundStaff'])
-        ->name('register.staff.process');
 
     // ============================================================================
     // PASSWORD SETUP AFTER REGISTRATION (Guest only)
@@ -88,20 +82,55 @@ Route::middleware('auth')->group(function () {
 
     // Role-Specific Dashboard Routes
     Route::get('/student/dashboard', function () {
-        return view('dashboards.student');
+        $userId = Auth::id();
+        
+        // Get student record
+        $student = DB::table('student')->where('user_id', $userId)->first();
+        
+        if (!$student) {
+            abort(404, 'Student record not found');
+        }
+        
+        // Get current enrollment
+        $currentEnrollment = DB::table('enrollment')
+            ->where('student_id', $student->student_id)
+            ->where('status', 'active')
+            ->first();
+        
+        // Calculate progress percentage
+        $progressPercentage = 0;
+        if ($currentEnrollment && $currentEnrollment->total_sessions > 0) {
+            $progressPercentage = round(($currentEnrollment->completed_sessions / $currentEnrollment->total_sessions) * 100);
+        }
+        
+        // Get next lesson
+        $nextLesson = DB::table('schedule')
+            ->where('student_id', $student->student_id)
+            ->where('schedule_date', '>=', now()->toDateString())
+            ->where('status', 'scheduled')
+            ->orderBy('schedule_date')
+            ->orderBy('start_time')
+            ->first();
+        
+        // Get recent progress
+        $recentProgress = DB::table('progress')
+            ->where('student_id', $student->student_id)
+            ->orderBy('progress_date', 'desc')
+            ->limit(6)
+            ->get();
+        
+        return view('dashboards.student', compact(
+            'student',
+            'currentEnrollment',
+            'progressPercentage',
+            'nextLesson',
+            'recentProgress'
+        ));
     })->name('student.dashboard');
 
     Route::get('/instructor/dashboard', function () {
         return view('dashboards.instructor');
     })->name('instructor.dashboard');
-
-    Route::get('/sales/dashboard', function () {
-        return view('dashboards.sales');
-    })->name('sales.dashboard');
-
-    Route::get('/staff/dashboard', function () {
-        return view('dashboards.staff');
-    })->name('staff.dashboard');
 
     // ============================================================================
     // ADMIN ROUTES
@@ -130,10 +159,6 @@ Route::middleware('auth')->group(function () {
             Route::get('/students', function () {
                 return redirect()->route('admin.students.index');
             })->name('students');
-
-            // Placeholder views (create them or redirect later)
-            Route::get('/sales-staff', fn() => view('admin.users.sales-staff'))->name('sales-staff');
-            Route::get('/all-around-staff', fn() => view('admin.users.all-around-staff'))->name('all-around-staff');
 
             // Bulk actions
             Route::post('/bulk-deactivate', [UserController::class, 'bulkDeactivate'])->name('bulk-deactivate');
@@ -166,6 +191,10 @@ Route::middleware('auth')->group(function () {
 
             Route::post('/{id}/toggle-status', [InstrumentController::class, 'toggleStatus'])->name('toggle-status');
             Route::get('/{id}/usage', [InstrumentController::class, 'getUsageDetails'])->name('usage');
+
+            Route::get('/admin/instruments/{id}/students', [InstrumentController::class, 'getStudents']);
+
+            Route::get('/{id}/students', [InstrumentController::class, 'getStudents'])->name('students');
         });
 
         // Instructors Management
@@ -196,21 +225,21 @@ Route::middleware('auth')->group(function () {
         // Schedules Management
         Route::prefix('schedules')->name('schedules.')->group(function () {
             Route::get('/', [ScheduleController::class, 'index'])->name('index');
-
+            
+            // STATIC ROUTES
             Route::get('/events', [ScheduleController::class, 'getEvents'])->name('events');
             Route::get('/enrollments', [ScheduleController::class, 'getEnrollments'])->name('enrollments');
+            Route::get('/check-availability', [ScheduleController::class, 'checkAvailability'])->name('check-availability');
             Route::get('/rooms', function () {
                 return response()->json(DB::table('room')->where('is_active', true)->get());
             })->name('rooms');
-
+            
+            // DYNAMIC ROUTES
             Route::post('/', [ScheduleController::class, 'store'])->name('store');
             Route::get('/{id}', [ScheduleController::class, 'show'])->name('show');
             Route::put('/{id}', [ScheduleController::class, 'update'])->name('update');
             Route::delete('/{id}', [ScheduleController::class, 'destroy'])->name('destroy');
-
             Route::post('/{id}/quick-update', [ScheduleController::class, 'quickUpdate'])->name('quick-update');
-
-            Route::get('/check-availability', [ScheduleController::class, 'checkAvailability'])->name('check-availability');
         });
 
         // Specializations Management
@@ -269,17 +298,50 @@ Route::middleware('auth')->group(function () {
             Route::put('/{session_id}', [LessonSessionController::class, 'update'])->name('update');
             Route::delete('/{session_id}', [LessonSessionController::class, 'destroy'])->name('destroy');
             Route::post('/{session_id}/toggle-status', [LessonSessionController::class, 'toggleStatus'])->name('toggle-status');
+            Route::get('/{session_id}/enrollments', [LessonSessionController::class, 'getEnrollments'])->name('enrollments');
         });
 
-        // Reports
+        // ============================================================================
+        // REPORTS MANAGEMENT
+        // ============================================================================
         Route::prefix('reports')->name('reports.')->group(function () {
-            Route::get('/', function () {
-                return view('admin.reports.index');
-            })->name('index');
-
+            // Monthly Reports Dashboard
+            Route::get('/', [ReportsController::class, 'index'])->name('index');
+            
+            // Export Monthly Report as PDF
+            Route::get('/export-pdf', [ReportsController::class, 'exportPdf'])->name('export-pdf');
+            
+            // Financial Report (YOUR EXISTING ROUTE)
             Route::get('/financial', function () {
                 return view('admin.reports.financial');
             })->name('financial');
+        });
+
+        // ============================================================================
+        // INVENTORY MANAGEMENT
+        // ============================================================================
+        Route::prefix('inventory')->name('inventory.')->group(function () {
+            Route::get('/', [InventoryController::class, 'index'])->name('index');
+            Route::get('create', [InventoryController::class, 'create'])->name('create');
+            Route::post('/', [InventoryController::class, 'store'])->name('store');
+            Route::get('{inventory}/edit', [InventoryController::class, 'edit'])->name('edit');
+            Route::put('{inventory}', [InventoryController::class, 'update'])->name('update');
+            Route::delete('{inventory}', [InventoryController::class, 'destroy'])->name('destroy');
+            Route::post('{inventory}/activate', [InventoryController::class, 'activate'])->name('activate');
+            Route::get('low-stock', [InventoryController::class, 'lowStockView'])->name('low-stock');
+            Route::get('export', [InventoryController::class, 'export'])->name('export');
+        });
+        
+        // ============================================================================
+        // SUPPLIER MANAGEMENT
+        // ============================================================================
+        Route::prefix('suppliers')->name('suppliers.')->group(function () {
+            Route::get('/', [SupplierController::class, 'index'])->name('index');
+            Route::get('/create', [SupplierController::class, 'create'])->name('create');
+            Route::post('/', [SupplierController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [SupplierController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [SupplierController::class, 'update'])->name('update');
+            Route::delete('/{id}', [SupplierController::class, 'destroy'])->name('destroy');
         });
 
         // Placeholder routes (to be implemented)
@@ -287,13 +349,12 @@ Route::middleware('auth')->group(function () {
             return view('admin.payments.index');
         })->name('payments.index');
 
-        Route::get('/inventory', function () {
-            return view('admin.inventory.index');
-        })->name('inventory.index');
-
         Route::get('/settings', function () {
             return view('admin.settings.index');
         })->name('settings.index');
+
+        Route::post('/admin/users/{id}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
+        Route::post('/admin/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('admin.users.deactivate');
     }); // End of admin prefix group
 
     // ============================================================================
@@ -307,10 +368,113 @@ Route::middleware('auth')->group(function () {
         Route::get('/instructor-performance', [App\Http\Controllers\Api\ChartController::class, 'instructorPerformance']);
     });
 
+    // ============================================================================
+    // STUDENT ROUTES
+    // ============================================================================
+    Route::prefix('student')->name('student.')->group(function () {
+        
+        Route::get('/dashboard', function () {
+            $userId = Auth::id();
+            
+            // Get student record
+            $student = DB::table('student')->where('user_id', $userId)->first();
+            
+            if (!$student) {
+                abort(404, 'Student record not found');
+            }
+            
+            // Get current enrollment with lesson session details
+            $currentEnrollment = DB::table('enrollment as e')
+                ->leftJoin('lesson_session as ls', 'e.session_id', '=', 'ls.session_id')
+                ->where('e.student_id', $student->student_id)
+                ->where('e.status', 'active')
+                ->select('e.*', 'ls.session_count', 'ls.session_name', 'ls.price')
+                ->first();
+            
+            // Calculate progress percentage
+            $progressPercentage = 0;
+            if ($currentEnrollment && $currentEnrollment->total_sessions > 0) {
+                $progressPercentage = round(($currentEnrollment->completed_sessions / $currentEnrollment->total_sessions) * 100);
+            }
+            
+            // Get next lesson with instructor details
+            $nextLesson = DB::table('schedule as s')
+                ->leftJoin('instructor as i', 's.instructor_id', '=', 'i.instructor_id')
+                ->where('s.student_id', $student->student_id)
+                ->where('s.schedule_date', '>=', now()->toDateString())
+                ->where('s.status', 'scheduled')
+                ->select(
+                    's.*',
+                    'i.first_name as instructor_first_name',
+                    'i.last_name as instructor_last_name'
+                )
+                ->orderBy('s.schedule_date')
+                ->orderBy('s.start_time')
+                ->first();
+            
+            // Get recent progress
+            $recentProgress = DB::table('progress')
+                ->where('student_id', $student->student_id)
+                ->orderBy('progress_date', 'desc')
+                ->limit(6)
+                ->get();
+            
+            // Convert dates to Carbon instances for blade
+            if ($currentEnrollment) {
+                $currentEnrollment->enrollment_date = $currentEnrollment->enrollment_date 
+                    ? \Carbon\Carbon::parse($currentEnrollment->enrollment_date) 
+                    : null;
+            }
+            
+            if ($nextLesson) {
+                $nextLesson->schedule_date = \Carbon\Carbon::parse($nextLesson->schedule_date);
+                $nextLesson->start_time = \Carbon\Carbon::parse($nextLesson->start_time);
+                $nextLesson->end_time = \Carbon\Carbon::parse($nextLesson->end_time);
+                
+                // Create instructor object for blade compatibility
+                $nextLesson->instructor = (object)[
+                    'first_name' => $nextLesson->instructor_first_name,
+                    'last_name' => $nextLesson->instructor_last_name,
+                ];
+            }
+            
+            // Convert progress dates
+            $recentProgress = $recentProgress->map(function($p) {
+                $p->progress_date = \Carbon\Carbon::parse($p->progress_date);
+                return $p;
+            });
+            
+            // Create lesson session object if enrollment exists
+            if ($currentEnrollment) {
+                $currentEnrollment->lessonSession = (object)[
+                    'session_count' => $currentEnrollment->session_count,
+                    'session_name' => $currentEnrollment->session_name,
+                    'price' => $currentEnrollment->price,
+                ];
+            }
+            
+            return view('dashboards.student', compact(
+                'student',
+                'currentEnrollment',
+                'progressPercentage',
+                'nextLesson',
+                'recentProgress'
+            ));
+        })->name('dashboard');
+        
+        // Placeholder routes for sidebar links
+        Route::get('/schedule', fn() => view('student.schedule'))->name('schedule');
+        Route::get('/lessons', fn() => view('student.lessons'))->name('lessons');
+        Route::get('/progress', fn() => view('student.progress'))->name('progress');
+        Route::get('/payments', fn() => view('student.payments'))->name('payments');
+        Route::get('/profile', fn() => view('student.profile'))->name('profile');
+        Route::get('/enrollments', fn() => view('student.enrollments'))->name('enrollments');
+    });
+
 });
 
 // ============================================================================
-// HOME ROUTE - Smart redirect based on role
+// HOME ROUTE
 // ============================================================================
 
 Route::get('/', function () {
@@ -321,12 +485,12 @@ Route::get('/', function () {
             return redirect()->route('student.dashboard');
         } elseif (DB::table('instructor')->where('user_id', $userId)->exists()) {
             return redirect()->route('instructor.dashboard');
-        } elseif (DB::table('sales_staff')->where('user_id', $userId)->exists()) {
-            return redirect()->route('sales.dashboard');
-        } elseif (DB::table('all_around_staff')->where('user_id', $userId)->exists()) {
-            return redirect()->route('staff.dashboard');
         }
     }
 
     return view('welcome');
 })->name('home');
+
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok'], 200);
+});

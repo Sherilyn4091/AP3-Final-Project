@@ -18,9 +18,13 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/css/style.css',
+                'resources/css/student-instructor.css', 
+
                 'resources/js/script.js',
                 'resources/js/app.js',
+
                 'resources/js/admin.jsx',
+
                 'resources/js/admin-pages.js',
                 'resources/js/admin-pages/instrument.js',
                 'resources/js/admin-pages/specialization.js',
@@ -28,6 +32,15 @@ export default defineConfig({
                 'resources/js/admin-pages/payment-method.js',
                 'resources/js/admin-pages/payment-status.js',
                 'resources/js/admin-pages/lesson-session.js',
+                'resources/js/admin-pages/user.js',
+                'resources/js/admin-pages/user-create.js',
+                'resources/js/admin-pages/student.js',
+                'resources/js/admin-pages/instructor.js',
+                'resources/js/admin-pages/schedule.js',
+                
+                'resources/js/admin/reports-charts.js',
+
+                'resources/js/student-instructor.js',
             ],
             refresh: true,
         }),
