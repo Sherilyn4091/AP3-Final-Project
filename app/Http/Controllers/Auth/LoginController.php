@@ -129,14 +129,6 @@ class LoginController extends Controller
             return 'instructor';
         }
 
-        if (\DB::table('sales_staff')->where('user_id', $user->user_id)->exists()) {
-            return 'sales_staff';
-        }
-
-        if (\DB::table('all_around_staff')->where('user_id', $user->user_id)->exists()) {
-            return 'all_around_staff';
-        }
-
         return null;
     }
 
@@ -151,8 +143,6 @@ class LoginController extends Controller
         $dashboardRoutes = [
             'student' => 'student.dashboard',
             'instructor' => 'instructor.dashboard',
-            'sales_staff' => 'sales.dashboard',
-            'all_around_staff' => 'staff.dashboard',
         ];
 
         $routeName = $dashboardRoutes[$role] ?? 'home';

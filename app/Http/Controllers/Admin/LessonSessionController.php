@@ -365,4 +365,61 @@ class LessonSessionController extends Controller
             'message' => 'Lesson package deleted successfully'
         ]);
     }
+
+    /**
+     * Get list of enrollments using a specific lesson package
+     * 
+     * @param int $session_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getEnrollments($session_id)
+    {
+        try {
+            // Check if session exists
+            $session = DB::table('lesson_session')
+                ->where('session_id', $session_id)
+                ->first();
+
+            if (!$session) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Lesson package not found.'
+                ], 404);
+            }
+
+            // Get enrollments using this package
+            $enrollments = DB::table('enrollment')
+                ->join('student', 'enrollment.student_id', '=', 'student.student_id')
+                ->join('user_account', 'student.user_id', '=', 'user_account.user_id')
+                ->leftJoin('instructor', 'enrollment.instructor_id', '=', 'instructor.instructor_id')
+                ->where('enrollment.session_id', $session_id)
+                ->select(
+                    'enrollment.enrollment_id',
+                    'enrollment.enrollment_date',
+                    'enrollment.status',
+                    'student.first_name',
+                    'student.last_name',
+                    'user_account.user_email',
+                    DB::raw("CONCAT(instructor.first_name, ' ', instructor.last_name) as instructor_name")
+                )
+                ->orderBy('enrollment.enrollment_date', 'desc')
+                ->get()
+                ->map(function($enrollment) {
+                    $enrollment->student_name = trim($enrollment->first_name . ' ' . $enrollment->last_name);
+                    return $enrollment;
+                });
+
+            return response()->json([
+                'success' => true,
+                'enrollments' => $enrollments,
+                'session_name' => $session->session_name
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch enrollments: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

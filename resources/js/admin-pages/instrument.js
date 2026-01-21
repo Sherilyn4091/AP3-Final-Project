@@ -6,7 +6,53 @@
 
 // resources/js/admin-pages/instrument.js
 
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+/**
+ * Displays a toast notification with close button.
+ * @param {string} message The message to display.
+ * @param {string} type 'success', 'error', or 'custom'.
+ * @param {string|null} customColor The hex color for 'custom' type.
+ */
+function showToast(message, type = 'success', customColor = null) {
+    const container = document.getElementById('toast-container');
+    if (!container) return; // Don't proceed if container doesn't exist
+    
+    const toast = document.createElement('div');
+    let bgColor, icon;
+    
+    if (type === 'custom' && customColor) {
+        toast.style.backgroundColor = customColor;
+        icon = ''; // No icon for custom type
+    } else if (type === 'success') {
+        bgColor = 'bg-forest-green';
+        icon = `<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+    } else { // error
+        bgColor = 'bg-warm-coral';
+        icon = `<svg class="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+    }
+    
+    toast.className = `flex items-center justify-between p-4 rounded-lg shadow-lg text-white ${bgColor} animate-fade-in-up`;
+    toast.innerHTML = `
+        <div class="flex items-center">
+            ${icon} <span class="font-semibold">${message}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="ml-4 text-black hover:text-gray-700 transition-colors">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    `;
+    
+    container.appendChild(toast);
+    
+    setTimeout(() => {
+        toast.classList.add('animate-fade-out');
+        toast.addEventListener('animationend', () => toast.remove());
+    }, 5000); // Auto-dismiss after 5 seconds
+}
+
 // Make functions globally accessible
+
 window.openAddInstrumentModal = openAddInstrumentModal;
 window.editInstrument = editInstrument;
 window.closeInstrumentModal = closeInstrumentModal;
@@ -188,7 +234,7 @@ async function submitInstrument(event, instrumentId = null) {
     
     try {
         const response = await fetch(url, {
-            method: isEdit ? 'POST' : 'POST',
+            method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
@@ -359,6 +405,131 @@ function clearInstrumentFilters() {
     
     applyInstrumentFilters();
 }
+
+/**
+ * Refresh a single instrument row without page reload
+ */
+async function refreshInstrumentRow(instrumentId) {
+    try {
+        const response = await fetch(`/admin/instruments/${instrumentId}`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update the row's data attributes and button
+            const row = document.querySelector(`[data-instrument-id="${instrumentId}"]`);
+            if (row) {
+                row.dataset.status = data.instrument.is_active ? 'active' : 'inactive';
+                
+                // Update status badge
+                const statusBadge = row.querySelector('.status-badge');
+                if (statusBadge) {
+                    statusBadge.className = `status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                        data.instrument.is_active 
+                            ? 'bg-forest-green text-white' 
+                            : 'bg-gray-400 text-white'
+                    }`;
+                    statusBadge.textContent = data.instrument.is_active ? 'Active' : 'Inactive';
+                }
+                
+                // Update action button
+                const actionBtn = row.querySelector('.action-toggle-btn');
+                if (actionBtn) {
+                    if (data.instrument.is_active) {
+                        actionBtn.onclick = () => deactivateInstrument(instrumentId);
+                        actionBtn.className = 'action-toggle-btn p-2 rounded-lg text-warm-coral hover:bg-warm-coral hover:text-white transition-all duration-200 shadow-sm hover:shadow';
+                        actionBtn.title = 'Deactivate';
+                        actionBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636l-12.728 12.728m0-12.728l12.728 12.728" /></svg>`;
+                    } else {
+                        actionBtn.onclick = () => activateInstrument(instrumentId);
+                        actionBtn.className = 'action-toggle-btn p-2 rounded-lg text-forest-green hover:bg-forest-green hover:text-white transition-all duration-200 shadow-sm hover:shadow';
+                        actionBtn.title = 'Activate';
+                        actionBtn.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>`;
+                    }
+                }
+            }
+        }
+    } catch (error) {
+        console.error('Failed to refresh row:', error);
+    }
+}
+
+/**
+ * Open modal showing students enrolled in an instrument
+ */
+async function viewInstrumentStudents(instrumentId, instrumentName) {
+    try {
+        const response = await fetch(`/admin/instruments/${instrumentId}/students`, {
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.message);
+        }
+        
+        const modal = document.getElementById('instrument-modal');
+        modal.innerHTML = `
+            <div class="bg-white rounded-lg max-w-2xl w-full p-6 shadow-2xl animate-fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold text-primary-dark">Students enrolled in ${instrumentName}</h2>
+                    <button onclick="closeInstrumentModal()" class="text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                ${data.students.length === 0 ? `
+                    <div class="text-center py-8">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path>
+                        </svg>
+                        <p class="text-gray-600">No active students enrolled</p>
+                    </div>
+                ` : `
+                    <div class="overflow-y-auto max-h-96">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">#</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Student name</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Email</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Enrolled since</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                ${data.students.map((student, index) => `
+                                    <tr class="hover:bg-blue-50/40 transition-colors">
+                                        <td class="px-4 py-3 text-sm text-gray-600">${index + 1}</td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">${student.student_name}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">${student.user_email}</td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">${new Date(student.enrollment_date).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+                
+                <button onclick="closeInstrumentModal()" class="w-full mt-6 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 font-semibold">
+                    Close
+                </button>
+            </div>
+        `;
+        
+        modal.classList.remove('hidden');
+        
+    } catch (error) {
+        showToast(error.message, 'error');
+    }
+}
+
+// Make function globally accessible
+window.viewInstrumentStudents = viewInstrumentStudents;
 
 /**
  * END OF INSTRUMENT MANAGEMENT FUNCTIONS

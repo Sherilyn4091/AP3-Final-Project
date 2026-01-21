@@ -35,8 +35,6 @@ class UserController extends Controller
         $query = DB::table('user_account as ua')  
             ->leftJoin('student as s', 'ua.user_id', '=', 's.user_id')  
             ->leftJoin('instructor as i', 'ua.user_id', '=', 'i.user_id')  
-            ->leftJoin('sales_staff as ss', 'ua.user_id', '=', 'ss.user_id')  
-            ->leftJoin('all_around_staff as aas', 'ua.user_id', '=', 'aas.user_id')  
             ->select(  
                 'ua.user_id',  
                 'ua.user_email',  
@@ -48,9 +46,7 @@ class UserController extends Controller
                     CASE  
                         WHEN ua.is_super_admin = TRUE THEN 'super_admin'  
                         WHEN s.user_id IS NOT NULL THEN 'student'  
-                        WHEN i.user_id IS NOT NULL THEN 'instructor'  
-                        WHEN ss.user_id IS NOT NULL THEN 'sales'  
-                        WHEN aas.user_id IS NOT NULL THEN 'all_around_staff'  
+                        WHEN i.user_id IS NOT NULL THEN 'instructor' 
                         ELSE 'unknown'  
                     END as user_role  
                 "),  
@@ -59,9 +55,7 @@ class UserController extends Controller
                         WHEN ua.is_super_admin = TRUE THEN 'Super Admin'  
                         ELSE COALESCE(  
                             CONCAT(s.first_name, ' ', s.last_name),  
-                            CONCAT(i.first_name, ' ', i.last_name),  
-                            CONCAT(ss.first_name, ' ', ss.last_name),  
-                            CONCAT(aas.first_name, ' ', aas.last_name),  
+                            CONCAT(i.first_name, ' ', i.last_name),
                             'N/A'  
                         )  
                     END as full_name  
@@ -69,42 +63,49 @@ class UserController extends Controller
                 DB::raw("  
                     CASE  
                         WHEN s.user_id IS NOT NULL THEN s.is_active  
-                        WHEN i.user_id IS NOT NULL THEN i.is_active  
-                        WHEN ss.user_id IS NOT NULL THEN ss.is_active  
-                        WHEN aas.user_id IS NOT NULL THEN aas.is_active  
+                        WHEN i.user_id IS NOT NULL THEN i.is_active
                         ELSE FALSE  
                     END as is_active  
                 ")  
             );  
   
-        if ($request->filled('role') && $request->role !== 'all') {  
-            switch ($request->role) {  
-                case 'student': $query->whereNotNull('s.user_id'); break;  
-                case 'instructor': $query->whereNotNull('i.user_id'); break;  
-                case 'sales': $query->whereNotNull('ss.user_id'); break;  
-                case 'all_around_staff': $query->whereNotNull('aas.user_id'); break;  
-            }  
-        }  
-  
-        if ($request->filled('status') && $request->status !== 'all') {  
-            $isActive = $request->status === 'active';  
-            $query->where(function($q) use ($isActive) {  
-                $q->where('s.is_active', '=', $isActive)  
-                  ->orWhere('i.is_active', '=', $isActive)  
-                  ->orWhere('ss.is_active', '=', $isActive)  
-                  ->orWhere('aas.is_active', '=', $isActive);  
-            });  
-        }  
-  
+        if ($request->filled('status') && $request->status !== 'all') {
+            // Use string 'TRUE' or 'FALSE' for PostgreSQL raw queries
+            $isActive = $request->status === 'active' ? 'TRUE' : 'FALSE';
+            
+            $query->where(function($q) use ($isActive) {
+                // Use whereRaw to properly handle PostgreSQL boolean comparison
+                $q->where(function($subQ) use ($isActive) {
+                    $subQ->whereNotNull('s.user_id')
+                        ->whereRaw("s.is_active = {$isActive}");
+                })->orWhere(function($subQ) use ($isActive) {
+                    $subQ->whereNotNull('i.user_id')
+                        ->whereRaw("i.is_active = {$isActive}");
+                });
+            });
+        }
+
+        // Add role filter to main query
+        if ($request->filled('role') && $request->role !== 'all') {
+            $role = $request->role;
+            $query->where(function($q) use ($role) {
+                if ($role === 'student') {
+                    $q->whereNotNull('s.user_id');
+                } elseif ($role === 'instructor') {
+                    $q->whereNotNull('i.user_id');
+                } elseif ($role === 'super_admin') {
+                    $q->where('ua.is_super_admin', true);
+                }
+            });
+        }
+        
         if ($request->filled('search')) {  
             $search = $request->search;  
             $query->where(function($q) use ($search) {  
                 $q->where('ua.user_email', 'ILIKE', "%{$search}%")  
                   ->orWhere(DB::raw('CAST(ua.user_id AS TEXT)'), 'ILIKE', "%{$search}%")  
                   ->orWhere(DB::raw("CONCAT(s.first_name, ' ', s.last_name)"), 'ILIKE', "%{$search}%")  
-                  ->orWhere(DB::raw("CONCAT(i.first_name, ' ', i.last_name)"), 'ILIKE', "%{$search}%")  
-                  ->orWhere(DB::raw("CONCAT(ss.first_name, ' ', ss.last_name)"), 'ILIKE', "%{$search}%")  
-                  ->orWhere(DB::raw("CONCAT(aas.first_name, ' ', aas.last_name)"), 'ILIKE', "%{$search}%");  
+                  ->orWhere(DB::raw("CONCAT(i.first_name, ' ', i.last_name)"), 'ILIKE', "%{$search}%");
             });  
         }  
   
@@ -116,17 +117,139 @@ class UserController extends Controller
             $query->whereDate($dateColumn, '<=', $request->date_to);  
         }  
   
-        $users = $query->orderBy('ua.user_id', 'asc')->paginate(20);  
-  
-        return view('admin.users.index', compact('users'));  
-    }  
+        // Get paginated users for display
+        $users = $query->orderBy('ua.user_id', 'asc')->paginate(20);
+
+        // Calculate accurate statistics from entire filtered dataset (not just current page)
+        $statsQuery = DB::table('user_account as ua')
+            ->leftJoin('student as s', 'ua.user_id', '=', 's.user_id')
+            ->leftJoin('instructor as i', 'ua.user_id', '=', 'i.user_id')
+            ->select(
+                DB::raw("COUNT(*) as total_users"),
+                DB::raw("SUM(CASE WHEN s.is_active = TRUE OR i.is_active = TRUE THEN 1 ELSE 0 END) as active_users"),
+                DB::raw("SUM(CASE WHEN (s.user_id IS NOT NULL AND s.is_active = FALSE) OR (i.user_id IS NOT NULL AND i.is_active = FALSE) THEN 1 ELSE 0 END) as inactive_users")
+            );
+
+        // Apply same filters to statistics query
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $statsQuery->where(function($q) use ($search) {
+                $q->where('ua.user_email', 'ILIKE', "%{$search}%")
+                ->orWhere(DB::raw('CAST(ua.user_id AS TEXT)'), 'ILIKE', "%{$search}%")
+                ->orWhere(DB::raw("CONCAT(s.first_name, ' ', s.last_name)"), 'ILIKE', "%{$search}%")
+                ->orWhere(DB::raw("CONCAT(i.first_name, ' ', i.last_name)"), 'ILIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('role') && $request->role !== 'all') {
+            $role = $request->role;
+            $statsQuery->where(function($q) use ($role) {
+                if ($role === 'student') {
+                    $q->whereNotNull('s.user_id');
+                } elseif ($role === 'instructor') {
+                    $q->whereNotNull('i.user_id');
+                } elseif ($role === 'super_admin') {
+                    $q->where('ua.is_super_admin', true);
+                }
+            });
+        }
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $isActive = $request->status === 'active' ? 'TRUE' : 'FALSE';
+            $statsQuery->where(function($q) use ($isActive) {
+                $q->where(function($subQ) use ($isActive) {
+                    $subQ->whereNotNull('s.user_id')
+                        ->whereRaw("s.is_active = {$isActive}");
+                })->orWhere(function($subQ) use ($isActive) {
+                    $subQ->whereNotNull('i.user_id')
+                        ->whereRaw("i.is_active = {$isActive}");
+                });
+            });
+        }
+
+        $dateColumn = $request->input('date_filter_by', 'created_at') === 'updated_at' ? 'ua.updated_at' : 'ua.created_at';
+        if ($request->filled('date_from')) {
+            $statsQuery->whereDate($dateColumn, '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $statsQuery->whereDate($dateColumn, '<=', $request->date_to);
+        }
+
+        $stats = $statsQuery->first();
+
+        // Calculate most common role from filtered results
+        $roleStats = DB::table('user_account as ua')
+            ->leftJoin('student as s', 'ua.user_id', '=', 's.user_id')
+            ->leftJoin('instructor as i', 'ua.user_id', '=', 'i.user_id')
+            ->select(
+                DB::raw("
+                    CASE
+                        WHEN ua.is_super_admin = TRUE THEN 'super_admin'
+                        WHEN s.user_id IS NOT NULL THEN 'student'
+                        WHEN i.user_id IS NOT NULL THEN 'instructor' 
+                        ELSE 'unknown'
+                    END as user_role
+                "),
+                DB::raw('COUNT(*) as role_count')
+            );
+
+        // Apply same filters to role statistics
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $roleStats->where(function($q) use ($search) {
+                $q->where('ua.user_email', 'ILIKE', "%{$search}%")
+                ->orWhere(DB::raw('CAST(ua.user_id AS TEXT)'), 'ILIKE', "%{$search}%")
+                ->orWhere(DB::raw("CONCAT(s.first_name, ' ', s.last_name)"), 'ILIKE', "%{$search}%")
+                ->orWhere(DB::raw("CONCAT(i.first_name, ' ', i.last_name)"), 'ILIKE', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('role') && $request->role !== 'all') {
+            $role = $request->role;
+            $roleStats->where(function($q) use ($role) {
+                if ($role === 'student') {
+                    $q->whereNotNull('s.user_id');
+                } elseif ($role === 'instructor') {
+                    $q->whereNotNull('i.user_id');
+                } elseif ($role === 'super_admin') {
+                    $q->where('ua.is_super_admin', true);
+                }
+            });
+        }
+
+        if ($request->filled('status') && $request->status !== 'all') {
+            $isActive = $request->status === 'active' ? 'TRUE' : 'FALSE';
+            $roleStats->where(function($q) use ($isActive) {
+                $q->where(function($subQ) use ($isActive) {
+                    $subQ->whereNotNull('s.user_id')
+                        ->whereRaw("s.is_active = {$isActive}");
+                })->orWhere(function($subQ) use ($isActive) {
+                    $subQ->whereNotNull('i.user_id')
+                        ->whereRaw("i.is_active = {$isActive}");
+                });
+            });
+        }
+
+        if ($request->filled('date_from')) {
+            $roleStats->whereDate($dateColumn, '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $roleStats->whereDate($dateColumn, '<=', $request->date_to);
+        }
+
+        $mostCommonRole = $roleStats->groupBy('user_role')
+            ->orderByDesc('role_count')
+            ->first();
+
+        return view('admin.users.index', compact('users', 'stats', 'mostCommonRole'));
+    }
   
       
     /**  
      * Show the form for creating a new resource.  
      */  
     public function create()  
-    {  
+    {
         $specializations = DB::table('specialization')  
             ->whereRaw('is_active = TRUE')  
             ->orderBy('specialization_name')  
@@ -154,31 +277,34 @@ class UserController extends Controller
         // ========================================================================  
         // STEP 1: Validate incoming request data  
         // ========================================================================  
-        $validator = Validator::make($request->all(), [  
-            'first_name' => 'required|string|max:100',  
-            'last_name' => 'required|string|max:100',  
-            'email' => 'required|string|email|max:255|unique:user_account,user_email', // ← FIXED: Check user_account table  
-            'password' => ['required', 'string', Password::min(8)->mixedCase()->numbers()->symbols()],  
-            'phone' => 'nullable|string|regex:/^\d{11}$/',  
-            'role' => 'required|string|in:student,instructor,sales,all_around_staff',  
-              
-            // Instructor-specific validation (only when role is instructor)  
-            'instructor.years_of_experience' => 'required_if:role,instructor|nullable|integer|min:0',  
-            'instructor.education_level' => 'nullable|string|max:100',  
-            'instructor.music_degree' => 'nullable|string|max:200',  
-            'instructor.bio' => 'nullable|string',  
-            'instructor.certifications' => 'nullable|string',  
-            'instructor.teaching_style' => 'nullable|string|max:255',  
-            'instructor.languages_spoken' => 'nullable|string|max:255',  
-            'instructor.max_students_per_day' => 'nullable|integer|min:1',  
-            'instructor.preferred_time_slots' => 'nullable|string|max:255',  
-            'instructor.available_days' => 'nullable|array',  
-            'instructor.available_days.*' => 'string|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',  
-              
-            // Specializations  
-            'specializations' => 'nullable|array',  
-            'specializations.*' => 'exists:specialization,specialization_id',  
-            'primary_specialization' => 'nullable|exists:specialization,specialization_id',  
+        $validator = Validator::make($request->all(), [
+            'first_name' => 'required|string|max:100',
+            'last_name' => 'required|string|max:100',
+            'email' => 'required|string|email|max:255|unique:user_account,user_email',
+            'password' => ['required', 'string', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'phone' => 'nullable|string|regex:/^\d{11}$/',
+            'role' => 'required|string|in:student,instructor',
+            
+            // Student-specific validation
+            'student_status_id' => 'required_if:role,student|exists:student_status,status_id',
+            
+            // Instructor-specific validation (years_of_experience is now OPTIONAL)
+            'instructor.years_of_experience' => 'nullable|integer|min:0',
+            'instructor.education_level' => 'nullable|string|max:100',
+            'instructor.music_degree' => 'nullable|string|max:200',
+            'instructor.bio' => 'nullable|string',
+            'instructor.certifications' => 'nullable|string',
+            'instructor.teaching_style' => 'nullable|string|max:255',
+            'instructor.languages_spoken' => 'nullable|string|max:255',
+            'instructor.max_students_per_day' => 'nullable|integer|min:1',
+            'instructor.preferred_time_slots' => 'nullable|string|max:255',
+            'instructor.available_days' => 'nullable|array',
+            'instructor.available_days.*' => 'string|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday,Sunday',
+            
+            // Specializations
+            'specializations' => 'nullable|array',
+            'specializations.*' => 'exists:specialization,specialization_id',
+            'primary_specialization' => 'nullable|exists:specialization,specialization_id',
         ]);  
   
         // If validation fails, return with errors  
@@ -209,103 +335,73 @@ class UserController extends Controller
             'is_super_admin' => false,  
             'created_at' => now(),  
             'updated_at' => now(),  
-        ], 'user_id'); // ← ADD THIS SECOND PARAMETER  
+        ], 'user_id'); // ← ADD THIS SECOND PARAMETER
+
   
-            // ====================================================================  
-            // STEP 5: Create role-specific entry based on selected role  
-            // ====================================================================  
-            $role = $request->role;  
-  
-            switch ($role) {  
-                case 'student':  
-                    // Get the 'Active' status ID (should be 1 based on your DB)  
-                    $activeStatusId = DB::table('student_status')  
-                        ->where('status_name', 'Active')  
-                        ->value('status_id') ?? 1;  
-  
-                    DB::table('student')->insert([  
-                        'user_id' => $userId,  
-                        'first_name' => $firstName,  
-                        'last_name' => $lastName,  
-                        'phone' => $phone,  
-                        'email' => $email,  
-                        'student_status_id' => $activeStatusId,  
-                        'is_active' => true,  
-                        'created_at' => now(),  
-                        'updated_at' => now(),  
-                    ]);  
-                    break;  
-  
-                case 'instructor':  
-                    // Prepare instructor data  
-                    $instructorData = [  
-                        'user_id' => $userId,  
-                        'first_name' => $firstName,  
-                        'last_name' => $lastName,  
-                        'phone' => $phone,  
-                        'email' => $email,  
-                        'years_of_experience' => $request->input('instructor.years_of_experience', 0),  
-                        'education_level' => $request->input('instructor.education_level'),  
-                        'music_degree' => $request->input('instructor.music_degree'),  
-                        'bio' => $request->input('instructor.bio'),  
-                        'certifications' => $request->input('instructor.certifications'),  
-                        'teaching_style' => $request->input('instructor.teaching_style'),  
-                        'languages_spoken' => $request->input('instructor.languages_spoken'),  
-                        'is_available' => $request->has('instructor.is_available') ? true : false,  
-                        'available_days' => $request->input('instructor.available_days')   
-                            ? json_encode($request->input('instructor.available_days'))   
-                            : null,  
-                        'preferred_time_slots' => $request->input('instructor.preferred_time_slots'),  
-                        'max_students_per_day' => $request->input('instructor.max_students_per_day', 8),  
-                        'is_active' => true,  
-                        'created_at' => now(),  
-                        'updated_at' => now(),  
-                    ];  
-  
-                    $instructorId = DB::table('instructor')->insertGetId($instructorData, 'instructor_id');  
-  
-                    // Handle specializations if provided  
-                    if ($request->has('specializations') && is_array($request->specializations)) {  
-                        $primarySpecId = $request->input('primary_specialization');  
-                          
-                        foreach ($request->specializations as $specId) {  
-                            DB::table('instructor_specialization')->insert([  
-                                'instructor_id' => $instructorId,  
-                                'specialization_id' => $specId,  
-                                'is_primary' => ($specId == $primarySpecId),  
-                                'created_at' => now(),  
-                                'updated_at' => now(),  
-                            ]);  
-                        }  
+        // ====================================================================  
+        // STEP 5: Create role-specific entry based on selected role  
+        // ====================================================================  
+        $role = $request->role;  
+
+        switch ($role) {  
+            case 'student':
+                DB::table('student')->insert([
+                    'user_id' => $userId,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'phone' => $phone,
+                    'email' => $email,
+                    'student_status_id' => $request->input('student_status_id'), // Use selected status from form
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            break;
+
+            case 'instructor':  
+                // Prepare instructor data  
+                $instructorData = [  
+                    'user_id' => $userId,  
+                    'first_name' => $firstName,  
+                    'last_name' => $lastName,  
+                    'phone' => $phone,  
+                    'email' => $email,  
+                    'years_of_experience' => $request->input('instructor.years_of_experience') ?? null,
+                    'education_level' => $request->input('instructor.education_level'),  
+                    'music_degree' => $request->input('instructor.music_degree'),  
+                    'bio' => $request->input('instructor.bio'),  
+                    'certifications' => $request->input('instructor.certifications'),  
+                    'teaching_style' => $request->input('instructor.teaching_style'),  
+                    'languages_spoken' => $request->input('instructor.languages_spoken'),  
+                    'is_available' => $request->has('instructor.is_available') ? true : false,  
+                    'available_days' => $request->input('instructor.available_days')   
+                        ? json_encode($request->input('instructor.available_days'))   
+                        : null,  
+                    'preferred_time_slots' => $request->input('instructor.preferred_time_slots'),  
+                    'max_students_per_day' => $request->input('instructor.max_students_per_day', 8),  
+                    'is_active' => true,  
+                    'created_at' => now(),  
+                    'updated_at' => now(),  
+                ];  
+
+                $instructorId = DB::table('instructor')->insertGetId($instructorData, 'instructor_id');  
+
+                // Handle specializations if provided  
+                if ($request->has('specializations') && is_array($request->specializations)) {  
+                    $primarySpecId = $request->input('primary_specialization');  
+                        
+                    foreach ($request->specializations as $specId) {  
+                        DB::table('instructor_specialization')->insert([  
+                            'instructor_id' => $instructorId,  
+                            'specialization_id' => $specId,  
+                            'is_primary' => ($specId == $primarySpecId),  
+                            'created_at' => now(),  
+                            'updated_at' => now(),  
+                        ]);  
                     }  
-                    break;  
-  
-                case 'sales':  
-                    DB::table('sales_staff')->insert([  
-                        'user_id' => $userId,  
-                        'first_name' => $firstName,  
-                        'last_name' => $lastName,  
-                        'phone' => $phone,  
-                        'email' => $email,  
-                        'is_active' => true,  
-                        'created_at' => now(),  
-                        'updated_at' => now(),  
-                    ]);  
-                    break;  
-  
-                case 'all_around_staff':  
-                    DB::table('all_around_staff')->insert([  
-                        'user_id' => $userId,  
-                        'first_name' => $firstName,  
-                        'last_name' => $lastName,  
-                        'phone' => $phone,  
-                        'email' => $email,  
-                        'is_active' => true,  
-                        'created_at' => now(),  
-                        'updated_at' => now(),  
-                    ]);  
-                    break;  
-            }  
+                }  
+            break;  
+        }  
   
             // ====================================================================  
             // STEP 6: Commit transaction  
@@ -375,11 +471,11 @@ class UserController extends Controller
             return response()->json(['error' => 'User not found'], 404);  
         }  
       
-        $validator = Validator::make($request->all(), [  
-            'first_name' => 'required_unless:is_super_admin,true|string|max:100',  
-            'last_name' => 'required_unless:is_super_admin,true|string|max:100',  
-            'user_email' => 'required|email|max:255|unique:user_account,user_email,' . $id . ',user_id',  
-            'phone' => 'nullable|string|regex:/^\d{11}$/',  
+        $validator = Validator::make($request->all(), [
+            'first_name' => ($user->is_super_admin ? 'nullable' : 'required') . '|string|max:100',
+            'last_name' => ($user->is_super_admin ? 'nullable' : 'required') . '|string|max:100',
+            'user_email' => 'required|email|max:255|unique:user_account,user_email,' . $id . ',user_id',
+            'phone' => 'nullable|string|regex:/^\d{11}$/',
         ]);  
       
         if ($validator->fails()) {  
@@ -431,15 +527,7 @@ class UserController extends Controller
         if ($roleData = DB::table('instructor')->where('user_id', $userId)->first()) {  
             $fullName = trim($roleData->first_name . ' ' . $roleData->last_name);  
             return ['instructor', $roleData, $fullName, (bool)$roleData->is_active];  
-        }  
-        if ($roleData = DB::table('sales_staff')->where('user_id', $userId)->first()) {  
-            $fullName = trim($roleData->first_name . ' ' . $roleData->last_name);  
-            return ['sales', $roleData, $fullName, (bool)$roleData->is_active];  
-        }  
-        if ($roleData = DB::table('all_around_staff')->where('user_id', $userId)->first()) {  
-            $fullName = trim($roleData->first_name . ' ' . $roleData->last_name);  
-            return ['all_around_staff', $roleData, $fullName, (bool)$roleData->is_active];  
-        }  
+        }
   
         $fullName = $user->is_super_admin ? 'Super Admin' : 'N/A';  
         return [null, null, $fullName, false];  
@@ -465,10 +553,7 @@ class UserController extends Controller
                 $data['assigned_students'] = DB::table('enrollment')->where('instructor_id', $instructor_id)->where('status', 'active')->distinct('student_id')->count('student_id');  
                 $data['total_lessons'] = DB::table('schedule')->where('instructor_id', $instructor_id)->where('status', 'completed')->count();  
                 break;  
-            case 'sales':  
-            case 'all_around_staff':  
-                $data['work_days'] = DB::table('attendance')->where('user_id', $userId)->where('attendance_type', 'work')->count();  
-                break;  
+            
         }  
         return $data;  
     }  
@@ -490,16 +575,23 @@ class UserController extends Controller
     {  
         list($role) = $this->getRoleAndDetailsByUserId($id);  
         if (!$role) return response()->json(['error' => 'User has no role to update.'], 404);  
-  
+
         $tableMap = [  
-            'student' => 'student', 'instructor' => 'instructor',  
-            'sales' => 'sales_staff', 'all_around_staff' => 'all_around_staff'  
+            'student' => 'student', 
+            'instructor' => 'instructor',
         ];  
         $tableName = $tableMap[$role];  
-  
-        DB::table($tableName)->where('user_id', $id)->update(['is_active' => $isActive, 'updated_at' => now()]);  
+
+        // Use DB::raw() to send actual PostgreSQL boolean TRUE/FALSE
+        DB::table($tableName)
+            ->where('user_id', $id)
+            ->update([
+                'is_active' => DB::raw($isActive ? 'TRUE' : 'FALSE'),
+                'updated_at' => now()
+            ]);
+            
         return response()->json(['success' => true, 'message' => 'User status updated successfully']);  
-    }  
+    }
   
     public function destroy($id)  
     {  
@@ -519,15 +611,19 @@ class UserController extends Controller
     {  
         $userIds = $request->input('user_ids', []);  
         DB::transaction(function () use ($userIds) {  
-            $usersByRole = ['student' => [], 'instructor' => [], 'sales' => [], 'all_around_staff' => []];  
+            $usersByRole = ['student' => [], 'instructor' => []];  
             foreach ($userIds as $userId) {  
                 list($role) = $this->getRoleAndDetailsByUserId($userId);  
                 if ($role) $usersByRole[$role][] = $userId;  
             }  
-            if (!empty($usersByRole['student'])) DB::table('student')->whereIn('user_id', $usersByRole['student'])->update(['is_active' => false]);  
-            if (!empty($usersByRole['instructor'])) DB::table('instructor')->whereIn('user_id', $usersByRole['instructor'])->update(['is_active' => false]);  
-            if (!empty($usersByRole['sales'])) DB::table('sales_staff')->whereIn('user_id', $usersByRole['sales'])->update(['is_active' => false]);  
-            if (!empty($usersByRole['all_around_staff'])) DB::table('all_around_staff')->whereIn('user_id', $usersByRole['all_around_staff'])->update(['is_active' => false]);  
+            if (!empty($usersByRole['student'])) {
+                DB::table('student')->whereIn('user_id', $usersByRole['student'])
+                    ->update(['is_active' => false, 'updated_at' => now()]);  
+            }
+            if (!empty($usersByRole['instructor'])) {
+                DB::table('instructor')->whereIn('user_id', $usersByRole['instructor'])
+                    ->update(['is_active' => false, 'updated_at' => now()]);
+            }
         });  
         return response()->json(['success' => true, 'message' => count($userIds) . ' users deactivated successfully.']);  
     }  

@@ -46,7 +46,7 @@ class InstrumentController extends Controller
         $instruments = DB::table('instrument')
             ->leftJoin('student', function($join) {
                 $join->on('student.instrument_id', '=', 'instrument.instrument_id')
-                     ->where('student.is_active', '=', true);
+                    ->where('student.is_active', '=', true);
             })
             ->select(
                 'instrument.*',
@@ -65,9 +65,25 @@ class InstrumentController extends Controller
             ->orderBy('instrument.instrument_name', 'ASC')
             ->get();
 
+        // Calculate statistics
+        $stats = [
+            'total' => $instruments->count(),
+            'active' => $instruments->where('is_active', true)->count(),
+            'inactive' => $instruments->where('is_active', false)->count(),
+            'most_used_name' => 'N/A',
+            'most_used_count' => 0
+        ];
+
+        // Find most popular instrument
+        $mostUsed = $instruments->where('students_count', '>', 0)->sortByDesc('students_count')->first();
+        if ($mostUsed) {
+            $stats['most_used_name'] = $mostUsed->instrument_name;
+            $stats['most_used_count'] = $mostUsed->students_count;
+        }
+
         $categories = self::CATEGORIES;
 
-        return view('admin.instruments.index', compact('instruments', 'categories'));
+        return view('admin.instruments.index', compact('instruments', 'categories', 'stats'));
     }
 
     /**
@@ -114,7 +130,7 @@ class InstrumentController extends Controller
                 'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now()
-            ]);
+            ], 'instrument_id');
 
             return response()->json([
                 'success' => true,
@@ -185,12 +201,32 @@ class InstrumentController extends Controller
                 ], 404);
             }
 
-            // Prevent editing system instruments' core fields
+            // For system instruments, only allow description updates
             if ($instrument->is_system) {
+                // Only validate and update description
+                $validator = Validator::make($request->all(), [
+                    'description' => 'nullable|string|max:500',
+                ]);
+
+                if ($validator->fails()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Validation failed.',
+                        'errors' => $validator->errors()
+                    ], 422);
+                }
+
+                DB::table('instrument')
+                    ->where('instrument_id', $id)
+                    ->update([
+                        'description' => $request->description ? trim($request->description) : null,
+                        'updated_at' => now()
+                    ]);
+
                 return response()->json([
-                    'success' => false,
-                    'message' => 'Cannot modify system instruments. Only description can be updated.'
-                ], 403);
+                    'success' => true,
+                    'message' => 'Instrument description updated successfully.'
+                ]);
             }
 
             // Validation rules
@@ -421,6 +457,62 @@ class InstrumentController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to check usage: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get list of students enrolled in a specific instrument
+     * 
+     * @param int $id - instrument_id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getStudents($id)
+    {
+        try {
+            // Check if instrument exists
+            $instrument = DB::table('instrument')
+                ->where('instrument_id', $id)
+                ->first();
+
+            if (!$instrument) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Instrument not found.'
+                ], 404);
+            }
+
+            // Get all ACTIVE students using this instrument
+            $students = DB::table('student')
+                ->join('user_account', 'student.user_id', '=', 'user_account.user_id')
+                ->where('student.instrument_id', $id)
+                ->where('student.is_active', true)
+                ->select(
+                    'student.student_id',
+                    'student.first_name',
+                    'student.last_name',
+                    'student.enrollment_date',
+                    'user_account.user_email'
+                )
+                ->orderBy('student.last_name', 'ASC')
+                ->orderBy('student.first_name', 'ASC')
+                ->get()
+                ->map(function($student) {
+                    // Format the student name
+                    $student->student_name = trim($student->first_name . ' ' . $student->last_name);
+                    return $student;
+                });
+
+            return response()->json([
+                'success' => true,
+                'students' => $students,
+                'instrument_name' => $instrument->instrument_name
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to fetch students: ' . $e->getMessage()
             ], 500);
         }
     }

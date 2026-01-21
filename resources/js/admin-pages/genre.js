@@ -305,7 +305,7 @@ async function viewStudents(genreId) {
                 <div class="bg-gradient-to-r from-secondary-blue to-forest-green p-6 text-white">
                     <div class="flex items-center justify-between">
                         <h2 class="text-2xl font-bold">Students who prefer this genre</h2>
-                        <button onclick="closeStudentModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
+                        <button onclick="closeStudentModal()" class="text-black hover:bg-white hover:bg-opacity-50 rounded-full p-2 transition-all">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>

@@ -28,18 +28,18 @@ class ScheduleController extends Controller
     {
         // Fetch all active rooms for the view (dropdown, display, etc.)
         $rooms = DB::table('room')
-            ->whereRaw('is_active = TRUE')
-            ->orderBy('room_name', 'asc')
+            ->whereRaw('is_active = true')
+            ->orderBy('room_number', 'asc')
             ->get();
 
         $instructors = DB::table('instructor')
-            ->whereRaw('is_active = TRUE')
+            ->whereRaw('is_active = true')
             ->orderBy('last_name')
             ->select('instructor_id', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
             ->get();
 
         $students = DB::table('student')
-            ->whereRaw('is_active = TRUE')
+            ->whereRaw('is_active = true')
             ->orderBy('last_name')
             ->select('student_id', DB::raw("CONCAT(first_name, ' ', last_name) as full_name"))
             ->get();
@@ -314,7 +314,7 @@ class ScheduleController extends Controller
                 'status' => 'scheduled',
                 'created_at' => now(),
                 'updated_at' => now()
-            ]);
+            ], 'schedule_id');
 
             return response()->json([
                 'success' => true,
@@ -512,7 +512,7 @@ class ScheduleController extends Controller
 
         // Get all rooms
         $rooms = DB::table('room')
-            ->whereRaw('is_active = TRUE')
+            ->whereRaw('is_active = true')
             ->get();
 
         // Check which rooms are occupied

@@ -53,8 +53,6 @@
                     <li><a href="{{ route('admin.users.index') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">All Users</a></li> 
                     <li><a href="{{ route('admin.users.students') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Students</a></li>
                     <li><a href="{{ route('admin.instructors.index') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Instructors</a></li>
-                    <li><a href="{{ route('admin.users.sales-staff') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Sales Staff</a></li>
-                    <li><a href="{{ route('admin.users.all-around-staff') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">All-Around Staff</a></li>
                     <li class="border-t border-secondary-blue pt-1 mt-1"> 
                         <a href="{{ route('admin.users.create') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm font-semibold"> 
                             + Add New User 
@@ -71,28 +69,6 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/> 
                     </svg> 
                     <span class="font-medium">Schedule</span> 
-                </a> 
-            </li> 
-             
-            {{-- Payments --}} 
-            <li> 
-                <a href="{{ route('admin.payments.index') }}"  
-                   class="flex items-center px-4 py-3 rounded-lg hover:bg-primary-darker transition-all duration-200"> 
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"> 
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/> 
-                    </svg> 
-                    <span class="font-medium">Payments</span> 
-                </a> 
-            </li> 
-             
-            {{-- Lessons --}} 
-            <li> 
-                <a href="{{ route('admin.lessons.index') }}"  
-                   class="flex items-center px-4 py-3 rounded-lg hover:bg-primary-darker transition-all duration-200"> 
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"> 
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/> 
-                    </svg> 
-                    <span class="font-medium">Lessons</span> 
                 </a> 
             </li> 
 
@@ -172,26 +148,28 @@
                     <span class="font-medium">Inventory</span> 
                 </a> 
             </li> 
-             
-            {{-- Reports --}} 
-            <li> 
-                <button class="w-full flex items-center justify-between px-4 py-3 rounded-lg hover:bg-primary-darker transition-all duration-200 focus:outline-none"  
-                        onclick="toggleDropdown(this)"> 
-                    <div class="flex items-center"> 
-                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"> 
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/> 
-                        </svg> 
-                        <span class="font-medium">Reports</span> 
-                    </div> 
-                    <svg class="w-4 h-4 transform transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"> 
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/> 
-                    </svg> 
-                </button> 
-                <ul class="hidden mt-1 ml-4 space-y-1 border-l-2 border-secondary-blue pl-4 max-h-[300px] overflow-y-auto scrollbar-custom"> 
-                    <li><a href="{{ route('admin.reports.index') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">All Reports</a></li> 
-                    <li><a href="{{ route('admin.reports.financial') }}" class="block px-4 py-2 rounded hover:bg-secondary-blue transition-colors text-sm">Financial Reports</a></li> 
-                </ul> 
-            </li> 
+
+            {{-- Suppliers --}}
+            <li>
+                <a href="{{ route('admin.suppliers.index') }}"
+                class="flex items-center px-4 py-3 rounded-lg hover:bg-primary-darker transition-all duration-200 {{ request()->routeIs('admin.suppliers.*') ? 'bg-secondary-blue text-white' : '' }}">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                    <span class="font-medium">Suppliers</span>
+                </a>
+            </li>
+
+            {{-- Reports --}}
+            <li>
+                <a href="{{ route('admin.reports.index') }}"
+                class="flex items-center px-4 py-3 rounded-lg hover:bg-primary-darker transition-all duration-200 {{ request()->routeIs('admin.reports.*') ? 'bg-secondary-blue text-white' : '' }}">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    <span class="font-medium">Reports</span>
+                </a>
+            </li>
              
             {{-- Settings --}} 
             <li> 

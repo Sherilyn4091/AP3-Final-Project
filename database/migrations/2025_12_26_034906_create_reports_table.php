@@ -12,7 +12,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        if (!Schema::hasTable('password_reset_tokens')) {
+        if (!Schema::hasTable('report')) {
         Schema::create('report', function (Blueprint $table) {
             $table->id('report_id');
             

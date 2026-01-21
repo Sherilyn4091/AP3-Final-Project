@@ -51,17 +51,17 @@
             <form method="GET" action="{{ route('admin.instructors.index') }}" class="space-y-4">
                 
                 {{-- First Row: Search and Quick Filters --}}
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Search</label>
                         <input type="text" name="search" value="{{ request('search') }}" 
-                               placeholder="Search by name, email, or employee ID..." 
-                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                            placeholder="Search by name, email, or employee ID..." 
+                            class="w-full px-3 md:px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Specialization</label>
-                        <select name="specialization" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Specialization</label>
+                        <select name="specialization" class="w-full px-3 md:px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
                             <option value="all">All Specializations</option>
                             @foreach($specializations as $spec)
                                 <option value="{{ $spec->specialization_id }}" {{ request('specialization') == $spec->specialization_id ? 'selected' : '' }}>
@@ -72,8 +72,8 @@
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Availability</label>
-                        <select name="availability" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Availability</label>
+                        <select name="availability" class="w-full px-3 md:px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
                             <option value="all">All</option>
                             <option value="available" {{ request('availability') == 'available' ? 'selected' : '' }}>Available</option>
                             <option value="unavailable" {{ request('availability') == 'unavailable' ? 'selected' : '' }}>Unavailable</option>
@@ -82,10 +82,10 @@
                 </div>
 
                 {{-- Second Row: More Filters --}}
-                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-                        <select name="status" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Status</label>
+                        <select name="status" class="w-full px-3 md:px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
                             <option value="all">All</option>
                             <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
                             <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
@@ -93,44 +93,33 @@
                     </div>
                     
                     <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Min. Rating</label>
-                        <select name="rating" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
-                            <option value="all">All Ratings</option>
-                            <option value="4" {{ request('rating') == '4' ? 'selected' : '' }}>4+ Stars</option>
-                            <option value="3" {{ request('rating') == '3' ? 'selected' : '' }}>3+ Stars</option>
-                            <option value="2" {{ request('rating') == '2' ? 'selected' : '' }}>2+ Stars</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Sort By</label>
-                        <select name="sort_by" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Sort By</label>
+                        <select name="sort_by" class="w-full px-3 md:px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
                             <option value="name" {{ request('sort_by') == 'name' ? 'selected' : '' }}>Name</option>
-                            <option value="rating" {{ request('sort_by') == 'rating' ? 'selected' : '' }}>Rating</option>
                             <option value="students" {{ request('sort_by') == 'students' ? 'selected' : '' }}>Active Students</option>
                             <option value="experience" {{ request('sort_by') == 'experience' ? 'selected' : '' }}>Experience</option>
                         </select>
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Date From</label>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Date From</label>
                         <input type="date" name="date_from" value="{{ request('date_from') }}" 
-                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                            class="w-full px-3 md:px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
                     </div>
                     
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Date To</label>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-xs md:text-sm font-semibold text-gray-700 mb-2">Date To</label>
                         <input type="date" name="date_to" value="{{ request('date_to') }}" 
-                               class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
+                            class="w-full px-3 md:px-4 py-2 text-sm border-2 border-gray-300 rounded-lg focus:border-secondary-blue">
                     </div>
                 </div>
 
                 {{-- Filter Actions --}}
-                <div class="flex gap-3">
-                    <button type="submit" class="bg-secondary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-secondary-blue-dark transition-all">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button type="submit" class="bg-secondary-blue text-white px-4 md:px-6 py-2 rounded-lg text-sm font-semibold hover:bg-secondary-blue-dark transition-all">
                         Apply Filters
                     </button>
-                    <a href="{{ route('admin.instructors.index') }}" class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 transition-all">
+                    <a href="{{ route('admin.instructors.index') }}" class="bg-gray-200 text-gray-700 px-4 md:px-6 py-2 rounded-lg text-sm font-semibold hover:bg-gray-300 transition-all text-center">
                         Clear All
                     </a>
                 </div>
@@ -193,123 +182,100 @@
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-primary-dark">
-                        <tr>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Instructor</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Contact</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Specializations</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Students</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Rating</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Actions</th>
-                        </tr>
-                    </thead>
+                    <tr>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Instructor</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Contact</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Specializations</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Students</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Actions</th>
+                    </tr>
+                </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($instructors as $instructor)
-                        <tr class="hover:bg-accent-yellow-light transition-colors" id="instructor-row-{{ $instructor->instructor_id }}">
-                            
-                            {{-- Instructor Info --}}
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-warm-coral to-golden-yellow rounded-full flex items-center justify-center text-white font-bold text-lg">
-                                        {{ substr($instructor->first_name, 0, 1) }}{{ substr($instructor->last_name, 0, 1) }}
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-bold text-gray-900">{{ $instructor->first_name }} {{ $instructor->last_name }}</div>
-                                        <div class="text-xs text-gray-500">ID: {{ $instructor->employee_id ?? 'N/A' }}</div>
-                                    </div>
+                    @forelse($instructors as $instructor)
+                    <tr class="hover:bg-accent-yellow-light transition-colors" id="instructor-row-{{ $instructor->instructor_id }}">
+                        
+                        {{-- Instructor Info --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-warm-coral to-golden-yellow rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                    {{ substr($instructor->first_name, 0, 1) }}{{ substr($instructor->last_name, 0, 1) }}
                                 </div>
-                            </td>
-                            
-                            {{-- Contact --}}
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $instructor->email }}</div>
-                                <div class="text-xs text-gray-500">{{ $instructor->phone ?? 'N/A' }}</div>
-                            </td>
-                            
-                            {{-- Specializations --}}
-                            <td class="px-6 py-4">
-                                <div class="flex flex-wrap gap-1">
-                                    @if($instructor->primary_specialization)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-forest-green text-white">
-                                            {{ $instructor->primary_specialization }}
-                                        </span>
-                                    @endif
-                                    @if($instructor->specialization_count > 1)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
-                                            +{{ $instructor->specialization_count - 1 }} more
-                                        </span>
-                                    @endif
-                                    @if($instructor->specialization_count == 0)
-                                        <span class="text-xs text-gray-400">None</span>
-                                    @endif
+                                <div class="ml-4">
+                                    <div class="text-sm font-bold text-gray-900">{{ $instructor->first_name }} {{ $instructor->last_name }}</div>
+                                    <div class="text-xs text-gray-500">ID: {{ $instructor->employee_id ?? 'N/A' }}</div>
                                 </div>
-                            </td>
-                            
-                            {{-- Students --}}
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-semibold text-primary-dark">{{ $instructor->active_students }} Active</div>
-                                <div class="text-xs text-gray-500">{{ $instructor->total_students_taught }} Total</div>
-                            </td>
-                            
-                            {{-- Rating --}}
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                @if($instructor->average_rating)
-                                    <div class="flex items-center">
-                                        <span class="text-sm font-bold text-golden-yellow mr-1">{{ number_format($instructor->average_rating, 1) }}</span>
-                                        <svg class="w-4 h-4 text-golden-yellow" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                    </div>
-                                @else
-                                    <span class="text-xs text-gray-400">No ratings</span>
+                            </div>
+                        </td>
+                        
+                        {{-- Contact --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm text-gray-900">{{ $instructor->email }}</div>
+                            <div class="text-xs text-gray-500">{{ $instructor->phone ?? 'N/A' }}</div>
+                        </td>
+                        
+                        {{-- Specializations --}}
+                        <td class="px-6 py-4">
+                            <div class="flex flex-wrap gap-1">
+                                @if($instructor->primary_specialization)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-forest-green text-white">
+                                        {{ $instructor->primary_specialization }}
+                                    </span>
                                 @endif
-                            </td>
-                            
-                            {{-- Status --}}
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex flex-col gap-1">
-                                    @if($instructor->is_active)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-forest-green text-white">Active</span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-400 text-white">Inactive</span>
-                                    @endif
-                                    
-                                    @if($instructor->is_available)
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-secondary-blue text-white">Available</span>
-                                    @else
-                                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-warm-coral text-white">Busy</span>
-                                    @endif
-                                </div>
-                            </td>
-                            
-                            {{-- Actions --}}
-                            <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                <div class="flex gap-2">
-                                    <button onclick="viewInstructor({{ $instructor->instructor_id }})" class="action-btn text-secondary-blue">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                        <span class="tooltip">View Details</span>
-                                    </button>
-                                    
-                                    <button onclick="manageSpecializations({{ $instructor->instructor_id }})" class="action-btn text-warm-coral">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-                                        <span class="tooltip">Specializations</span>
-                                    </button>
-                                    
-                                    <button onclick="viewPerformance({{ $instructor->instructor_id }})" class="action-btn text-golden-yellow">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                                        <span class="tooltip">Performance</span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                                <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                                <p class="text-lg font-semibold">No instructors found</p>
-                                <p class="text-sm mt-2">Try adjusting your filters or add a new instructor</p>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
+                                @if($instructor->specialization_count > 1)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-200 text-gray-700">
+                                        +{{ $instructor->specialization_count - 1 }} more
+                                    </span>
+                                @endif
+                                @if($instructor->specialization_count == 0)
+                                    <span class="text-xs text-gray-400">None</span>
+                                @endif
+                            </div>
+                        </td>
+                        
+                        {{-- Students --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-semibold text-primary-dark">{{ $instructor->active_students }} Active</div>
+                            <div class="text-xs text-gray-500">{{ $instructor->total_students_taught }} Total</div>
+                        </td>
+                        
+                        {{-- Status --}}
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex flex-col gap-1">
+                                @if($instructor->is_active)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-forest-green text-white">Active</span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-gray-400 text-white">Inactive</span>
+                                @endif
+                                
+                                @if($instructor->is_available)
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-secondary-blue text-white">Available</span>
+                                @else
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-warm-coral text-white">Busy</span>
+                                @endif
+                            </div>
+                        </td>
+                        
+                        {{-- Actions - ONLY VIEW BUTTON --}}
+                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                            <div class="flex gap-2">
+                                <button onclick="viewInstructor({{ $instructor->instructor_id }})" class="action-btn text-secondary-blue">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    <span class="tooltip">View Details</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                            <p class="text-lg font-semibold">No instructors found</p>
+                            <p class="text-sm mt-2">Try adjusting your filters or add a new instructor</p>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
                 </table>
             </div>
             
@@ -335,6 +301,8 @@
 
 {{-- Toast Container --}}
 <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
+
+@vite(['resources/js/admin-pages/instructor.js'])
 
 </body>
 </html>

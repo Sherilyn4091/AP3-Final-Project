@@ -19,10 +19,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Schedule Management - Admin Dashboard</title>
-    @vite(['resources/css/style.css', 'resources/js/app.js', 'resources/js/admin-pages.js'])
+    @vite(['resources/css/style.css', 'resources/js/app.js', 'resources/js/admin-pages.js', 'resources/js/admin-pages/schedule.js'])
 
-    <!-- FullCalendar CSS -->
-    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet' />
     
     <!-- Mobile-specific styles -->
     <style>
@@ -75,11 +73,11 @@
                 <p class="text-secondary-blue mt-1">Manage lesson schedules and room bookings</p>
             </div>
             <div class="flex gap-3">
-                <button onclick="openAddScheduleModal()" class="bg-forest-green text-white px-6 py-3 rounded-lg font-semibold hover:bg-forest-green-dark transition-all shadow-lg">
+                <button onclick="openAddScheduleModal()" class="bg-forest-green text-white px-4 py-2 text-sm rounded-lg font-semibold hover:bg-forest-green-dark transition-all shadow-lg">
                     <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                     Add lesson schedule
                 </button>
-                <button onclick="openRoomAvailabilityChecker()" class="bg-secondary-blue text-white px-6 py-3 rounded-lg font-semibold hover:bg-secondary-blue-dark transition-all shadow-lg">
+                <button onclick="openRoomAvailabilityChecker()" class="bg-secondary-blue text-white px-4 py-2 text-sm rounded-lg font-semibold hover:bg-secondary-blue-dark transition-all shadow-lg">
                     <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                     Check availability
                 </button>
@@ -133,9 +131,12 @@
                     </select>
                 </div>
                 
-                <div class="flex items-end">
-                    <button onclick="applyFilters()" class="w-full bg-secondary-blue text-white px-6 py-2 rounded-lg font-semibold hover:bg-secondary-blue-dark transition-all">
+                <div class="flex items-end gap-2">
+                    <button onclick="applyFilters()" class="flex-1 bg-secondary-blue text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-secondary-blue-dark transition-all">
                         Apply
+                    </button>
+                    <button onclick="clearFilters()" class="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-semibold hover:bg-gray-300 transition-all">
+                        Clear
                     </button>
                 </div>
             </div>
@@ -181,7 +182,7 @@
 <div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
 
 <!-- FullCalendar JS -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+<script src='https://unpkg.com/fullcalendar@6.1.15/index.global.min.js'></script>
 
 </body>
 </html>

@@ -199,9 +199,10 @@
 
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($session->usage_count > 0)
-                                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-secondary-blue text-white">
+                                        <button onclick="viewSessionEnrollments({{ $session->session_id }}, '{{ addslashes($session->session_name) }}')"
+                                                class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-secondary-blue text-white hover:bg-secondary-blue-dark transition-all">
                                             {{ $session->usage_count }} {{ $session->usage_count == 1 ? 'enrollment' : 'enrollments' }}
-                                        </span>
+                                        </button>
                                     @else
                                         <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">
                                             Not used yet

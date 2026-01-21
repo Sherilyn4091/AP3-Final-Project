@@ -99,7 +99,7 @@ return [
             'connect_timeout' => env('DB_CONNECT_TIMEOUT', 30),
 
             'options' => [
-                PDO::ATTR_EMULATE_PREPARES => true,
+                PDO::ATTR_EMULATE_PREPARES => false,
                 PDO::ATTR_PERSISTENT => false,
             ],
         ],

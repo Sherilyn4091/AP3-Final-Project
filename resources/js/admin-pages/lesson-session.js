@@ -521,6 +521,90 @@ function updateCustomSessionCount(value) {
 }
 
 /**
+ * View enrollments using a specific lesson package
+ * @param {number} sessionId - Session ID
+ * @param {string} sessionName - Session package name
+ */
+function viewSessionEnrollments(sessionId, sessionName) {
+    fetch(`/admin/lesson-sessions/${sessionId}/enrollments`, {
+        headers: { 'Accept': 'application/json' }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            throw new Error(data.message);
+        }
+        
+        const modalHTML = `
+            <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 bg-secondary-blue">
+                    <h2 class="text-2xl font-bold text-white">Enrollments using ${sessionName}</h2>
+                    <button onclick="closeModal()" class="text-black hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                ${data.enrollments.length === 0 ? `
+                    <div class="text-center py-12 px-6">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        <p class="text-gray-600 font-semibold">No enrollments found</p>
+                    </div>
+                ` : `
+                    <div class="overflow-y-auto max-h-[70vh] px-6 py-4">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Enrollment ID</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Student</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Instructor</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Enrolled</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-100">
+                                ${data.enrollments.map(e => `
+                                    <tr class="hover:bg-blue-50 transition-colors">
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">${e.enrollment_id}</td>
+                                        <td class="px-4 py-3">
+                                            <div class="text-sm font-medium text-gray-900">${e.student_name}</div>
+                                            <div class="text-xs text-gray-500">${e.user_email}</div>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">${e.instructor_name ? e.instructor_name : 'Not assigned'}</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${
+                                                e.status === 'active' ? 'bg-forest-green text-white' : 
+                                                e.status === 'completed' ? 'bg-secondary-blue text-white' : 'bg-gray-400 text-white'
+                                            }">${e.status}</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">${new Date(e.enrollment_date).toLocaleDateString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+                
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    <button onclick="closeModal()" class="w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all">
+                        Close
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        showModal(modalHTML);
+        
+        })
+        .catch(error => {
+        showToast(error.message, 'error');
+    });
+}
+
+/**
  * ============================================================================
  * EXPOSE FUNCTIONS TO WINDOW OBJECT (for inline onclick handlers)
  * ============================================================================
@@ -535,3 +619,4 @@ window.updateTotalHours = updateTotalHours;
 window.calculateTotalHours = calculateTotalHours;  
 window.handleSessionCountChange = handleSessionCountChange;
 window.updateCustomSessionCount = updateCustomSessionCount;
+window.viewSessionEnrollments = viewSessionEnrollments;

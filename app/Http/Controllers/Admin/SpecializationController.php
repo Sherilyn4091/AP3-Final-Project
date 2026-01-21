@@ -75,6 +75,16 @@ class SpecializationController extends Controller
                 $query->orderBy('specialization.specialization_name', 'ASC');
         }
 
+        // ===== NEW: Check if AJAX request =====
+        if ($request->wantsJson() || $request->expectsJson()) {
+            $specializations = $query->get();
+            return response()->json([
+                'success' => true,
+                'specializations' => $specializations
+            ]);
+        }
+
+        // Otherwise return view as normal
         $specializations = $query->paginate(15);
 
         // Calculate statistics (separate queries - more efficient)

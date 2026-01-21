@@ -144,7 +144,7 @@
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Specialization</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Description</th>
-                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Instructors</th>
+                            <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Instructors (view)</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Status</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Created</th>
                             <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Actions</th>

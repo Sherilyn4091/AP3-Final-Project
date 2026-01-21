@@ -8,7 +8,10 @@ class Inventory extends Model
 {
     protected $table = 'inventory';
     protected $primaryKey = 'item_id';
-    
+    public $timestamps = true;
+
+    // If your primary key isn't "id", Eloquent needs to know
+    public $incrementing = true;
     protected $fillable = [
         'item_code',
         'item_name',
@@ -29,7 +32,7 @@ class Inventory extends Model
         'last_ordered_date',
         'is_active',
     ];
-    
+
     protected $casts = [
         'quantity' => 'integer',
         'unit_price' => 'decimal:2',
@@ -40,16 +43,16 @@ class Inventory extends Model
         'last_ordered_date' => 'date',
         'is_active' => 'boolean',
     ];
-    
+
     // Relationships
     public function supplier()
     {
         return $this->belongsTo(Supplier::class, 'supplier_id', 'supplier_id');
     }
-    
+
     // Accessor to check if item is low stock
     public function getIsLowStockAttribute()
     {
         return $this->quantity <= $this->low_stock_threshold;
     }
-}
+} 

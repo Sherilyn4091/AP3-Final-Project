@@ -8,7 +8,8 @@ class Supplier extends Model
 {
     protected $table = 'supplier';
     protected $primaryKey = 'supplier_id';
-    
+    public $timestamps = true;
+
     protected $fillable = [
         'supplier_name',
         'supplier_code',
@@ -23,27 +24,18 @@ class Supplier extends Model
         'province',
         'postal_code',
         'country',
-        'products_supplied',
-        'product_categories',
         'payment_terms',
         'delivery_terms',
-        'minimum_order_amount',
         'rating',
-        'total_orders',
-        'last_order_date',
         'is_active',
         'notes',
     ];
-    
+
     protected $casts = [
-        'minimum_order_amount' => 'decimal:2',
         'rating' => 'decimal:2',
-        'total_orders' => 'integer',
-        'last_order_date' => 'date',
         'is_active' => 'boolean',
     ];
-    
-    // Relationships
+
     public function inventoryItems()
     {
         return $this->hasMany(Inventory::class, 'supplier_id', 'supplier_id');
