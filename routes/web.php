@@ -2,6 +2,9 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\LoginController;
@@ -23,6 +26,14 @@ use App\Http\Controllers\Api\ChartController;
 use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\SupplierController;
+
+use App\Http\Controllers\Instructor\InstructorController as InstructorPortalController;
+use App\Http\Controllers\Instructor\InstructorDashboardController;
+use App\Http\Controllers\Instructor\StudentController as InstructorStudentController;
+use App\Http\Controllers\Instructor\ScheduleController as InstructorScheduleController;
+use App\Http\Controllers\Instructor\AttendanceController;
+use App\Http\Controllers\Instructor\ProgressController;
+use App\Http\Controllers\Instructor\InstructorProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -355,6 +366,42 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/admin/users/{id}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
         Route::post('/admin/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('admin.users.deactivate');
+
+        
+        Route::post('/change-password', function (Request $request) {
+            try {
+                $validated = $request->validate([
+                    'current_password' => 'required|string',
+                    'password' => 'required|string|min:8'
+                ]);
+
+                $user = Auth::user();
+                
+                if (!Hash::check($validated['current_password'], $user->user_password)) {
+                    return response()->json([
+                        'success' => false, 
+                        'message' => 'Current password is incorrect'
+                    ], 400);
+                }
+                
+                DB::table('user_account')
+                    ->where('user_id', $user->user_id)
+                    ->update(['user_password' => Hash::make($validated['password'])]);
+
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Password changed successfully'
+                ]);
+                
+            } catch (\Exception $e) {
+                \Log::error('Password change error: ' . $e->getMessage());
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Server error. Please try again.'
+                ], 500);
+            }
+        })->name('admin.change-password');
+
     }); // End of admin prefix group
 
     // ============================================================================
@@ -469,6 +516,75 @@ Route::middleware('auth')->group(function () {
         Route::get('/payments', fn() => view('student.payments'))->name('payments');
         Route::get('/profile', fn() => view('student.profile'))->name('profile');
         Route::get('/enrollments', fn() => view('student.enrollments'))->name('enrollments');
+    });
+    
+
+    // ============================================================================
+    // INSTRUCTOR ROUTES (REFINED)
+    // ============================================================================
+    Route::prefix('instructor')
+    ->name('instructor.')
+    ->middleware(['auth', 'role:instructor'])
+    ->group(function () {
+
+        Route::get('/dashboard', [InstructorDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        Route::get('/some-route', [InstructorPortalController::class, 'someMethod']);
+
+        // Students
+        Route::get('/students', [InstructorStudentController::class, 'index'])
+            ->name('students.index');
+
+        Route::get('/students/{student}', [InstructorStudentController::class, 'show'])
+            ->whereNumber('student')
+            ->name('students.show');
+
+        // Schedule
+        Route::get('/schedule', [InstructorScheduleController::class, 'index'])
+            ->name('schedule.index');
+
+        Route::get('/schedule/{schedule}/edit', [InstructorScheduleController::class, 'edit'])
+            ->name('schedule.edit');
+
+        Route::put('/schedule/{schedule}', [InstructorScheduleController::class, 'update'])
+            ->name('schedule.update');
+
+        // Schedule create/store
+        Route::get('/schedule/create', [InstructorScheduleController::class, 'create'])->name('schedule.create');
+        Route::post('/schedule', [InstructorScheduleController::class, 'store'])->name('schedule.store');
+
+        // Attendance
+        Route::get('/attendance', [AttendanceController::class, 'index'])
+            ->name('attendance.index');
+
+        Route::get('/attendance/{student}/edit', [AttendanceController::class, 'edit'])
+            ->name('attendance.edit');
+
+        Route::put('/attendance/{student}', [AttendanceController::class, 'update'])
+            ->name('attendance.update');
+
+        // Progress
+        Route::get('/progress', [ProgressController::class, 'index'])->name('progress.index');
+        Route::get('/progress/create', [ProgressController::class, 'create'])->name('progress.create');
+        Route::post('/progress', [ProgressController::class, 'store'])->name('progress.store');
+
+        Route::get('/progress/{progress}', [ProgressController::class, 'show'])
+            ->whereNumber('progress')
+            ->name('progress.show');
+
+        Route::get('/progress/{progress}/edit', [ProgressController::class, 'edit'])
+            ->whereNumber('progress')
+            ->name('progress.edit');
+
+        Route::put('/progress/{progress}', [ProgressController::class, 'update'])
+            ->whereNumber('progress')
+            ->name('progress.update');
+
+        Route::get('/profile', [InstructorProfileController::class, 'index'])
+            ->name('profile.index');
+        Route::patch('/profile', [InstructorProfileController::class, 'update'])
+            ->name('profile.update');
     });
 
 });

@@ -38,7 +38,7 @@ export default defineConfig({
                 'resources/js/admin-pages/instructor.js',
                 'resources/js/admin-pages/schedule.js',
                 
-                'resources/js/admin-pages/ReportsChart.js',
+                'resources/js/admin-pages/reports-chart.js',
 
                 'resources/js/student-instructor.js',
             ],

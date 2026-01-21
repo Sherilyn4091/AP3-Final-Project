@@ -1,6 +1,5 @@
 /**
  * ============================================================================
- * MAIN JAVASCRIPT FILE
  * \resources\js\script.js
  * ============================================================================
  */
@@ -752,4 +751,76 @@ window.copyPassword = function() {
     } catch (err) {
         alert('Copy failed. Please select and copy manually.');
     }
+}
+
+window.openAccountModal = function() {
+    document.getElementById('account-modal').classList.remove('hidden');
+    document.getElementById('account-modal').classList.add('flex');
+}
+
+window.closeAccountModal = function() {
+    document.getElementById('account-modal').classList.add('hidden');
+    document.getElementById('account-modal').classList.remove('flex');
+    document.getElementById('password-form').reset();
+}
+
+/**
+ * ============================================================================
+ * CHANGE PASSWORD FUNCTION - FIXED VERSION
+ * Replace the existing window.changePassword function (around line 680-730)
+ * ============================================================================
+ */
+
+window.changePassword = async function(e) {
+    e.preventDefault();
+    e.stopPropagation(); // Prevent form from submitting traditionally
+    
+    const currentPass = document.getElementById('current-password').value;
+    const newPass = document.getElementById('new-password').value;
+    const confirmPass = document.getElementById('confirm-password').value;
+    
+    // Client-side validation
+    if (newPass !== confirmPass) {
+        alert('New password and confirm password do not match');
+        return false;
+    }
+    
+    if (newPass.length < 8) {
+        alert('New password must be at least 8 characters');
+        return false;
+    }
+    
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+    
+    try {
+        const response = await fetch('/admin/change-password', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ 
+                current_password: currentPass,
+                password: newPass 
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok || !data.success) {
+            alert(data.message || 'Failed to change password');
+            return false;
+        }
+        
+        alert('Password changed successfully!');
+        closeAccountModal();
+        window.location.reload();
+        
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+    }
+    
+    return false; // Prevent any default form submission
 }

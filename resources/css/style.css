@@ -385,3 +385,8 @@
     align-items: center;
     justify-content: center;
 }
+
+/* Force hide Recharts legend */
+#instrument-popularity-chart .recharts-legend-wrapper {
+    display: none !important;
+}

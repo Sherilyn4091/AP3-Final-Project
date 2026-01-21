@@ -24,10 +24,19 @@
     
     {{-- Page Header --}}
     <header class="bg-white shadow-sm p-6 lg:p-8">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
                 <h1 class="text-2xl lg:text-3xl font-bold text-primary-dark">Welcome, Super Admin</h1>
                 <p class="text-secondary-blue mt-1">{{ now()->format('l, F j, Y') }}</p>
+            </div>
+            <div>
+                <button onclick="openAccountModal()" class="btn-secondary px-4 py-2 text-sm whitespace-nowrap">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    Account Settings
+                </button>
             </div>
         </div>
     </header>
@@ -35,9 +44,9 @@
     <div class="p-4 lg:p-8">
         
         {{-- ============================================================================
-            TOP ROW: USER STATISTICS CARDS
+            TOP ROW: USER STATISTICS CARDS - Adjusted for better alignment
             ============================================================================ --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
             
             {{-- Total Users Card --}}
             <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
@@ -84,27 +93,12 @@
                     </div>
                 </div>
             </div>
-
-            {{-- Total Staff Card --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Total Staff</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">{{ number_format($totalStaff) }}</p>
-                    </div>
-                    <div class="p-3 bg-secondary-blue bg-opacity-10 rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 text-secondary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
         </div>
 
         {{-- ============================================================================
-            SECOND ROW: TODAY'S ACTIVITY & ALERTS
+            SECOND ROW: TODAY'S ACTIVITY & ALERTS - Adjusted for better alignment
             ============================================================================ --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
             
             {{-- Today's Enrollments --}}
             <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
@@ -171,7 +165,7 @@
             CHARTS SECTION - Live Data Visualizations (React/JS Mount Points)
             These empty divs are targets for JavaScript chart libraries (Chart.js, Recharts, etc.)
             ============================================================================ --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
             
             {{-- Enrollment Trend Chart (Line Chart) --}}
             <div class="card p-4 lg:p-6">
@@ -222,7 +216,7 @@
         {{-- ============================================================================
             TODAY'S ACTIVITY PANEL
             ============================================================================ --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6 mb-6 lg:mb-8">
+        <div class="grid grid-cols-1 gap-3 lg:gap-4 mb-4 lg:mb-6">
             
             {{-- Today's Schedule --}}
             <div class="card p-4 lg:p-6">
@@ -280,61 +274,6 @@
                     </table>
                 </div>
             </div>
-
-            {{-- Today's Bookings --}}
-            <div class="card p-4 lg:p-6">
-                <h3 class="text-base lg:text-lg font-semibold text-secondary-blue mb-4 flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                    Today's Bookings
-                </h3>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-accent-yellow bg-opacity-20 text-xs uppercase">
-                            <tr>
-                                <th class="px-3 py-2">Time</th>
-                                <th class="px-3 py-2 hidden sm:table-cell">Room</th>
-                                <th class="px-3 py-2">Customer</th>
-                                <th class="px-3 py-2">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-xs lg:text-sm">
-                            @forelse ($todaysBookings as $booking)
-                                <tr class="border-b hover:bg-accent-yellow hover:bg-opacity-10 transition-colors">
-                                    <td class="px-3 py-3 font-medium whitespace-nowrap">
-                                        {{ \Carbon\Carbon::parse($booking->start_time)->format('g:i A') }} - 
-                                        {{ \Carbon\Carbon::parse($booking->end_time)->format('g:i A') }}
-                                    </td>
-                                    <td class="px-3 py-3 hidden sm:table-cell">{{ $booking->room_number }}</td>
-                                    <td class="px-3 py-3">{{ $booking->customer }}</td>
-                                    <td class="px-3 py-3">
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium
-                                            @if($booking->status === 'confirmed') bg-green-100 text-green-800
-                                            @elseif($booking->status === 'pending') bg-yellow-100 text-yellow-800
-                                            @elseif($booking->status === 'cancelled') bg-red-100 text-red-800
-                                            @elseif($booking->status === 'completed') bg-blue-100 text-blue-800
-                                            @else bg-gray-100 text-gray-800
-                                            @endif">
-                                            {{ ucfirst($booking->status) }}
-                                        </span>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="4" class="px-3 py-8 text-center text-secondary-blue">
-                                        <svg class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                        </svg>
-                                        <p class="font-medium">No bookings for today</p>
-                                        <p class="text-xs mt-1 opacity-70">Room bookings will appear here when available</p>
-                                    </td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-            </div>
         </div>
 
         {{-- ============================================================================
@@ -347,55 +286,19 @@
                 </svg>
                 Recent Activity
             </h3>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
-                
-                {{-- Recent Enrollments --}}
-                <div class="border-l-4 border-forest-green pl-4">
-                    <h4 class="font-semibold text-primary-dark mb-3 text-sm">Recent Enrollments</h4>
-                    <div class="space-y-2">
-                        @forelse ($recentEnrollments as $enrollment)
-                            <div class="text-xs lg:text-sm p-2 bg-accent-yellow bg-opacity-10 rounded">
-                                <p class="font-medium text-primary-dark">{{ $enrollment->student_name }}</p>
-                                <p class="text-secondary-blue text-xs">ID: {{ $enrollment->enrollment_id }}</p>
-                                <p class="text-secondary-blue text-xs">{{ \Carbon\Carbon::parse($enrollment->created_at)->diffForHumans() }}</p>
-                            </div>
-                        @empty
-                            <p class="text-xs text-secondary-blue italic">No recent enrollments</p>
-                        @endforelse
+            {{-- Recent Enrollments --}}
+            <div class="border-l-4 border-forest-green pl-4">
+                <h4 class="font-semibold text-primary-dark mb-3 text-sm">Recent Enrollments</h4>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                    @forelse ($recentEnrollments as $enrollment)
+                    <div class="text-xs p-2 bg-accent-yellow bg-opacity-10 rounded">
+                        <p class="font-medium text-primary-dark">{{ $enrollment->student_name }}</p>
+                        <p class="text-secondary-blue text-xs">ID: {{ $enrollment->enrollment_id }}</p>
+                        <p class="text-secondary-blue text-xs">{{ \Carbon\Carbon::parse($enrollment->created_at)->diffForHumans() }}</p>
                     </div>
-                </div>
-
-                {{-- Recent Payments --}}
-                <div class="border-l-4 border-golden-yellow pl-4">
-                    <h4 class="font-semibold text-primary-dark mb-3 text-sm">Recent Payments</h4>
-                    <div class="space-y-2">
-                        @forelse ($recentPayments as $payment)
-                            <div class="text-xs lg:text-sm p-2 bg-accent-yellow bg-opacity-10 rounded">
-                                <p class="font-medium text-primary-dark">{{ $payment->student_name }}</p>
-                                <p class="text-secondary-blue text-xs">₱{{ number_format($payment->amount, 2) }} - {{ $payment->method_name }}</p>
-                                <p class="text-secondary-blue text-xs">{{ \Carbon\Carbon::parse($payment->created_at)->diffForHumans() }}</p>
-                            </div>
-                        @empty
-                            <p class="text-xs text-secondary-blue italic">No recent payments</p>
-                        @endforelse
-                    </div>
-                </div>
-
-                {{-- Recent Reports --}}
-                <div class="border-l-4 border-warm-coral pl-4">
-                    <h4 class="font-semibold text-primary-dark mb-3 text-sm">Recent Reports</h4>
-                    <div class="space-y-2">
-                        @forelse ($recentReports as $report)
-                            <div class="text-xs lg:text-sm p-2 bg-accent-yellow bg-opacity-10 rounded">
-                                <p class="font-medium text-primary-dark">{{ $report->report_title }}</p>
-                                <p class="text-secondary-blue text-xs">Type: {{ ucfirst($report->report_type) }}</p>
-                                <p class="text-secondary-blue text-xs">{{ \Carbon\Carbon::parse($report->generated_at)->diffForHumans() }}</p>
-                            </div>
-                        @empty
-                            <p class="text-xs text-secondary-blue italic">No recent reports</p>
-                        @endforelse
-                    </div>
+                    @empty
+                        <p class="text-xs text-secondary-blue italic">No recent enrollments</p>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -452,14 +355,6 @@
                     View Reports
                 </a>
 
-                {{-- Financial Reports Button --}}
-                <a href="{{ route('admin.reports.financial') }}" class="btn-secondary py-3 text-center text-sm hover:scale-105 transition-transform">
-                    <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Financial Reports
-                </a>
-
                 {{-- Inventory Dashboard Button --}}
                 <a href="{{ route('admin.inventory.index') }}" class="btn-secondary py-3 text-center text-sm hover:scale-105 transition-transform">
                     <svg class="w-5 h-5 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,6 +384,31 @@
     </footer>
 
 </main>
+
+{{-- Account Settings Modal --}}
+<div id="account-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-4 max-w-sm w-full mx-4">
+        <h3 class="text-base font-bold text-primary-dark mb-3">Change Password</h3>
+        <form id="password-form" onsubmit="event.preventDefault(); changePassword(event); return false;">
+            <div class="mb-3">
+                <label class="block text-xs font-medium text-gray-700 mb-1">Current Password</label>
+                <input type="password" id="current-password" name="current_password" required class="input-field text-sm py-1.5">
+            </div>
+            <div class="mb-3">
+                <label class="block text-xs font-medium text-gray-700 mb-1">New Password</label>
+                <input type="password" id="new-password" name="password" required class="input-field text-sm py-1.5" minlength="8">
+            </div>
+            <div class="mb-3">
+                <label class="block text-xs font-medium text-gray-700 mb-1">Confirm Password</label>
+                <input type="password" id="confirm-password" name="password_confirmation" required class="input-field text-sm py-1.5">
+            </div>
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary flex-1 text-sm py-1.5">Save</button>
+                <button type="button" onclick="closeAccountModal()" class="btn-secondary flex-1 text-sm py-1.5">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 </body>
 </html>

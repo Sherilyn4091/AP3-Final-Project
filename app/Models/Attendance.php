@@ -15,8 +15,6 @@ class Attendance extends Model
         'user_id',
         'student_id',
         'instructor_id',
-        'sales_staff_id',
-        'all_around_staff_id',
         'attendance_date',
         'attendance_status',
         'check_in_time',
@@ -25,8 +23,8 @@ class Attendance extends Model
     
     protected $casts = [
         'attendance_date' => 'date',
-        'check_in_time' => 'datetime',
-        'check_out_time' => 'datetime',
+        'check_in_time' => 'datetime:H:i:s',
+        'check_out_time' => 'datetime:H:i:s',
     ];
     
     // Relationships
@@ -48,15 +46,5 @@ class Attendance extends Model
     public function instructor()
     {
         return $this->belongsTo(Instructor::class, 'instructor_id', 'instructor_id');
-    }
-    
-    public function salesStaff()
-    {
-        return $this->belongsTo(SalesStaff::class, 'sales_staff_id', 'sales_staff_id');
-    }
-    
-    public function allAroundStaff()
-    {
-        return $this->belongsTo(AllAroundStaff::class, 'all_around_staff_id', 'all_around_staff_id');
     }
 }

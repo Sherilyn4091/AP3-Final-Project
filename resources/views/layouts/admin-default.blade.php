@@ -11,7 +11,7 @@
         'resources/css/app.css',
         'resources/js/app.js',           // ← should contain Alpine + other global JS
         'resources/js/admin-pages.js',
-        'resources/js/charts/ReportsChart.js'    // ← your custom admin scripts
+        'resources/js/admin-pages/reports-chart.js'    // ← your custom admin scripts
     ])
 
     <!-- Livewire styles – only once -->

@@ -113,4 +113,12 @@ class Student extends Model
     {
         return trim("{$this->first_name} {$this->middle_name} {$this->last_name} {$this->suffix}");
     }
+
+    // Get the latest enrollment row for quick dashboard/progress display
+    public function latestEnrollment()
+    {
+        return $this->hasOne(Enrollment::class, 'student_id', 'student_id')
+            ->latest('enrollment_date');
+    }
+
 }

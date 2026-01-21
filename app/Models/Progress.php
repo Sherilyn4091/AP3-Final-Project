@@ -8,6 +8,7 @@ class Progress extends Model
 {
     protected $table = 'progress';
     protected $primaryKey = 'progress_id';
+    public $timestamps = true;
     
     protected $fillable = [
         'student_id',

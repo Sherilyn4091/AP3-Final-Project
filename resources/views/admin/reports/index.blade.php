@@ -102,6 +102,6 @@
 </script>
 
 {{-- 3) Load your external JS (Vite) --}}
-@vite('resources/js/charts/ReportsChart.js')
+@vite('resources/js/admin-pages/reports-chart.js')
 
 @endsection

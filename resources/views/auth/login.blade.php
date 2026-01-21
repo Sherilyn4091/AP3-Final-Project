@@ -285,7 +285,7 @@
                     {{-- Email Confirmation --}}
                     <div class="bg-[#FFF6E0] border-l-4 border-[#C2922F] p-3 rounded-r-lg mb-4">
                         <p class="text-xs text-[#272829]">
-                            <span class="font-semibold">Sent to:</span> 
+                            <span class="font-semibold">Confirmed Email: </span> 
                             <span id="userEmail" class="text-[#61677A] font-mono"></span>
                         </p>
                     </div>
