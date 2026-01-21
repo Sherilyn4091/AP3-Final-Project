@@ -1,4 +1,4 @@
-// resources/js/admin/reports-charts.js
+// resources/js/admin-pages/ReportsChart.js
 
 (function () {
     // Make sure Chart.js is loaded
