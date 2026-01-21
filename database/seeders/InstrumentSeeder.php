@@ -1,12 +1,8 @@
 <?php
-
 // database/seeders/InstrumentSeeder.php
-
 namespace Database\Seeders;
-
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-
 class InstrumentSeeder extends Seeder
 {
     public function run(): void
@@ -69,13 +65,15 @@ class InstrumentSeeder extends Seeder
                 'is_active' => true
             ],
         ];
-
+        
         foreach ($instruments as $instrument) {
-            if (!DB::table('instrument')->where('instrument_name', $instrument['instrument_name'])->exists()) {
-                $instrument['created_at'] = now();
-                $instrument['updated_at'] = now();
-                DB::table('instrument')->insert($instrument);
-            }
+            $instrument['is_system'] = (int) $instrument['is_system'];
+            $instrument['is_active'] = (int) $instrument['is_active'];
+            
+            \App\Models\Instrument::firstOrCreate(
+                ['instrument_name' => $instrument['instrument_name']],
+                $instrument
+            );
         }
     }
 }

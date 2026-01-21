@@ -319,22 +319,20 @@ class StudentController extends Controller
         // ====================================================================
         // TAB 7: Payment History
         // ====================================================================
-        $payments = DB::table('payment as p')
-            ->leftJoin('payment_method as pm', 'p.payment_method_id', '=', 'pm.method_id')
-            ->leftJoin('payment_status as ps', 'p.payment_status_id', '=', 'ps.status_id')
-            ->leftJoin('enrollment as e', 'p.enrollment_id', '=', 'e.enrollment_id')
-            ->where('p.student_id', $id)
+        // Get payment info from enrollment table instead
+        $payments = DB::table('enrollment as e')
+            ->leftJoin('payment_method as pm', 'e.payment_method_id', '=', 'pm.method_id')
+            ->where('e.student_id', $id)
+            ->where('e.amount_paid', '>', 0)
             ->select(
-                'p.payment_id',
-                'p.payment_date',
-                'p.receipt_number',
-                'p.amount',
-                'pm.method_name',
-                'ps.status_name as payment_status',
                 'e.enrollment_id',
-                'p.booking_id'
+                'e.enrollment_date as payment_date',
+                'e.enrollment_id as receipt_number',
+                'e.amount_paid as amount',
+                'pm.method_name',
+                'e.payment_status'
             )
-            ->orderBy('p.payment_date', 'desc')
+            ->orderBy('e.enrollment_date', 'desc')
             ->get();
 
         // Payment summary

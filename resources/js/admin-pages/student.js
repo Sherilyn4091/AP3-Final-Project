@@ -223,19 +223,19 @@ function buildTabContent(student, data) {
             <div class="mb-6">
                 <h3 class="text-base md:text-lg font-bold text-primary-dark mb-4">Attendance statistics</h3>
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-                    <div class="bg-gradient-to-br from-secondary-blue to-primary-dark text-white p-3 md:p-4 rounded-lg text-center">
+                    <div class="bg-secondary-blue text-white p-3 md:p-4 rounded-lg text-center">
                         <p class="text-xl md:text-3xl font-bold">${data.attendanceStats?.total_lessons || 0}</p>
                         <p class="text-xs md:text-sm opacity-90">Total lessons</p>
                     </div>
-                    <div class="bg-gradient-to-br from-forest-green to-forest-green-dark text-white p-3 md:p-4 rounded-lg text-center">
+                    <div class="bg-forest-green text-white p-3 md:p-4 rounded-lg text-center">
                         <p class="text-xl md:text-3xl font-bold">${data.attendanceStats?.present_count || 0}</p>
                         <p class="text-xs md:text-sm opacity-90">Present</p>
                     </div>
-                    <div class="bg-gradient-to-br from-warm-coral to-warm-coral-dark text-white p-3 md:p-4 rounded-lg text-center">
+                    <div class="bg-warm-coral text-white p-3 md:p-4 rounded-lg text-center">
                         <p class="text-xl md:text-3xl font-bold">${data.attendanceStats?.absent_count || 0}</p>
                         <p class="text-xs md:text-sm opacity-90">Absent</p>
                     </div>
-                    <div class="bg-gradient-to-br from-golden-yellow to-golden-yellow-dark text-white p-3 md:p-4 rounded-lg text-center">
+                    <div class="bg-golden-yellow text-white p-3 md:p-4 rounded-lg text-center">
                         <p class="text-xl md:text-3xl font-bold">${data.attendanceStats?.attendance_rate || 0}%</p>
                         <p class="text-xs md:text-sm opacity-90">Rate</p>
                     </div>
@@ -274,22 +274,11 @@ function buildTabContent(student, data) {
                         </div>
                     `).join('')}
                 </div>
-                <button onclick="loadAllProgress(${student.student_id})" class="w-full mt-4 bg-secondary-blue text-white py-2 rounded-lg hover:bg-secondary-blue-dark text-sm md:text-base">View all progress</button>
             ` : '<p class="text-gray-500 text-center py-8 text-sm">No progress reports yet</p>'}
         </div>
 
         <!-- Payments Tab -->
         <div id="tab-payments" class="tab-content hidden">
-            <div class="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-gradient-to-br from-forest-green to-forest-green-dark text-white p-3 md:p-4 rounded-lg">
-                    <p class="text-xl md:text-2xl font-bold">₱${Number(data.paymentSummary?.total_paid || 0).toLocaleString()}</p>
-                    <p class="text-xs md:text-sm opacity-90">Total paid</p>
-                </div>
-                <div class="bg-gradient-to-br from-warm-coral to-warm-coral-dark text-white p-3 md:p-4 rounded-lg">
-                    <p class="text-xl md:text-2xl font-bold">₱${Number(data.outstandingBalance || 0).toLocaleString()}</p>
-                    <p class="text-xs md:text-sm opacity-90">Outstanding</p>
-                </div>
-            </div>
             
             <h3 class="text-base md:text-lg font-bold text-primary-dark mb-4">Payment history</h3>
             ${data.payments && data.payments.length > 0 ? `
@@ -301,13 +290,9 @@ function buildTabContent(student, data) {
                                     <p class="font-semibold text-sm md:text-base">₱${Number(pay.amount).toLocaleString()}</p>
                                     <p class="text-xs md:text-sm text-gray-600">${new Date(pay.payment_date).toLocaleDateString()}</p>
                                     <p class="text-xs text-gray-500">Receipt: ${pay.receipt_number || 'N/A'}</p>
-                                    <p class="text-xs text-gray-500">Method: ${pay.method_name}</p>
+                                    <p class="text-xs text-gray-500">Method: ${pay.method_name || 'N/A'}</p>
+                                    <p class="text-xs text-gray-500">Status: ${pay.payment_status || 'N/A'}</p>
                                 </div>
-                                <span class="px-2 md:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                                    pay.payment_status === 'Paid' ? 'bg-forest-green text-white' :
-                                    pay.payment_status === 'Pending' ? 'bg-golden-yellow text-white' :
-                                    'bg-warm-coral text-white'
-                                }">${pay.payment_status}</span>
                             </div>
                         </div>
                     `).join('')}
