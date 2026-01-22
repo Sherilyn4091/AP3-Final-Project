@@ -36,7 +36,7 @@
         <!-- Action Buttons -->
         <div class="flex flex-col sm:flex-row gap-6 justify-center animate-fade-in">
             <a href="{{ route('login') }}" class="btn-primary px-12 py-4 text-lg">Log In</a>
-            <a href="{{ route('register') }}" class="btn-secondary px-12 py-4 text-lg">Register</a>
+            <a href="{{ route('register.student.form') }}" class="btn-secondary px-12 py-4 text-lg">Register</a>
         </div>
 
         <!-- Footer Note -->

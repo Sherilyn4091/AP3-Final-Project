@@ -92,52 +92,7 @@ Route::middleware('auth')->group(function () {
         ->name('logout');
 
     // Role-Specific Dashboard Routes
-    Route::get('/student/dashboard', function () {
-        $userId = Auth::id();
-        
-        // Get student record
-        $student = DB::table('student')->where('user_id', $userId)->first();
-        
-        if (!$student) {
-            abort(404, 'Student record not found');
-        }
-        
-        // Get current enrollment
-        $currentEnrollment = DB::table('enrollment')
-            ->where('student_id', $student->student_id)
-            ->where('status', 'active')
-            ->first();
-        
-        // Calculate progress percentage
-        $progressPercentage = 0;
-        if ($currentEnrollment && $currentEnrollment->total_sessions > 0) {
-            $progressPercentage = round(($currentEnrollment->completed_sessions / $currentEnrollment->total_sessions) * 100);
-        }
-        
-        // Get next lesson
-        $nextLesson = DB::table('schedule')
-            ->where('student_id', $student->student_id)
-            ->where('schedule_date', '>=', now()->toDateString())
-            ->where('status', 'scheduled')
-            ->orderBy('schedule_date')
-            ->orderBy('start_time')
-            ->first();
-        
-        // Get recent progress
-        $recentProgress = DB::table('progress')
-            ->where('student_id', $student->student_id)
-            ->orderBy('progress_date', 'desc')
-            ->limit(6)
-            ->get();
-        
-        return view('dashboards.student', compact(
-            'student',
-            'currentEnrollment',
-            'progressPercentage',
-            'nextLesson',
-            'recentProgress'
-        ));
-    })->name('student.dashboard');
+    Route::get('/student/dashboard', [App\Http\Controllers\Student\DashboardController::class, 'index'])->name('student.dashboard');
 
     Route::get('/instructor/dashboard', function () {
         return view('dashboards.instructor');
@@ -450,11 +405,7 @@ Route::middleware('auth')->group(function () {
                 ->where('s.student_id', $student->student_id)
                 ->where('s.schedule_date', '>=', now()->toDateString())
                 ->where('s.status', 'scheduled')
-                ->select(
-                    's.*',
-                    'i.first_name as instructor_first_name',
-                    'i.last_name as instructor_last_name'
-                )
+                ->select('s.*', 'i.first_name as instructor_first_name', 'i.last_name as instructor_last_name')
                 ->orderBy('s.schedule_date')
                 ->orderBy('s.start_time')
                 ->first();
@@ -466,32 +417,27 @@ Route::middleware('auth')->group(function () {
                 ->limit(6)
                 ->get();
             
-            // Convert dates to Carbon instances for blade
+            // Convert dates to Carbon instances
             if ($currentEnrollment) {
                 $currentEnrollment->enrollment_date = $currentEnrollment->enrollment_date 
-                    ? \Carbon\Carbon::parse($currentEnrollment->enrollment_date) 
-                    : null;
+                    ? \Carbon\Carbon::parse($currentEnrollment->enrollment_date) : null;
             }
             
             if ($nextLesson) {
                 $nextLesson->schedule_date = \Carbon\Carbon::parse($nextLesson->schedule_date);
                 $nextLesson->start_time = \Carbon\Carbon::parse($nextLesson->start_time);
                 $nextLesson->end_time = \Carbon\Carbon::parse($nextLesson->end_time);
-                
-                // Create instructor object for blade compatibility
                 $nextLesson->instructor = (object)[
                     'first_name' => $nextLesson->instructor_first_name,
                     'last_name' => $nextLesson->instructor_last_name,
                 ];
             }
             
-            // Convert progress dates
             $recentProgress = $recentProgress->map(function($p) {
                 $p->progress_date = \Carbon\Carbon::parse($p->progress_date);
                 return $p;
             });
             
-            // Create lesson session object if enrollment exists
             if ($currentEnrollment) {
                 $currentEnrollment->lessonSession = (object)[
                     'session_count' => $currentEnrollment->session_count,
@@ -500,22 +446,28 @@ Route::middleware('auth')->group(function () {
                 ];
             }
             
-            return view('dashboards.student', compact(
-                'student',
-                'currentEnrollment',
-                'progressPercentage',
-                'nextLesson',
-                'recentProgress'
-            ));
+            return view('dashboards.student', compact('student', 'currentEnrollment', 'progressPercentage', 'nextLesson', 'recentProgress'));
         })->name('dashboard');
         
-        // Placeholder routes for sidebar links
-        Route::get('/schedule', fn() => view('student.schedule'))->name('schedule');
-        Route::get('/lessons', fn() => view('student.lessons'))->name('lessons');
-        Route::get('/progress', fn() => view('student.progress'))->name('progress');
-        Route::get('/payments', fn() => view('student.payments'))->name('payments');
-        Route::get('/profile', fn() => view('student.profile'))->name('profile');
-        Route::get('/enrollments', fn() => view('student.enrollments'))->name('enrollments');
+        // Schedule, Progress, Profile routes
+        Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('schedule');
+        Route::get('/progress', [App\Http\Controllers\Student\ProgressController::class, 'index'])->name('progress');
+        Route::get('/profile', [App\Http\Controllers\Student\ProfileController::class, 'index'])->name('profile');
+        Route::patch('/profile', [App\Http\Controllers\Student\ProfileController::class, 'update'])->name('profile.update');
+
+        // Enrollment routes
+        Route::get('/packages', [App\Http\Controllers\Student\EnrollmentController::class, 'packages'])->name('packages');
+        Route::get('/enroll/{sessionId}', [App\Http\Controllers\Student\EnrollmentController::class, 'enrollmentForm'])->name('enroll.form');
+        Route::get('/enrollments', [App\Http\Controllers\Student\EnrollmentController::class, 'index'])->name('enrollments');
+
+        // Process enrollment form
+        Route::post('/enroll/process', [App\Http\Controllers\Student\EnrollmentController::class, 'processEnrollment'])->name('enroll.process');
+
+        // API: Get instructors by instrument
+        Route::get('/api/instructors-by-instrument/{instrumentId}', [App\Http\Controllers\Student\EnrollmentController::class, 'getInstructorsByInstrument']);
+
+        Route::post('/password/change', [App\Http\Controllers\Student\ProfileController::class, 'changePassword'])
+            ->name('password.change');
     });
     
 
