@@ -55,7 +55,7 @@ Route::middleware('guest')->group(function () {
     Route::post('/forgot-password', [LoginController::class, 'resetPassword']);
 
     // Role Selection Page
-    Route::get('/register', function () {return view('auth.register.select-role');})->name('register');
+    Route::get('/register', [RegistrationController::class, 'showStudentRegistrationForm'])->name('register');
 
     // Student Registration
     Route::get('/register/student', [RegistrationController::class, 'showStudentRegistrationForm'])
