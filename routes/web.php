@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\GenreController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentStatusController;
 use App\Http\Controllers\Api\ChartController;
+use App\Http\Controllers\ReviewController;
 
 
 use App\Http\Controllers\Admin\ReportsController;
@@ -80,6 +81,12 @@ Route::middleware('guest')->group(function () {
         ->name('account.create.process');
 
 }); // End of guest middleware group
+
+// ============================================================================
+// REVIEW ROUTES (Public - No Auth Required)
+// ============================================================================
+Route::get('/reviews', [ReviewController::class, 'index'])->name('reviews.index');
+Route::post('/reviews', [ReviewController::class, 'store'])->name('reviews.store');
 
 // ============================================================================
 // AUTHENTICATED ROUTES
