@@ -304,7 +304,7 @@ class StudentSeeder extends Seeder
                 'special_needs' => $selectedSpecialNeeds,
 
                 // Enrollment Information
-                'enrollment_date' => $enrollmentDateDisplay,
+                'enrollment_date' => $enrollmentDateObj->format('Y-m-d'),
                 'expected_completion_date' => $expectedCompletionDateDisplay,
                 'student_status_id' => $faker->randomElement($studentStatusIds),
                 'preferred_genre_id' => $faker->randomElement($genreIds),

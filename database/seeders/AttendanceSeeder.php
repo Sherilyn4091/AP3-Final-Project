@@ -81,8 +81,6 @@ class AttendanceSeeder extends Seeder
                 'user_id' => $schedule->user_id,
                 'student_id' => $schedule->student_id,
                 'instructor_id' => null, // Not tracking instructor attendance
-                'sales_staff_id' => null,
-                'all_around_staff_id' => null,
                 'attendance_date' => $schedule->schedule_date,
                 'attendance_status' => $attendanceStatus,
                 'check_in_time' => $checkInTime,

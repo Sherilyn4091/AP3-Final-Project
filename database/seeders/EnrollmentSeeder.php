@@ -8,13 +8,11 @@ use Carbon\Carbon;
 
 /**
  * ============================================================================
- * ENROLLMENT SEEDER
+ * ENROLLMENT SEEDER - FIXED FOR AUTO-ENROLLMENT-DATE TRIGGER
  * ============================================================================
- * Generates 30 enrollments with:
- * - Auto-incremented enrollment_id based on last existing ID
- * - Proper FK relationships (student, lesson_session, instructor, payment_method)
- * - Realistic payment statuses and dates
- * - Re-runnable without errors
+ * - REMOVED enrollment_date from INSERT (trigger handles it)
+ * - Uses student's actual enrollment_date via trigger
+ * - Proper FK relationships maintained
  * ============================================================================
  */
 class EnrollmentSeeder extends Seeder
@@ -25,7 +23,7 @@ class EnrollmentSeeder extends Seeder
         $studentIds = DB::table('student')->pluck('student_id')->toArray();
         $sessionIds = DB::table('lesson_session')->pluck('session_id')->toArray();
         $instructorIds = DB::table('instructor')->pluck('instructor_id')->toArray();
-        $paymentMethodIds = DB::table('payment_method')->pluck('method_id')->toArray();
+        $paymentMethodIds = DB::table('payment_methods')->pluck('method_id')->toArray();
 
         if (empty($studentIds)) {
             $this->command->error('No students found. Run StudentSeeder first.');
@@ -58,13 +56,16 @@ class EnrollmentSeeder extends Seeder
 
         $seq = $maxSeq ? (int)$maxSeq + 1 : 1;
 
-        $this->command->info("📚 Seeding {$count} enrollments starting from {$ym}-" . str_pad($seq, 7, '0', STR_PAD_LEFT) . "...");
+        $this->command->info("Seeding {$count} enrollments starting from {$ym}-" . str_pad($seq, 7, '0', STR_PAD_LEFT) . "...");
 
         for ($i = 0; $i < $count; $i++) {
             $studentId = $studentIds[array_rand($studentIds)];
             $sessionId = $sessionIds[array_rand($sessionIds)];
             $instructorId = $instructorIds[array_rand($instructorIds)];
-            $paymentMethodId = $paymentMethodIds[array_rand($paymentMethodIds)]; // Random payment method
+            $paymentMethodId = $paymentMethodIds[array_rand($paymentMethodIds)];
+
+            // Get student's enrollment_date (will be auto-set by trigger)
+            $student = DB::table('student')->where('student_id', $studentId)->first();
 
             // Get session package details
             $pkg = DB::table('lesson_session')
@@ -76,10 +77,10 @@ class EnrollmentSeeder extends Seeder
             $totalAmount = (float)$pkg->price;
 
             // Random completion progress
-            $completed = rand(0, min(3, $totalSessions)); // 0-3 sessions completed
+            $completed = rand(0, min(3, $totalSessions));
             $remaining = $totalSessions - $completed;
 
-            // Random payment status (75% paid, 25% pending/partial)
+            // Random payment status
             $rand = rand(1, 100);
             if ($rand <= 75) {
                 $paymentStatus = 'paid';
@@ -92,21 +93,21 @@ class EnrollmentSeeder extends Seeder
                 $amountPaid = 0.00;
             }
 
-            // Random dates
-            $enrollDate = Carbon::now()->subDays(rand(0, 60))->toDateString();
-            $startDate = Carbon::parse($enrollDate)->addDays(rand(1, 5))->toDateString();
+            // Calculate start/end dates based on student's enrollment_date
+            $startDate = Carbon::parse($student->enrollment_date)->addDays(rand(1, 5))->toDateString();
             $endDate = Carbon::parse($startDate)->addDays(rand(30, 90))->toDateString();
 
-            // Generate enrollment_id: YYYY-MM-0000001
+            // Generate enrollment_id
             $enrollmentId = $ym . '-' . str_pad((string)$seq, 7, '0', STR_PAD_LEFT);
             $seq++;
 
+            // REMOVED enrollment_date - trigger auto-sets it from student table
             DB::table('enrollment')->insert([
                 'enrollment_id' => $enrollmentId,
                 'student_id' => $studentId,
                 'session_id' => $sessionId,
                 'instructor_id' => $instructorId,
-                'enrollment_date' => $enrollDate,
+                // enrollment_date AUTO-SET by trigger from student.enrollment_date
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'total_sessions' => $totalSessions,
@@ -114,7 +115,7 @@ class EnrollmentSeeder extends Seeder
                 'remaining_sessions' => $remaining,
                 'status' => $remaining > 0 ? 'active' : 'completed',
                 'payment_status' => $paymentStatus,
-                'payment_method_id' => $paymentMethodId, // NEW: Added payment method
+                'payment_method_id' => $paymentMethodId,
                 'total_amount' => $totalAmount,
                 'amount_paid' => $amountPaid,
                 'notes' => 'Demo enrollment - seeded',
@@ -122,9 +123,8 @@ class EnrollmentSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            // Progress indicator
             if (($i + 1) % 10 === 0) {
-                $this->command->info("✓ Created " . ($i + 1) . " enrollments...");
+                $this->command->info("   ✓ Created " . ($i + 1) . " enrollments...");
             }
         }
 

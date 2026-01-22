@@ -63,16 +63,9 @@ class DatabaseSeeder extends Seeder
                                             // Referenced by: enrollment, schedule, payment, attendance
         ]);
 
-        // ========================================================================
-        // LEVEL 5: RELATIONSHIP TABLES
-        // Depend on: instructor, specialization
-        // ========================================================================
-        $this->call([
-            // InstructorSpecializationSeeder::class, // Already done in InstructorSeeder
-        ]);
 
         // ========================================================================
-        // LEVEL 6: INVENTORY
+        // LEVEL 5: INVENTORY
         // Depends on: supplier
         // ========================================================================
         $this->call([
@@ -102,7 +95,7 @@ class DatabaseSeeder extends Seeder
         // Depend on: enrollment, schedule, student
         // ========================================================================
         $this->call([
-            // PaymentSeeder::class,        // Depends on: student, enrollment, payment_method, payment_status
+            PaymentSeeder::class,        // Depends on: student, enrollment, payment_method, payment_status
             AttendanceSeeder::class,     // Depends on: schedule, student, instructor, user_account
             ProgressSeeder::class,       // Depends on: student, enrollment, instructor, schedule
         ]);
