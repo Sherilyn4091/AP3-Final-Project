@@ -40,12 +40,9 @@ class DashboardController extends Controller
     {
         $today = now()->format('Y-m-d');
 
-        // User Statistics (FIX: Use whereRaw for PostgreSQL boolean)
         $totalUsers = DB::table('user_account')->count();
         $activeStudents = DB::table('student')->whereRaw('is_active = TRUE')->count();
         $activeInstructors = DB::table('instructor')->whereRaw('is_active = TRUE')->count();
-        $totalStaff = DB::table('sales_staff')->whereRaw('is_active = TRUE')->count() +
-                    DB::table('all_around_staff')->whereRaw('is_active = TRUE')->count();
 
         // Today's Activity
         $todaysEnrollments = DB::table('enrollment')
@@ -129,7 +126,6 @@ class DashboardController extends Controller
             'totalUsers',
             'activeStudents',
             'activeInstructors',
-            'totalStaff',
             'todaysEnrollments',
             'todaysRevenue',
             'pendingPayments',
@@ -195,6 +191,7 @@ class DashboardController extends Controller
 
         return response()->json($data);
     }
+    
     public function getInstructorPerformance()
     {
         $data = DB::table('instructor')
