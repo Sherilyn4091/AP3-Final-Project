@@ -115,7 +115,7 @@ class EnrollmentController extends Controller
             ->get();
 
         // Get payment methods
-        $paymentMethods = DB::table('payment_method')
+        $paymentMethods = DB::table('payment_methods')
             ->where('is_active', true)
             ->get();
 

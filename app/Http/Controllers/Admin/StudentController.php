@@ -321,7 +321,7 @@ class StudentController extends Controller
         // ====================================================================
         // Get payment info from enrollment table instead
         $payments = DB::table('enrollment as e')
-            ->leftJoin('payment_method as pm', 'e.payment_method_id', '=', 'pm.method_id')
+            ->leftJoin('payment_methods as pm', 'e.payment_method_id', '=', 'pm.method_id')
             ->where('e.student_id', $id)
             ->where('e.amount_paid', '>', 0)
             ->select(

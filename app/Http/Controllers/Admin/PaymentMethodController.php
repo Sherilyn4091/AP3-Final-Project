@@ -16,7 +16,7 @@ class PaymentMethodController extends Controller
     // ============================================================================
     public function index(Request $request)
     {
-        $query = DB::table('payment_method as pm')
+        $query = DB::table('payment_methods as pm')
             ->select(
                 'pm.*',
                 DB::raw('(SELECT COUNT(*) FROM payment WHERE payment_method_id = pm.method_id) as usage_count')
@@ -46,13 +46,13 @@ class PaymentMethodController extends Controller
 
         // Statistics
         $stats = [
-            'total' => DB::table('payment_method')->count(),
-            'active' => DB::table('payment_method')->whereRaw('is_active = TRUE')->count(),
-            'inactive' => DB::table('payment_method')->whereRaw('is_active = FALSE')->count(),
-            'most_used' => DB::table('payment_method')
+            'total' => DB::table('payment_methods')->count(),
+            'active' => DB::table('payment_methods')->whereRaw('is_active = TRUE')->count(),
+            'inactive' => DB::table('payment_methods')->whereRaw('is_active = FALSE')->count(),
+            'most_used' => DB::table('payment_methods')
                 ->select('method_name', DB::raw('COUNT(payment.payment_id) as count'))
-                ->leftJoin('payment', 'payment_method.method_id', '=', 'payment.payment_method_id')
-                ->groupBy('payment_method.method_name')
+                ->leftJoin('payment', 'payment_methods.method_id', '=', 'payment.payment_method_id')
+                ->groupBy('payment_methods.methods_name')
                 ->orderByDesc('count')
                 ->first(),
         ];
@@ -67,7 +67,7 @@ class PaymentMethodController extends Controller
     {
         // Validation - removed description field
         $validator = Validator::make($request->all(), [
-            'method_name' => 'required|string|max:50|unique:payment_method,method_name',
+            'method_name' => 'required|string|max:50|unique:payment_methods,method_name',
         ]);
 
         if ($validator->fails()) {
@@ -80,7 +80,7 @@ class PaymentMethodController extends Controller
         // Trim whitespace from method_name
         $methodName = trim($request->method_name);
 
-        DB::table('payment_method')->insert([
+        DB::table('payment_methods')->insert([
             'method_name' => $methodName,
             'is_active' => true,
             'created_at' => now(),
@@ -114,7 +114,7 @@ class PaymentMethodController extends Controller
     {
         // Validation - fixed to use correct column name and removed description
         $validator = Validator::make($request->all(), [
-            'method_name' => 'required|string|max:50|unique:payment_method,method_name,' . $id . ',method_id',
+            'method_name' => 'required|string|max:50|unique:payment_methods,method_name,' . $id . ',method_id',
         ]);
 
         if ($validator->fails()) {
@@ -172,7 +172,7 @@ class PaymentMethodController extends Controller
         }
 
         // Fixed: Toggle is_active instead of updating method_name
-        DB::table('payment_method')->where('method_id', $id)->update([
+        DB::table('payment_methods')->where('method_id', $id)->update([
             'is_active' => !$method->is_active,
             'updated_at' => now(),
         ]);

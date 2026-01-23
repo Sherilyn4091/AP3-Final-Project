@@ -15,7 +15,6 @@
     ])
 
     <!-- Livewire styles – only once -->
-    @livewireStyles
 </head>
 
 <body class="bg-gray-100 flex"> {{-- Gray background for the whole site --}}
