@@ -11,6 +11,7 @@ use App\Models\Enrollment;
 class EnrollmentController extends Controller
 {
     /**
+     * app/Http/Controllers/Student/EnrollmentController.php
      * Display available lesson packages for enrollment
      * Purpose: Browse lesson packages TO PURCHASE (Requirement #7)
      * Data Source: lesson_session table WHERE is_active = TRUE

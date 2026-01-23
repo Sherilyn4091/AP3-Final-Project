@@ -110,7 +110,7 @@ class ReportsController extends Controller
         ");
 
         // C) Revenue by payment method (paid only)
-        $revenueByMethod = DB::table('payment')
+       $revenueByMethod = DB::table('payment')
             ->join('payment_methods', 'payment.payment_method_id', '=', 'payment_methods.method_id')
             ->when($paidStatusId, fn ($q) => $q->where('payment.payment_status_id', $paidStatusId))
             ->selectRaw('payment_methods.method_name AS label, SUM(payment.amount) AS value')
@@ -249,7 +249,7 @@ class ReportsController extends Controller
     ");
 
     $revenueByMethod = DB::table('payment')
-        ->join('payment_method', 'payment.payment_method_id', '=', 'payment_methods.method_id')
+        ->join('payment_methods', 'payment.payment_method_id', '=', 'payment_methods.method_id')
         ->when($paidStatusId, fn ($q) => $q->where('payment.payment_status_id', $paidStatusId))
         ->selectRaw('payment_methods.method_name AS label, SUM(payment.amount) AS value')
         ->groupBy('payment_methods.method_name')
