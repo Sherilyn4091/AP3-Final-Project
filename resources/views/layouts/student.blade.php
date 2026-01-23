@@ -14,8 +14,8 @@
 
     <div class="flex h-screen">
         <aside id="sidebar"
-            class="w-64 bg-[#272829] border-r border-[#61677A]
-                flex flex-col h-screen flex-shrink-0
+            class="fixed lg:static inset-y-0 left-0 w-64 bg-[#272829] border-r border-[#61677A]
+                flex flex-col h-screen
                 transform -translate-x-full lg:translate-x-0
                 transition-transform duration-300
                 z-40">
