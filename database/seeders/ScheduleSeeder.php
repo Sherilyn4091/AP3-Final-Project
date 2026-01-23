@@ -8,232 +8,134 @@ use Carbon\Carbon;
 
 /**
  * ============================================================================
- * SCHEDULE SEEDER
+ * ATTENDANCE SEEDER (INTELLIGENT DATE FILTERING)
+ * database/seeders/AttendanceSeeder.php
  * ============================================================================
- * - Generates dates that EXACTLY match student's preferred_lesson_days
- * - Uses EXACT times from student's preferred_lesson_time
- * - Works with database trigger validation
+ * Generates 40 lesson attendance records with:
+ * - Only lesson-type attendance (student attendance for schedules)
+ * - ONLY PAST & TODAY schedules (no future dates)
+ * - Proper FK relationships (schedule, student, user_account)
+ * - Realistic attendance statuses based on schedule status
+ * - Auto check-in/check-out times
+ * - Re-runnable without errors or duplicates
  * ============================================================================
  */
-class ScheduleSeeder extends Seeder
+class AttendanceSeeder extends Seeder
 {
     public function run(): void
     {
-        // Fetch enrollments with student preferences
-        $enrollments = DB::table('enrollment')
-            ->join('student', 'enrollment.student_id', '=', 'student.student_id')
+        // Get today's date for filtering
+        $today = Carbon::today();
+
+        // Fetch ONLY past and today schedules (exclude future) WITH enrollment data
+        $schedules = DB::table('schedule as s')
+            ->join('student as st', 's.student_id', '=', 'st.student_id')
+            ->join('enrollment as e', 's.enrollment_id', '=', 'e.enrollment_id')
             ->select(
-                'enrollment.enrollment_id',
-                'enrollment.student_id',
-                'enrollment.instructor_id',
-                'student.preferred_lesson_days',
-                'student.preferred_lesson_time'
+                's.schedule_id', 
+                's.student_id', 
+                's.schedule_date', 
+                's.start_time', 
+                's.end_time', 
+                's.status', 
+                'st.user_id',
+                'e.enrollment_id',
+                'e.completed_sessions',
+                'e.total_sessions'
             )
+            ->whereNotNull('s.schedule_id')
+            ->where('s.schedule_date', '<=', $today) // ONLY past & today
+            ->orderBy('s.schedule_date') // Oldest first to match session order
             ->get();
 
-        if ($enrollments->isEmpty()) {
-            $this->command->error('❌ No enrollments found. Run EnrollmentSeeder first.');
+        if ($schedules->isEmpty()) {
+            $this->command->error('No past/today schedules found. Run ScheduleSeeder first or adjust schedule dates.');
             return;
         }
 
-        // Get or create rooms
-        $rooms = DB::table('room')->pluck('room_number')->toArray();
-        if (empty($rooms)) {
-            for ($i = 1; $i <= 5; $i++) {
-                DB::table('room')->insert([
-                    'room_number' => 'R' . str_pad($i, 2, '0', STR_PAD_LEFT),
-                    'room_name' => 'Practice Room ' . $i,
-                    'capacity' => rand(2, 6),
-                    'hourly_rate' => rand(200, 500),
-                    'is_active' => true,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            $rooms = DB::table('room')->pluck('room_number')->toArray();
+        // Get existing attendance schedule IDs to avoid duplicates
+        $existingScheduleIds = DB::table('attendance')
+            ->whereNotNull('schedule_id')
+            ->pluck('schedule_id')
+            ->toArray();
+
+        // Filter out schedules that already have attendance
+        $availableSchedules = $schedules->filter(function ($schedule) use ($existingScheduleIds) {
+            return !in_array($schedule->schedule_id, $existingScheduleIds);
+        });
+
+        if ($availableSchedules->isEmpty()) {
+            $this->command->warn('All past/today schedules already have attendance records. No new records created.');
+            return;
         }
 
-        $count = 50;
-        $this->command->info("📅 Seeding {$count} schedules with STRICT preference enforcement...");
+        $this->command->info("✓ Seeding attendance records (matching enrollment.completed_sessions)...");
 
-        // Day mapping
-        $dayMap = [
-            'Monday' => Carbon::MONDAY,
-            'Tuesday' => Carbon::TUESDAY,
-            'Wednesday' => Carbon::WEDNESDAY,
-            'Thursday' => Carbon::THURSDAY,
-            'Friday' => Carbon::FRIDAY,
-            'Saturday' => Carbon::SATURDAY,
-            'Sunday' => Carbon::SUNDAY,
-        ];
+        // Group schedules by enrollment_id to track per-enrollment progress
+        $schedulesByEnrollment = $availableSchedules->groupBy('enrollment_id');
 
         $created = 0;
-        $attempts = 0;
-        $maxAttempts = $count * 3; // Allow 3x attempts to handle conflicts
+        foreach ($schedulesByEnrollment as $enrollmentId => $enrollmentSchedules) {
+            $enrollment = $enrollmentSchedules->first();
+            $completedSessions = (int)$enrollment->completed_sessions;
 
-        while ($created < $count && $attempts < $maxAttempts) {
-            $attempts++;
-            
-            $enrollment = $enrollments->random();
-            $room = $rooms[array_rand($rooms)];
+            // Only create attendance for the FIRST N schedules matching completed_sessions
+            $schedulesToMark = $enrollmentSchedules->take($completedSessions);
 
-            // Parse preferred days
-            $preferredDaysRaw = $enrollment->preferred_lesson_days 
-                ? array_map('trim', explode(',', $enrollment->preferred_lesson_days))
-                : ['Monday', 'Wednesday', 'Friday'];
+            foreach ($schedulesToMark as $schedule) {
+            // Determine attendance status based on schedule status
+            $attendanceStatus = $this->mapScheduleToAttendance($schedule->status);
 
-            // Get random preferred day
-            $randomDay = $preferredDaysRaw[array_rand($preferredDaysRaw)];
-            $carbonDay = $dayMap[$randomDay] ?? Carbon::MONDAY;
+            // Generate check-in/check-out times only if present
+            $checkInTime = null;
+            $checkOutTime = null;
 
-            // Generate EXACT date matching preferred day (mix of past/future for progress tracking)
-            $weeksAhead = rand(-4, 8); // ← CHANGED: -4 to +8 weeks (mix past/future)
-            $baseDate = Carbon::now()->next($carbonDay)->addWeeks($weeksAhead);
-            $scheduleDate = $baseDate->toDateString();
-
-            // Parse EXACT preferred time
-            $timeSlot = $this->parsePreferredTime($enrollment->preferred_lesson_time);
-
-            // Determine status
-            $isPast = Carbon::parse($scheduleDate)->isPast();
-            if ($isPast) {
-                $status = $this->weightedRandom([
-                    'completed' => 70,
-                    'cancelled' => 20,
-                    'no_show' => 10,
-                ]);
-            } else {
-                $status = 'scheduled';
+            if ($attendanceStatus === 'present') {
+                $checkInTime = Carbon::parse($schedule->schedule_date . ' ' . $schedule->start_time)
+                    ->subMinutes(rand(0, 10)); // 0-10 mins early
+                $checkOutTime = Carbon::parse($schedule->schedule_date . ' ' . $schedule->end_time)
+                    ->addMinutes(rand(0, 5)); // 0-5 mins late
+            } elseif ($attendanceStatus === 'late') {
+                $checkInTime = Carbon::parse($schedule->schedule_date . ' ' . $schedule->start_time)
+                    ->addMinutes(rand(5, 20)); // 5-20 mins late
+                $checkOutTime = Carbon::parse($schedule->schedule_date . ' ' . $schedule->end_time);
             }
 
-            // Check for conflicts before inserting
-            $conflict = DB::table('schedule')
-                ->where('room_number', $room)
-                ->where('schedule_date', $scheduleDate)
-                ->where('start_time', $timeSlot['start'])
-                ->whereNotIn('status', ['cancelled', 'no_class', 'rescheduled'])
-                ->exists();
+            DB::table('attendance')->insert([
+                'attendance_type' => 'lesson',
+                'schedule_id' => $schedule->schedule_id,
+                'user_id' => $schedule->user_id,
+                'student_id' => $schedule->student_id,
+                'instructor_id' => null, // Not tracking instructor attendance
+                'attendance_date' => $schedule->schedule_date,
+                'attendance_status' => $attendanceStatus,
+                'check_in_time' => $checkInTime,
+                'check_out_time' => $checkOutTime,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-            if ($conflict) {
-                continue; // Skip this iteration, try again
-            }
+            $created++;
 
-            try {
-                DB::table('schedule')->insert([
-                    'enrollment_id' => $enrollment->enrollment_id,
-                    'student_id' => $enrollment->student_id,
-                    'instructor_id' => $enrollment->instructor_id,
-                    'room_number' => $room,
-                    'schedule_date' => $scheduleDate,
-                    'start_time' => $timeSlot['start'],
-                    'end_time' => $timeSlot['end'],
-                    'duration_minutes' => $timeSlot['duration'],
-                    'status' => $status,
-                    'lesson_topic' => $this->randomTopic(),
-                    'lesson_content' => $this->randomContent(),
-                    'notes' => rand(1, 10) > 7 ? 'Student requested extra practice time' : null,
-                    'cancellation_reason' => $status === 'cancelled' ? 'Student unavailable' : null,
-                    'cancelled_at' => $status === 'cancelled' ? now() : null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-
-                $created++;
-
-                if ($created % 10 === 0) {
-                    $this->command->info("✓ Created {$created} schedules...");
-                }
-            } catch (\Exception $e) {
-                // Trigger validation failed or other error - skip
-                $this->command->warn("⚠ Skipped schedule due to: " . $e->getMessage());
-                continue;
+            // Progress indicator
+            if ($created % 10 === 0) {
+                $this->command->info("✓ Created {$created} attendance records...");
             }
         }
 
-        if ($created < $count) {
-            $this->command->warn("⚠ Created only {$created}/{$count} schedules due to preference constraints");
-        } else {
-            $this->command->info("✅ Successfully seeded {$created} schedules with strict preferences!");
-        }
+        $this->command->info("✓ Successfully seeded {$created} lesson attendance records (past & today only)!");
     }
 
     /**
-     * Parse student's preferred_lesson_time (e.g., "2:00 PM - 3:30 PM")
+     * Map schedule status to attendance status
      */
-    private function parsePreferredTime(?string $preferredTime): array
+    private function mapScheduleToAttendance(string $scheduleStatus): string
     {
-        if (!$preferredTime || !str_contains($preferredTime, '-')) {
-            return [
-                'start' => '14:00:00',
-                'end' => '15:00:00',
-                'duration' => 60,
-            ];
-        }
-
-        $parts = explode('-', $preferredTime);
-        $startStr = trim($parts[0]);
-        $endStr = trim($parts[1]);
-
-        try {
-            $start = Carbon::createFromFormat('g:i A', $startStr);
-            $end = Carbon::createFromFormat('g:i A', $endStr);
-
-            return [
-                'start' => $start->format('H:i:s'),
-                'end' => $end->format('H:i:s'),
-                'duration' => $start->diffInMinutes($end),
-            ];
-        } catch (\Exception $e) {
-            return [
-                'start' => '14:00:00',
-                'end' => '15:00:00',
-                'duration' => 60,
-            ];
-        }
-    }
-
-    private function randomTopic(): string
-    {
-        $topics = [
-            'Scales and Arpeggios',
-            'Chord Progressions',
-            'Rhythm and Timing',
-            'Song Performance Practice',
-            'Music Theory Fundamentals',
-            'Sight Reading',
-            'Improvisation Techniques',
-            'Fingerstyle Techniques',
-            'Vocal Warm-ups and Breathing',
-            'Classical Pieces',
-        ];
-        return $topics[array_rand($topics)];
-    }
-
-    private function randomContent(): ?string
-    {
-        $contents = [
-            'Focused on major and minor scales in all keys',
-            'Practiced chord transitions and progressions',
-            'Worked on timing with metronome exercises',
-            'Prepared for upcoming recital performance',
-            'Introduced basic music notation and key signatures',
-            null,
-        ];
-        return $contents[array_rand($contents)];
-    }
-
-    private function weightedRandom(array $weights): string
-    {
-        $total = array_sum($weights);
-        $rand = rand(1, $total);
-        $cumulative = 0;
-
-        foreach ($weights as $key => $weight) {
-            $cumulative += $weight;
-            if ($rand <= $cumulative) {
-                return $key;
-            }
-        }
-        return array_key_first($weights);
+        return match ($scheduleStatus) {
+            'completed' => rand(1, 10) > 2 ? 'present' : 'late', // 80% present, 20% late
+            'no_show' => 'absent',
+            'cancelled' => 'excused',
+            default => 'present',
+        };
     }
 }

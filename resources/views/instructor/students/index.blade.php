@@ -121,12 +121,6 @@
                                   hover:bg-gray-700 transition text-sm">
                             View Details
                         </a>
-
-                        <button type="button"
-                                class="flex-1 py-2 bg-gray-200 text-gray-800 rounded-lg
-                                       hover:bg-gray-300 transition text-sm">
-                            Message
-                        </button>
                     </div>
                 </div>
             @endforeach

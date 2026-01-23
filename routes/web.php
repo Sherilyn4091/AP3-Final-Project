@@ -544,6 +544,8 @@ Route::middleware('auth')->group(function () {
             ->name('profile.index');
         Route::patch('/profile', [InstructorProfileController::class, 'update'])
             ->name('profile.update');
+        Route::post('/profile/password', [InstructorProfileController::class, 'changePassword'])
+            ->name('password.change');
     });
 
 });

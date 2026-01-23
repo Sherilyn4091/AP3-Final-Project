@@ -52,7 +52,7 @@ class PaymentMethodController extends Controller
             'most_used' => DB::table('payment_methods')
                 ->select('method_name', DB::raw('COUNT(payment.payment_id) as count'))
                 ->leftJoin('payment', 'payment_methods.method_id', '=', 'payment.payment_method_id')
-                ->groupBy('payment_methods.methods_name')
+                ->groupBy('payment_methods.method_name')
                 ->orderByDesc('count')
                 ->first(),
         ];
@@ -98,7 +98,7 @@ class PaymentMethodController extends Controller
     // ============================================================================
     public function edit($id)
     {
-        $method = DB::table('payment_method')->where('method_id', $id)->first();
+        $method = DB::table('payment_methods')->where('method_id', $id)->first();
         
         if (!$method) {
             return response()->json(['error' => 'Method not found'], 404);
@@ -127,7 +127,7 @@ class PaymentMethodController extends Controller
         // Trim whitespace from method_name
         $methodName = trim($request->method_name);
 
-        DB::table('payment_method')->where('method_id', $id)->update([
+        DB::table('payment_methods')->where('method_id', $id)->update([
             'method_name' => $methodName,
             'updated_at' => now(),
         ]);
@@ -152,7 +152,7 @@ class PaymentMethodController extends Controller
             ], 400);
         }
 
-        DB::table('payment_method')->where('method_id', $id)->delete();
+        DB::table('payment_methods')->where('method_id', $id)->delete();
 
         return response()->json([
             'success' => true,
@@ -165,7 +165,7 @@ class PaymentMethodController extends Controller
     // ============================================================================
     public function toggleStatus($id)
     {
-        $method = DB::table('payment_method')->where('method_id', $id)->first();
+        $method = DB::table('payment_methods')->where('method_id', $id)->first();
         
         if (!$method) {
             return response()->json(['error' => 'Method not found'], 404);

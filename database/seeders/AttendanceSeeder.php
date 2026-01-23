@@ -8,10 +8,12 @@ use Carbon\Carbon;
 
 /**
  * ============================================================================
- * ATTENDANCE SEEDER
+ * ATTENDANCE SEEDER (INTELLIGENT DATE FILTERING)
+ * database/seeders/AttendanceSeeder.php
  * ============================================================================
  * Generates 40 lesson attendance records with:
  * - Only lesson-type attendance (student attendance for schedules)
+ * - ONLY PAST & TODAY schedules (no future dates)
  * - Proper FK relationships (schedule, student, user_account)
  * - Realistic attendance statuses based on schedule status
  * - Auto check-in/check-out times
@@ -22,15 +24,19 @@ class AttendanceSeeder extends Seeder
 {
     public function run(): void
     {
-        // Fetch schedules with student and user info
+        // Get today's date for filtering
+        $today = Carbon::today();
+
+        // Fetch ONLY past and today schedules (exclude future)
         $schedules = DB::table('schedule as s')
             ->join('student as st', 's.student_id', '=', 'st.student_id')
             ->select('s.schedule_id', 's.student_id', 's.schedule_date', 's.start_time', 's.end_time', 's.status', 'st.user_id')
             ->whereNotNull('s.schedule_id')
+            ->where('s.schedule_date', '<=', $today) // ONLY past & today
             ->get();
 
         if ($schedules->isEmpty()) {
-            $this->command->error('No schedules found. Run ScheduleSeeder first.');
+            $this->command->error('No past/today schedules found. Run ScheduleSeeder first or adjust schedule dates.');
             return;
         }
 
@@ -46,14 +52,14 @@ class AttendanceSeeder extends Seeder
         });
 
         if ($availableSchedules->isEmpty()) {
-            $this->command->warn('All schedules already have attendance records. No new records created.');
+            $this->command->warn('All past/today schedules already have attendance records. No new records created.');
             return;
         }
 
         // Number of attendance records to create
         $count = min(40, $availableSchedules->count());
 
-        $this->command->info("✓ Seeding {$count} lesson attendance records...");
+        $this->command->info("✓ Seeding {$count} lesson attendance records (past & today only)...");
 
         $created = 0;
         foreach ($availableSchedules->take($count) as $schedule) {
@@ -97,7 +103,7 @@ class AttendanceSeeder extends Seeder
             }
         }
 
-        $this->command->info("Successfully seeded {$created} lesson attendance records!");
+        $this->command->info("✓ Successfully seeded {$created} lesson attendance records (past & today only)!");
     }
 
     /**
