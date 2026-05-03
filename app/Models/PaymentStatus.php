@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+// app/Models/PaymentStatus.php
 
+namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class PaymentStatus extends Model

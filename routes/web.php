@@ -1,4 +1,5 @@
 <?php
+#routes/web.php
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Auth\RegistrationController;
 use App\Http\Controllers\Auth\LoginController;
 
+# USER ADMIN
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\InstructorController;
@@ -28,6 +30,7 @@ use App\Http\Controllers\Admin\ReportsController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\SupplierController;
 
+# USER INSTRUCTOR
 use App\Http\Controllers\Instructor\InstructorController as InstructorPortalController;
 use App\Http\Controllers\Instructor\InstructorDashboardController;
 use App\Http\Controllers\Instructor\StudentController as InstructorStudentController;
@@ -35,6 +38,9 @@ use App\Http\Controllers\Instructor\ScheduleController as InstructorScheduleCont
 use App\Http\Controllers\Instructor\AttendanceController;
 use App\Http\Controllers\Instructor\ProgressController;
 use App\Http\Controllers\Instructor\InstructorProfileController;
+
+use App\Http\Controllers\GuitarAnalyzerController;
+use App\Http\Controllers\EmergingTech\PitchMonitorController;
 
 /*
 |--------------------------------------------------------------------------
@@ -475,11 +481,42 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/password/change', [App\Http\Controllers\Student\ProfileController::class, 'changePassword'])
             ->name('password.change');
+
+        // ============================================================
+        // SOUND CHECK / GUITAR ANALYZER
+        // ============================================================
+            Route::prefix('sound-check')->name('guitar.')->group(function () {
+
+                Route::get('/',                         [GuitarAnalyzerController::class, 'index'])->name('index');
+                Route::get('/history',                  [GuitarAnalyzerController::class, 'history'])->name('history');
+                Route::post('/session/start',           [GuitarAnalyzerController::class, 'startSession'])->name('session.start');
+                Route::post('/session/{session}/end',   [GuitarAnalyzerController::class, 'endSession'])->name('session.end');
+                Route::post('/session/{session}/event', [GuitarAnalyzerController::class, 'storeEvent'])->name('session.event');
+                Route::delete('/session/{session}/delete', [GuitarAnalyzerController::class, 'deleteSession'])->name('session.delete');
+            });
+
+        /*
+        |--------------------------------------------------------------------------
+        | PITCH MONITOR
+        |--------------------------------------------------------------------------
+        |
+        | Separate Emerging Tech module for Essentia.js real-time pitch extraction.
+        |
+        */
+        Route::prefix('pitch-monitor')->name('pitch-monitor.')->group(function () {
+            Route::get('/', [PitchMonitorController::class, 'index'])->name('index');
+            Route::get('/history', [PitchMonitorController::class, 'history'])->name('history');
+
+            Route::post('/session/start', [PitchMonitorController::class, 'startSession'])->name('session.start');
+            Route::post('/session/{session}/end', [PitchMonitorController::class, 'endSession'])->name('session.end');
+            Route::post('/session/{session}/event', [PitchMonitorController::class, 'storeEvent'])->name('session.event');
+            Route::delete('/session/{session}/delete', [PitchMonitorController::class, 'deleteSession'])->name('session.delete');
+        });
+
     });
-    
 
     // ============================================================================
-    // INSTRUCTOR ROUTES (REFINED)
+    // INSTRUCTOR ROUTES
     // ============================================================================
     Route::prefix('instructor')
     ->name('instructor.')

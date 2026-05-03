@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+// app/Models/Progress.php
 
+namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class Progress extends Model

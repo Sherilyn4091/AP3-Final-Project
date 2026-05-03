@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Student Portal - {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js', 'resources/css/student-instructor.css', 'resources/js/student-instructor.js'])
+    @stack('styles')
 </head>
 <body class="font-sans text-[#D8D9DA] bg-[#272829] min-h-screen antialiased">
 
@@ -15,9 +16,10 @@
     <div class="flex h-screen">
         <aside id="sidebar"
             class="fixed lg:static inset-y-0 left-0 w-64 bg-[#272829] border-r border-[#61677A]
-                flex flex-col h-screen
+                flex flex-col
                 transform -translate-x-full lg:translate-x-0
                 transition-transform duration-300
+                overflow-y-auto
                 z-40">
             @include('student.partials.sidebar')
         </aside>
@@ -50,7 +52,6 @@
             document.body.classList.remove('overflow-hidden');
         }
 
-
         menuBtn?.addEventListener('click', openSidebar);
         closeBtn?.addEventListener('click', closeSidebar);
         overlay?.addEventListener('click', closeSidebar);
@@ -63,5 +64,6 @@
         });
     </script>
 
+    @stack('scripts')
 </body>
 </html>

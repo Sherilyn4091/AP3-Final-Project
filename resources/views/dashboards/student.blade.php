@@ -1,3 +1,5 @@
+{{-- resources/views/dashboards/student.blade.php --}}
+
 @extends('layouts.student')
 
 @section('content')

@@ -18,7 +18,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/css/style.css',
-                'resources/css/student-instructor.css', 
+                'resources/css/student-instructor.css',
 
                 'resources/js/script.js',
                 'resources/js/app.js',
@@ -37,18 +37,23 @@ export default defineConfig({
                 'resources/js/admin-pages/student.js',
                 'resources/js/admin-pages/instructor.js',
                 'resources/js/admin-pages/schedule.js',
-                
+
                 'resources/js/admin-pages/reports-chart.js',
 
                 'resources/js/student-instructor.js',
+
+                'resources/js/emerging-tech/pitch-monitor-controller.js',
+                'resources/js/emerging-tech/pitch-monitor-processor.js',
             ],
             refresh: true,
         }),
+
         react({
             jsxRuntime: 'automatic',
             fastRefresh: false,
         }),
     ],
+
     server: {
         watch: {
             ignored: ['**/storage/framework/views/**'],

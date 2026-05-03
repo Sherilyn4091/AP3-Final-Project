@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Models;
+//app/Models/SalesStaff.php 
 
+namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 
 class SalesStaff extends Model
