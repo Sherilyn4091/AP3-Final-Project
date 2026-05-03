@@ -3,7 +3,6 @@
 
   Pitch Monitor Controller
 
-  This version keeps the safer ChatGPT structure and adds:
   - silence gap markers
   - graph line break during silence
   - moving time axis
@@ -43,29 +42,23 @@
         minFrequency: 65.406,
         maxFrequency: 3951.066,
         timeWindowSeconds: 12,
-        leftPadding: 72,
-        rightPadding: 62,
+
+        /*
+          Wider graph padding
+
+          Purpose:
+          - Prevents the left Pitch (Hz) title from overlapping with Hz labels.
+          - Gives the right Pitch Class title and labels enough space.
+          - Keeps the plotted pitch contour inside a clean readable area.
+        */
+        leftPadding: 118,
+        rightPadding: 112,
         topPadding: 24,
-        bottomPadding: 46,
+        bottomPadding: 50,
         maxGapMs: 1200,
     };
 
     const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-
-    const NOTE_GRID_COLORS = {
-        C: 'rgba(57, 91, 100, 0.20)',
-        'C#': 'rgba(68, 87, 109, 0.20)',
-        D: 'rgba(82, 61, 53, 0.18)',
-        'D#': 'rgba(149, 157, 144, 0.20)',
-        E: 'rgba(34, 48, 48, 0.20)',
-        F: 'rgba(57, 91, 100, 0.18)',
-        'F#': 'rgba(68, 87, 109, 0.18)',
-        G: 'rgba(82, 61, 53, 0.16)',
-        'G#': 'rgba(149, 157, 144, 0.18)',
-        A: 'rgba(34, 48, 48, 0.18)',
-        'A#': 'rgba(57, 91, 100, 0.16)',
-        B: 'rgba(68, 87, 109, 0.16)',
-    };
 
     const CONFIG = window.pitchMonitorConfig || {};
     const PROCESSOR_FILE_URL = CONFIG.processorUrl;
@@ -90,7 +83,10 @@
         session: {
             id: null,
             isRunning: false,
+            isPaused: false,
             startedAt: null,
+            pausedAt: null,
+            totalPausedMs: 0,
             elapsedAtStop: 0,
             lastSaveTime: 0,
         },
@@ -134,7 +130,8 @@
         waveCtx: document.getElementById('waveCanvas')?.getContext('2d'),
 
         btnStart: document.getElementById('btnStart'),
-        btnStop: document.getElementById('btnStop'),
+        btnPause: document.getElementById('btnPause'),
+        btnResume: document.getElementById('btnResume'),
         btnReset: document.getElementById('btnReset'),
     };
 
@@ -216,9 +213,24 @@
         return Math.max(min, Math.min(max, value));
     }
 
+    /*
+      Pause-safe elapsed time helper
+
+      Purpose:
+      - While running, time continues.
+      - While paused, time freezes.
+      - After reset, the graph returns to the original 12s to 0s idle window.
+    */
     function getElapsedSeconds() {
         if (state.session.isRunning && state.session.startedAt) {
-            return Math.max(0, (performance.now() - state.session.startedAt) / 1000);
+            const now = state.session.isPaused && state.session.pausedAt
+                ? state.session.pausedAt
+                : performance.now();
+
+            return Math.max(
+                0,
+                (now - state.session.startedAt - state.session.totalPausedMs) / 1000
+            );
         }
 
         return state.session.elapsedAtStop || 0;
@@ -304,8 +316,15 @@
             state.pitch.lastGapAt = 0;
             state.pitch.lastAlgorithm = '';
 
+            state.session.isRunning = false;
+            state.session.isPaused = false;
             state.session.startedAt = null;
+            state.session.pausedAt = null;
+            state.session.totalPausedMs = 0;
             state.session.elapsedAtStop = 0;
+            state.session.lastSaveTime = 0;
+
+            this.setButtonState('idle');
 
             CanvasManager.drawPitchContour();
             CanvasManager.clearWaveform();
@@ -399,7 +418,7 @@
         },
 
         clearStalePitchReadout() {
-            if (!state.session.isRunning) return;
+            if (!state.session.isRunning || state.session.isPaused) return;
             if (!state.pitch.lastDetectedAt) return;
 
             const staleFor = performance.now() - state.pitch.lastDetectedAt;
@@ -416,9 +435,36 @@
             this.updateListeningState();
         },
 
-        setButtonState(isRunning) {
-            if (DOM.btnStart) DOM.btnStart.disabled = isRunning;
-            if (DOM.btnStop) DOM.btnStop.disabled = !isRunning;
+        /*
+          Button state manager
+
+          Modes:
+          - idle: Start enabled, Pause/Resume disabled, Reset enabled
+          - starting: all recording controls disabled while microphone loads
+          - running: Start disabled, Pause enabled, Resume disabled, Reset enabled
+          - paused: Start disabled, Pause disabled, Resume enabled, Reset enabled
+        */
+        setButtonState(mode = 'idle') {
+            const isIdle = mode === 'idle';
+            const isStarting = mode === 'starting';
+            const isRunning = mode === 'running';
+            const isPaused = mode === 'paused';
+
+            if (DOM.btnStart) {
+                DOM.btnStart.disabled = isStarting || isRunning || isPaused;
+            }
+
+            if (DOM.btnPause) {
+                DOM.btnPause.disabled = !isRunning;
+            }
+
+            if (DOM.btnResume) {
+                DOM.btnResume.disabled = !isPaused;
+            }
+
+            if (DOM.btnReset) {
+                DOM.btnReset.disabled = isStarting && !isIdle;
+            }
         },
 
         showError(message) {
@@ -511,8 +557,12 @@
                 }
 
                 const y = this._frequencyToY(frequency, height);
+                const isNaturalNote = !noteName.includes('#');
 
-                ctx.strokeStyle = NOTE_GRID_COLORS[noteName] || 'rgba(216, 221, 216, 0.35)';
+                ctx.strokeStyle = isNaturalNote
+                    ? 'rgba(118, 138, 150, 0.14)'
+                    : 'rgba(118, 138, 150, 0.055)';
+
                 ctx.beginPath();
                 ctx.moveTo(chartLeft, y);
                 ctx.lineTo(chartRight, y);
@@ -524,10 +574,12 @@
             const hzLines = [65.406, 100, 200, 500, 1000, 2000, 3951.066];
             const chartLeft = GRAPH_CONFIG.leftPadding;
             const chartRight = width - GRAPH_CONFIG.rightPadding;
+            const labelX = Math.max(24, chartLeft - 92);
 
             ctx.lineWidth = 1;
             ctx.font = '11px Inter, sans-serif';
             ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
 
             hzLines.forEach((hz) => {
                 const y = this._frequencyToY(hz, height);
@@ -544,24 +596,33 @@
                     ? hz.toFixed(3) + ' Hz'
                     : Math.round(hz).toLocaleString() + ' Hz';
 
-                ctx.fillText(label, 8, y);
+                ctx.fillText(label, labelX, y);
             });
+
+            ctx.textAlign = 'start';
         },
 
         _drawPitchClassLabels(ctx, width, height) {
             const chartRight = width - GRAPH_CONFIG.rightPadding;
-            const labelX = chartRight + 10;
+            const labelX = chartRight + 12;
             const minMidi = Math.floor(12 * Math.log2(GRAPH_CONFIG.minFrequency / 440) + 69);
             const maxMidi = Math.ceil(12 * Math.log2(GRAPH_CONFIG.maxFrequency / 440) + 69);
-
-            ctx.textBaseline = 'middle';
-
+            const allowedNotes = ['C', 'E', 'G', 'A'];
             const currentNote = state.pitch.lastDetectedAt
                 ? frequencyToNote(state.pitch.current || state.pitch.smoothedValue || 0).note
                 : null;
+            let lastLabelY = null;
+
+            ctx.textBaseline = 'middle';
+            ctx.textAlign = 'left';
 
             for (let midi = minMidi; midi <= maxMidi; midi++) {
                 const noteName = NOTE_NAMES[((midi % 12) + 12) % 12];
+
+                if (!allowedNotes.includes(noteName)) {
+                    continue;
+                }
+
                 const frequency = midiToFrequency(midi);
 
                 if (frequency < GRAPH_CONFIG.minFrequency || frequency > GRAPH_CONFIG.maxFrequency) {
@@ -570,40 +631,59 @@
 
                 const y = this._frequencyToY(frequency, height);
 
-                if (y < GRAPH_CONFIG.topPadding || y > height - GRAPH_CONFIG.bottomPadding) {
+                if (y < GRAPH_CONFIG.topPadding + 8 || y > height - GRAPH_CONFIG.bottomPadding - 8) {
                     continue;
                 }
 
+                if (lastLabelY !== null && Math.abs(y - lastLabelY) < 13) {
+                    continue;
+                }
+
+                const octave = Math.floor(midi / 12) - 1;
                 const isActive = currentNote === noteName;
 
                 ctx.font = isActive ? 'bold 10px Inter, sans-serif' : '10px Inter, sans-serif';
                 ctx.fillStyle = isActive ? '#223030' : '#768A96';
-                ctx.fillText(noteName, labelX, y);
+                ctx.fillText(noteName + octave, labelX, y);
+                lastLabelY = y;
             }
+
+            ctx.textAlign = 'start';
         },
 
         _drawTimeLabels(ctx, width, height) {
             const chartLeft = GRAPH_CONFIG.leftPadding;
             const chartRight = width - GRAPH_CONFIG.rightPadding;
             const chartWidth = chartRight - chartLeft;
-            const bottomY = height - 18;
+            const bottomY = height - 20;
             const steps = 6;
             const elapsed = getElapsedSeconds();
-            const leftTime = Math.max(0, elapsed - GRAPH_CONFIG.timeWindowSeconds);
-            const rightTime = elapsed;
 
             ctx.font = '10px Inter, sans-serif';
             ctx.fillStyle = '#768A96';
             ctx.textBaseline = 'alphabetic';
+            ctx.textAlign = 'center';
 
             for (let i = 0; i <= steps; i++) {
                 const x = chartLeft + (chartWidth / steps) * i;
-                const progress = i / steps;
-                const timeValue = leftTime + ((rightTime - leftTime) * progress);
-                const label = formatSeconds(timeValue);
+                let label;
 
-                ctx.fillText(label, x - 10, bottomY);
+                if (!state.session.isRunning && elapsed === 0) {
+                    const ageSeconds = GRAPH_CONFIG.timeWindowSeconds - ((GRAPH_CONFIG.timeWindowSeconds / steps) * i);
+                    label = Math.round(ageSeconds) + 's';
+                } else {
+                    const leftTime = Math.max(0, elapsed - GRAPH_CONFIG.timeWindowSeconds);
+                    const rightTime = elapsed;
+                    const progress = i / steps;
+                    const timeValue = leftTime + ((rightTime - leftTime) * progress);
+
+                    label = formatSeconds(timeValue);
+                }
+
+                ctx.fillText(label, x, bottomY);
             }
+
+            ctx.textAlign = 'start';
         },
 
         _drawGraphAxisTitles(ctx, width, height) {
@@ -612,20 +692,23 @@
             ctx.font = '11px Inter, sans-serif';
             ctx.fillStyle = '#768A96';
             ctx.textBaseline = 'alphabetic';
+            ctx.textAlign = 'center';
 
-            ctx.fillText('Time (seconds)', Math.floor(width / 2) - 42, height - 5);
+            ctx.fillText('Time (seconds)', Math.floor(width / 2), height - 5);
 
             ctx.save();
-            ctx.translate(16, Math.floor(height / 2) + 32);
+            ctx.translate(12, Math.floor(height / 2));
             ctx.rotate(-Math.PI / 2);
             ctx.fillText('Pitch (Hz)', 0, 0);
             ctx.restore();
 
             ctx.save();
-            ctx.translate(chartRight + 46, Math.floor(height / 2) + 36);
+            ctx.translate(chartRight + 78, Math.floor(height / 2));
             ctx.rotate(Math.PI / 2);
             ctx.fillText('Pitch Class', 0, 0);
             ctx.restore();
+
+            ctx.textAlign = 'start';
         },
 
         _drawContourLine(ctx, width, height) {
@@ -730,7 +813,7 @@
 
         startPitchLoop() {
             const animate = (timestamp) => {
-                if (!state.session.isRunning) {
+                if (!state.session.isRunning || state.session.isPaused) {
                     return;
                 }
 
@@ -798,7 +881,7 @@
             ctx.lineTo(width, height / 2);
             ctx.stroke();
 
-            if (state.session.isRunning) {
+            if (state.session.isRunning && !state.session.isPaused) {
                 state.animation.waveformId = requestAnimationFrame(() => {
                     CanvasManager.drawWaveform();
                 });
@@ -917,7 +1000,7 @@
                 }
 
                 UIManager.resetAll();
-                UIManager.setButtonState(true);
+                UIManager.setButtonState('starting');
                 UIManager.setStatusBadge('Starting', '#EEF2F4', '#44576D');
 
                 if (DOM.liveStatusText) {
@@ -989,10 +1072,13 @@
 
                 state.session.id = await BackendAPI.startSession();
                 state.session.isRunning = true;
+                state.session.isPaused = false;
                 state.session.startedAt = performance.now();
+                state.session.pausedAt = null;
+                state.session.totalPausedMs = 0;
                 state.session.elapsedAtStop = 0;
 
-                UIManager.setButtonState(true);
+                UIManager.setButtonState('running');
                 UIManager.setStatusBadge('Listening', '#EEF2F4', '#44576D');
 
                 if (DOM.liveStatusText) {
@@ -1009,6 +1095,10 @@
         },
 
         onPitchDetected(data) {
+            if (state.session.isPaused) {
+                return;
+            }
+
             const { pitch, confidence, rms, algorithm } = data || {};
 
             state.pitch.rms = rms || 0;
@@ -1076,12 +1166,83 @@
             });
         },
 
+        pause() {
+            if (!state.session.isRunning || state.session.isPaused) {
+                return;
+            }
+
+            state.session.isPaused = true;
+            state.session.pausedAt = performance.now();
+
+            if (state.animation.pitchGraphId) {
+                cancelAnimationFrame(state.animation.pitchGraphId);
+                state.animation.pitchGraphId = null;
+            }
+
+            if (state.animation.waveformId) {
+                cancelAnimationFrame(state.animation.waveformId);
+                state.animation.waveformId = null;
+            }
+
+            UIManager.setButtonState('paused');
+            UIManager.setStatusBadge('Paused', '#EEF2F4', '#44576D');
+
+            if (DOM.liveStatusText) {
+                DOM.liveStatusText.textContent = 'Pitch monitor paused. The current display is frozen until Resume is clicked.';
+            }
+
+            CanvasManager.drawPitchContour();
+        },
+
+        resume() {
+            if (!state.session.isRunning || !state.session.isPaused) {
+                return;
+            }
+
+            const pauseDuration = performance.now() - state.session.pausedAt;
+
+            state.session.totalPausedMs += pauseDuration;
+            state.session.pausedAt = null;
+            state.session.isPaused = false;
+
+            /*
+              Keep the graph visually frozen during pause.
+
+              Without shifting point timestamps, old pitch points would age while
+              paused and suddenly jump/disappear when Resume is clicked.
+            */
+            state.pitch.points = state.pitch.points.map((point) => ({
+                ...point,
+                time: point.time + pauseDuration,
+            }));
+
+            if (state.pitch.lastDetectedAt) {
+                state.pitch.lastDetectedAt += pauseDuration;
+            }
+
+            if (state.pitch.lastGapAt) {
+                state.pitch.lastGapAt += pauseDuration;
+            }
+
+            UIManager.setButtonState('running');
+            UIManager.setStatusBadge('Listening', '#EEF2F4', '#44576D');
+
+            if (DOM.liveStatusText) {
+                DOM.liveStatusText.textContent = 'Listening resumed. Continue playing or singing one clear note at a time.';
+            }
+
+            CanvasManager.startPitchLoop();
+            CanvasManager.drawWaveform();
+        },
+
         async stop(shouldEndSession = true) {
             if (state.session.startedAt) {
                 state.session.elapsedAtStop = getElapsedSeconds();
             }
 
             state.session.isRunning = false;
+            state.session.isPaused = false;
+            state.session.pausedAt = null;
 
             if (state.animation.pitchGraphId) {
                 cancelAnimationFrame(state.animation.pitchGraphId);
@@ -1129,8 +1290,10 @@
 
             state.session.id = null;
             state.session.startedAt = null;
+            state.session.pausedAt = null;
+            state.session.totalPausedMs = 0;
 
-            UIManager.setButtonState(false);
+            UIManager.setButtonState('idle');
 
             if (shouldEndSession) {
                 UIManager.setStatusBadge('Stopped', '#F6EFEC', '#523D35');
@@ -1152,13 +1315,16 @@
         AudioManager.start();
     });
 
-    DOM.btnStop?.addEventListener('click', () => {
-        AudioManager.stop();
+    DOM.btnPause?.addEventListener('click', () => {
+        AudioManager.pause();
+    });
+
+    DOM.btnResume?.addEventListener('click', () => {
+        AudioManager.resume();
     });
 
     DOM.btnReset?.addEventListener('click', async () => {
         await AudioManager.stop();
-        state.session.lastSaveTime = 0;
         UIManager.resetAll();
     });
 

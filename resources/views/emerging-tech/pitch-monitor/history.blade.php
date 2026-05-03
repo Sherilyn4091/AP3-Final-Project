@@ -10,36 +10,70 @@
         {{-- ============================================================= --}}
         {{-- HEADER --}}
         {{-- ============================================================= --}}
-        <header class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-            <div>
-                <h1 class="text-3xl sm:text-4xl font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">
-                    Pitch Monitor History
-                </h1>
-                <p class="mt-2 text-sm text-[#44576D]" style="font-family: 'Inter', sans-serif;">
-                    Review previous pitch extraction sessions and captured note events.
-                </p>
-            </div>
+        <header class="relative z-50 mb-6">
+            <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div class="min-w-0">
+                    <h1 class="text-3xl sm:text-4xl font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">
+                        Pitch Monitor History
+                    </h1>
+                    <p class="mt-2 text-sm text-[#44576D]" style="font-family: 'Inter', sans-serif;">
+                        Review previous pitch extraction sessions and captured note events.
+                    </p>
+                </div>
 
-            {{-- Clean history switcher --}}
-            <div class="relative">
-                <details class="group">
-                    <summary class="list-none cursor-pointer rounded-2xl border border-[#D8DDD8] bg-white px-4 py-2 text-sm font-semibold text-[#223030] transition hover:border-[#768A96] hover:bg-[#F4F5F2]" style="font-family: 'Inter', sans-serif;">
-                        Switch History
-                    </summary>
+                {{--
+                |--------------------------------------------------------------------------
+                | History Header Actions
+                |--------------------------------------------------------------------------
+                |
+                | Purpose:
+                | - Keeps Practice History as the only history link in the sidebar.
+                | - Allows users to switch back to String Pitch Detection History here.
+                | - Uses a floating dropdown so session cards do not move when opened.
+                | - Keeps buttons horizontally aligned across screen sizes.
+                |
+                --}}
+                <div class="relative z-[80] flex flex-row flex-nowrap items-start justify-start gap-2 md:justify-end">
+                    {{-- Switch between histories --}}
+                    <div class="relative shrink-0">
+                        <details class="group">
+                            <summary class="list-none cursor-pointer rounded-2xl border border-[#D8DDD8] bg-white px-3 py-2 text-xs font-semibold text-[#223030] transition hover:border-[#768A96] hover:bg-[#F4F5F2] sm:px-4 sm:text-sm [&::-webkit-details-marker]:hidden"
+                                     style="font-family: 'Inter', sans-serif;">
+                                Switch History
+                            </summary>
 
-                    <div class="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-[#D8DDD8] bg-white shadow-lg">
-                        <a href="{{ route('student.guitar.history') }}"
-                           class="block px-4 py-3 text-sm text-[#223030] hover:bg-[#F4F5F2]"
-                           style="font-family: 'Inter', sans-serif;">
-                            Sound Check History
-                        </a>
-                        <a href="{{ route('student.pitch-monitor.history') }}"
-                           class="block px-4 py-3 text-sm text-[#223030] hover:bg-[#F4F5F2]"
-                           style="font-family: 'Inter', sans-serif;">
-                            Pitch Monitor History
-                        </a>
+                            {{--
+                                Floating dropdown
+
+                                Important:
+                                - absolute prevents layout shift.
+                                - z-index keeps the dropdown above cards.
+                                - group-hover supports hover preview.
+                                - group-open supports click/tap behavior.
+                            --}}
+                            <div class="invisible pointer-events-none absolute right-0 top-full z-[90] mt-2 w-64 overflow-hidden rounded-2xl border border-[#D8DDD8] bg-white opacity-0 shadow-xl transition-all duration-150
+                                        group-hover:visible group-hover:pointer-events-auto group-hover:opacity-100
+                                        group-open:visible group-open:pointer-events-auto group-open:opacity-100">
+                                <a href="{{ route('student.guitar.history') }}"
+                                   class="block px-4 py-3 text-sm text-[#223030] transition hover:bg-[#F4F5F2]"
+                                   style="font-family: 'Inter', sans-serif;">
+                                    String Pitch Detection History
+                                </a>
+
+                                <span class="block bg-[#F4F5F2] px-4 py-3 text-sm font-semibold text-[#223030]"
+                                      style="font-family: 'Inter', sans-serif;">
+                                    Pitch Monitor History
+                                </span>
+                            </div>
+                        </details>
                     </div>
-                </details>
+
+                    <a href="{{ route('student.pitch-monitor.index') }}"
+                       class="shrink-0 whitespace-nowrap rounded-2xl border border-[#D8DDD8] bg-white px-3 py-2 text-xs font-semibold text-[#223030] transition hover:border-[#768A96] hover:bg-[#F4F5F2] sm:px-4 sm:text-sm"
+                       style="font-family: 'Inter', sans-serif;">
+                        Back to Pitch Monitor
+                    </a>
+                </div>
             </div>
         </header>
 

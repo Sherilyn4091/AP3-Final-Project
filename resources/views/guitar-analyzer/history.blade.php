@@ -1,51 +1,78 @@
 {{-- resources/views/guitar-analyzer/history.blade.php --}}
 @extends('layouts.student')
 
-@section('title', 'Sound Check — History')
+@section('title', 'String Pitch Detection History')
+@section('pageTitle', 'String Pitch Detection History')
 
 @section('content')
 <div class="min-h-screen bg-[#f8f7f4] py-8 px-4">
     <div class="max-w-4xl mx-auto">
 
         {{-- PAGE HEADER --}}
-        <header class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-8 animate-fadeIn">
-            <div>
-                <h1 class="text-3xl sm:text-4xl font-bold text-[#223030] mb-2" style="font-family: 'Sora', sans-serif;">
-                    Session History
-                </h1>
-                <p class="text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">
-                    Track your progress over time
-                </p>
-            </div>
-
-            <div class="flex flex-wrap items-center gap-2">
-                {{-- Switch between histories --}}
-                <div class="relative">
-                    <details class="group">
-                        <summary class="list-none cursor-pointer rounded-2xl border border-[#D8DDD8] bg-white px-4 py-2 text-sm font-semibold text-[#223030] transition hover:border-[#768A96] hover:bg-[#F4F5F2]" style="font-family: 'Inter', sans-serif;">
-                            Switch History
-                        </summary>
-
-                        <div class="absolute right-0 z-20 mt-2 w-56 overflow-hidden rounded-2xl border border-[#D8DDD8] bg-white shadow-lg">
-                            <a href="{{ route('student.guitar.history') }}"
-                            class="block px-4 py-3 text-sm text-[#223030] hover:bg-[#F4F5F2]"
-                            style="font-family: 'Inter', sans-serif;">
-                                Sound Check History
-                            </a>
-                            <a href="{{ route('student.pitch-monitor.history') }}"
-                            class="block px-4 py-3 text-sm text-[#223030] hover:bg-[#F4F5F2]"
-                            style="font-family: 'Inter', sans-serif;">
-                                Pitch Monitor History
-                            </a>
-                        </div>
-                    </details>
+        <header class="relative z-50 mb-8 animate-fadeIn">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div class="min-w-0">
+                    <h1 class="text-3xl sm:text-4xl font-bold text-[#223030] mb-2" style="font-family: 'Sora', sans-serif;">
+                        String Pitch Detection History
+                    </h1>
+                    <p class="text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Review your Sound Check sessions by default, then switch to Pitch Monitor History when needed.
+                    </p>
                 </div>
 
-                <a href="{{ route('student.guitar.index') }}"
-                class="px-4 py-2 rounded-2xl text-sm font-semibold transition-all duration-300 border border-[#D8DDD8] bg-white text-[#223030] hover:border-[#768A96] hover:bg-[#F4F5F2] inline-flex items-center gap-2"
-                style="font-family: 'Inter', sans-serif;">
-                    Back to Sound Check
-                </a>
+                {{--
+                |--------------------------------------------------------------------------
+                | History Header Actions
+                |--------------------------------------------------------------------------
+                |
+                | Purpose:
+                | - Keeps the Switch History and Back button horizontally aligned.
+                | - Uses a floating dropdown so history cards do not move when opened.
+                | - Keeps the controls responsive by using smaller spacing on small screens.
+                | - Avoids duplicated dropdown logic by keeping all history switching in one
+                |   small, focused header section.
+                |
+                --}}
+                <div class="relative z-[80] flex flex-row flex-nowrap items-start justify-start gap-2 sm:justify-end">
+                    {{-- Switch between histories --}}
+                    <div class="relative shrink-0">
+                        <details class="group">
+                            <summary class="list-none cursor-pointer rounded-2xl border border-[#D8DDD8] bg-white px-3 py-2 text-xs font-semibold text-[#223030] transition hover:border-[#768A96] hover:bg-[#F4F5F2] sm:px-4 sm:text-sm [&::-webkit-details-marker]:hidden"
+                                     style="font-family: 'Inter', sans-serif;">
+                                Switch History
+                            </summary>
+
+                            {{--
+                                Floating dropdown
+
+                                Important:
+                                - absolute keeps the dropdown floating above cards.
+                                - group-hover also shows the menu on hover.
+                                - group-open keeps it visible after clicking the summary.
+                            --}}
+                            <div class="invisible pointer-events-none absolute right-0 top-full z-[90] mt-2 w-64 overflow-hidden rounded-2xl border border-[#D8DDD8] bg-white opacity-0 shadow-xl transition-all duration-150
+                                        group-hover:visible group-hover:pointer-events-auto group-hover:opacity-100
+                                        group-open:visible group-open:pointer-events-auto group-open:opacity-100">
+                                <span class="block bg-[#F4F5F2] px-4 py-3 text-sm font-semibold text-[#223030]"
+                                      style="font-family: 'Inter', sans-serif;">
+                                    String Pitch Detection History
+                                </span>
+
+                                <a href="{{ route('student.pitch-monitor.history') }}"
+                                   class="block px-4 py-3 text-sm text-[#223030] transition hover:bg-[#F4F5F2]"
+                                   style="font-family: 'Inter', sans-serif;">
+                                    Pitch Monitor History
+                                </a>
+                            </div>
+                        </details>
+                    </div>
+
+                    <a href="{{ route('student.guitar.index') }}"
+                       class="shrink-0 whitespace-nowrap rounded-2xl border border-[#D8DDD8] bg-white px-3 py-2 text-xs font-semibold text-[#223030] transition hover:border-[#768A96] hover:bg-[#F4F5F2] sm:px-4 sm:text-sm"
+                       style="font-family: 'Inter', sans-serif;">
+                        Back to Sound Check
+                    </a>
+                </div>
             </div>
         </header>
 

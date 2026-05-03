@@ -97,39 +97,50 @@
         {{-- ── Sound Check ──────────────────────────────────────────────────────── --}}
         <li>
             <a href="{{ route('student.guitar.index') }}"
-            class="flex items-center px-4 py-3 rounded-lg transition
-                    {{ request()->routeIs('student.guitar.*') ? 'bg-[#61677A] text-white' : 'text-[#D8D9DA] hover:bg-[#61677A]/30' }}">
+               class="flex items-center px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('student.guitar.index') ? 'bg-[#61677A] text-white' : 'text-[#D8D9DA] hover:bg-[#61677A]/30' }}">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2
-                            1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2
-                            1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+                          d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2
+                             1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2
+                             1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
                 </svg>
                 Sound Check
             </a>
         </li>
 
-        {{-- ── Pitch Monitor (NEW MODULE) ─────────────────────────────────────── --}}
+        {{-- ── Pitch Monitor ─────────────────────────────────────────────────────── --}}
         <li>
             <a href="{{ route('student.pitch-monitor.index') }}"
-            class="flex items-center px-4 py-3 rounded-lg transition
-                    {{ request()->routeIs('student.pitch-monitor.*') ? 'bg-[#61677A] text-white' : 'text-[#D8D9DA] hover:bg-[#61677A]/30' }}">
+               class="flex items-center px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('student.pitch-monitor.index') ? 'bg-[#61677A] text-white' : 'text-[#D8D9DA] hover:bg-[#61677A]/30' }}">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M11 5L6 9H4a1 1 0 00-1 1v4a1 1 0 001 1h2l5 4V5zm4.5 3.5a4 4 0 010 7m2.5-9.5a7 7 0 010 12"/>
+                          d="M11 5L6 9H4a1 1 0 00-1 1v4a1 1 0 001 1h2l5 4V5zm4.5 3.5a4 4 0 010 7m2.5-9.5a7 7 0 010 12"/>
                 </svg>
                 Pitch Monitor
             </a>
         </li>
 
-        {{-- ── Practice History ──────────────────────────────────────────────────────── --}}
+        {{-- 
+        |----------------------------------------------------------------------
+        | Practice History
+        |----------------------------------------------------------------------
+        |
+        | Purpose:
+        | - This is the only history link in the student sidebar.
+        | - It opens Sound Check / String Pitch Detection History by default.
+        | - Pitch Monitor History is accessed inside the history page using
+        |   the Switch History button, not as a separate sidebar item.
+        |
+        --}}
         <li>
             <a href="{{ route('student.guitar.history') }}"
-            class="flex items-center px-4 py-3 rounded-lg transition
-                    {{ request()->routeIs('student.guitar.history') ? 'bg-[#61677A] text-white' : 'text-[#D8D9DA] hover:bg-[#61677A]/30' }}">
+               class="flex items-center px-4 py-3 rounded-lg transition
+                      {{ request()->routeIs('student.guitar.history') || request()->routeIs('student.pitch-monitor.history') ? 'bg-[#61677A] text-white' : 'text-[#D8D9DA] hover:bg-[#61677A]/30' }}">
                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                 </svg>
                 Practice History
             </a>
@@ -137,7 +148,6 @@
 
     </ul>
 </nav>
-
 
 {{-- ── Logout ──────────────────────────────────────────────────────── --}}
 <div class="p-4 border-t border-[#61677A] mt-auto">
@@ -150,6 +160,7 @@
         </svg>
         Logout
     </a>
+
     <form id="logout-form" action="{{ route('logout') }}" method="POST" class="hidden">
         @csrf
     </form>
