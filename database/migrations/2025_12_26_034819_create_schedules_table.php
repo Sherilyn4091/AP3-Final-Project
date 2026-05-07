@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     /**
+     * database/migrations/2025_12_26_034819_create_schedules_table.php
      * Run the migrations.
      */
     public function up(): void

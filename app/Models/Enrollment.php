@@ -1,23 +1,35 @@
 <?php
 
-// app/Models/Enrollment.php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Enrollment extends Model
 {
+    /**
+     * Database table used by this model.
+     */
     protected $table = 'enrollment';
+
+    /**
+     * Primary key is a custom string ID like 2026-05-0000001.
+     */
     protected $primaryKey = 'enrollment_id';
+
     public $incrementing = false;
+
     protected $keyType = 'string';
-    
+
+    /**
+     * Fields allowed for mass assignment.
+     */
     protected $fillable = [
+        'enrollment_id',
         'student_id',
+        'instrument_id',
         'session_id',
         'instructor_id',
+        'payment_method_id',
         'enrollment_date',
         'start_date',
         'end_date',
@@ -30,7 +42,10 @@ class Enrollment extends Model
         'amount_paid',
         'notes',
     ];
-    
+
+    /**
+     * Cast database values into useful PHP types.
+     */
     protected $casts = [
         'enrollment_date' => 'date',
         'start_date' => 'date',
@@ -41,52 +56,43 @@ class Enrollment extends Model
         'total_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
     ];
-    
-    // Auto-fetch generated ID after insert
-    protected static function booted()
-    {
-        static::created(function ($enrollment) {
-            if (!$enrollment->enrollment_id) {
-                $latest = DB::table('enrollment')
-                    ->where('student_id', $enrollment->student_id)
-                    ->whereNotNull('enrollment_id')
-                    ->latest('created_at')
-                    ->first();
-                
-                if ($latest) {
-                    $enrollment->enrollment_id = $latest->enrollment_id;
-                    $enrollment->syncOriginal(['enrollment_id']);
-                }
-            }
-        });
-    }
-    
-    // Relationships
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
     public function student()
     {
         return $this->belongsTo(Student::class, 'student_id', 'student_id');
     }
-    
+
+    public function instrument()
+    {
+        return $this->belongsTo(Instrument::class, 'instrument_id', 'instrument_id');
+    }
+
     public function lessonSession()
     {
         return $this->belongsTo(LessonSession::class, 'session_id', 'session_id');
     }
-    
+
     public function instructor()
     {
         return $this->belongsTo(Instructor::class, 'instructor_id', 'instructor_id');
     }
-    
+
     public function schedules()
     {
         return $this->hasMany(Schedule::class, 'enrollment_id', 'enrollment_id');
     }
-    
+
     public function progress()
     {
         return $this->hasMany(Progress::class, 'enrollment_id', 'enrollment_id');
     }
-    
+
     public function payments()
     {
         return $this->hasMany(Payment::class, 'enrollment_id', 'enrollment_id');

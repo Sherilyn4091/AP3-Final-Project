@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Schema;
 
 /*
 |--------------------------------------------------------------------------
+| database/migrations/2026_04_17_000001_create_pitch_sessions_and_pitch_events_tables.php
 | Create Pitch Monitor Tables
 |--------------------------------------------------------------------------
 |

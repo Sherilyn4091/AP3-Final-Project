@@ -1,79 +1,89 @@
 <?php
-// database/seeders/InstrumentSeeder.php
+
 namespace Database\Seeders;
+
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+
 class InstrumentSeeder extends Seeder
 {
+    /**
+     * Seed official Music Lab instruments.
+     *
+     * Official lessons:
+     * - Guitar
+     * - Bass
+     * - Keyboard
+     * - Drums
+     * - Ukulele
+     * - Violin
+     * - Voice
+     *
+     */
     public function run(): void
     {
         $instruments = [
             [
                 'instrument_name' => 'Guitar',
                 'category' => 'String',
-                'description' => '6-string acoustic or electric guitar',
+                'description' => 'Guitar lesson for acoustic or electric guitar.',
                 'is_system' => true,
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'instrument_name' => 'Bass',
                 'category' => 'String',
-                'description' => '4-string bass guitar',
+                'description' => 'Bass guitar lesson.',
                 'is_system' => true,
-                'is_active' => true
-            ],
-            [
-                'instrument_name' => 'Piano',
-                'category' => 'Keyboard',
-                'description' => 'Acoustic or digital piano',
-                'is_system' => true,
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'instrument_name' => 'Keyboard',
                 'category' => 'Keyboard',
-                'description' => 'Electronic keyboard or synthesizer',
+                'description' => 'Keyboard lesson.',
                 'is_system' => true,
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'instrument_name' => 'Drums',
                 'category' => 'Percussion',
-                'description' => 'Drum set with cymbals',
+                'description' => 'Drum lesson.',
                 'is_system' => true,
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'instrument_name' => 'Ukulele',
                 'category' => 'String',
-                'description' => '4-string ukulele',
+                'description' => 'Ukulele lesson.',
                 'is_system' => true,
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'instrument_name' => 'Violin',
                 'category' => 'String',
-                'description' => 'Classical violin',
+                'description' => 'Violin lesson.',
                 'is_system' => true,
-                'is_active' => true
+                'is_active' => true,
             ],
             [
                 'instrument_name' => 'Voice',
                 'category' => 'Voice/Vocal',
-                'description' => 'Vocal training and singing lessons',
+                'description' => 'Voice and vocal training lesson.',
                 'is_system' => true,
-                'is_active' => true
+                'is_active' => true,
             ],
         ];
-        
+
         foreach ($instruments as $instrument) {
-            $instrument['is_system'] = (int) $instrument['is_system'];
-            $instrument['is_active'] = (int) $instrument['is_active'];
-            
-            \App\Models\Instrument::firstOrCreate(
+            DB::table('instrument')->updateOrInsert(
                 ['instrument_name' => $instrument['instrument_name']],
-                $instrument
+                array_merge($instrument, [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ])
             );
         }
+
+        $this->command->info('Successfully seeded official Music Lab instruments.');
     }
 }

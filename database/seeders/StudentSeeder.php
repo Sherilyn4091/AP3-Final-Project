@@ -22,6 +22,11 @@ class StudentSeeder extends Seeder
         $instrumentIds = DB::table('instrument')->pluck('instrument_id')->toArray();
         $genreIds = DB::table('genre')->pluck('genre_id')->toArray();
 
+        if (empty($studentStatusIds) || empty($instrumentIds) || empty($genreIds)) {
+            $this->command->error('Missing lookup data. Run StudentStatusSeeder, InstrumentSeeder, and GenreSeeder first.');
+            return;
+        }
+
         // Realistic Philippine streets (manual array for consistency)
         $streets = [
             'Rizal Avenue', 'EDSA', 'Ayala Avenue', 'Quezon Avenue', 'Roxas Boulevard', 'Taft Avenue',
@@ -31,61 +36,57 @@ class StudentSeeder extends Seeder
             'Legarda Street', 'Recto Avenue', 'Blumentritt Street', 'Dimasalang Street', 'Lacson Avenue',
             'Timog Avenue', 'Kamuning Road', 'Tomas Morato Avenue', 'West Avenue', 'Visayas Avenue',
             'Mindanao Avenue', 'Congressional Avenue', 'Banawe Street', 'Retiro Street', 'Araneta Avenue',
-            'Cubao', 'Alabang-Zapote Road', 'Alabang', 'SLEX', 'NLEX', 'Skyway',
-            'Osmeña Highway', 'Quirino Avenue', 'Pedro Gil Street', 'Padre Faura Street', 'Kalaw Avenue',
+            'Osmeña Boulevard', 'Colon Street', 'V. Rama Avenue', 'Escario Street', 'Gorordo Avenue',
         ];
 
         // Realistic Philippine schools (manual array)
         $schools = [
+            'Cebu Technological University', 'University of Cebu', 'University of San Carlos',
+            'University of the Visayas', 'Cebu Normal University', 'Southwestern University PHINMA',
+            'University of Southern Philippines Foundation', 'Cebu Institute of Technology - University',
+            'Asian College of Technology', 'University of the Philippines Cebu',
             'Ateneo de Manila University', 'University of the Philippines', 'De La Salle University',
             'University of Santo Tomas', 'Far Eastern University', 'Adamson University',
             'Mapua University', 'Polytechnic University of the Philippines', 'National University',
-            'Philippine Normal University', 'Manila Central University', 'Jose Rizal University',
-            'Arellano University', 'Centro Escolar University', 'Lyceum of the Philippines University',
-            'San Beda University', 'University of the East', 'Technological Institute of the Philippines',
+            'Philippine Normal University', 'San Beda University', 'University of the East',
             'Rizal High School', 'Quezon City Science High School', 'Manila Science High School',
-            'Pasig City Science High School', 'Makati Science High School', 'Valenzuela City Science High School',
-            'Marikina Science High School', 'Taguig Science High School', 'Philippine Science High School',
-            'St. Paul College', 'St. Scholastica\'s College', 'Assumption College', 'Miriam College',
-            'La Salle Greenhills', 'Xavier School', 'Immaculate Conception Academy', 'St. Jude Catholic School',
-            'Colegio de San Juan de Letran', 'San Sebastian College', 'Holy Angel University',
-            'Angeles University Foundation', 'University of Cebu', 'Silliman University', 'University of San Carlos',
+            'Philippine Science High School', 'St. Paul College', 'St. Scholastica\'s College',
         ];
 
-        // Philippine cities (manually curated for authentic data)
+        // Philippine cities
         $cities = [
-            'Manila', 'Quezon City', 'Makati', 'Pasig', 'Taguig', 'Mandaluyong', 'San Juan', 'Marikina',
-            'Parañaque', 'Las Piñas', 'Muntinlupa', 'Valenzuela', 'Malabon', 'Navotas', 'Caloocan',
-            'Pasay', 'Pateros', 'Cebu City', 'Davao City', 'Cagayan de Oro', 'Iloilo City', 'Bacolod',
-            'Baguio', 'Antipolo', 'Cavite City', 'Bacoor', 'Imus', 'Dasmariñas', 'Tagaytay'
+            'Cebu City', 'Mandaue City', 'Lapu-Lapu City', 'Talisay City', 'Minglanilla',
+            'Consolacion', 'Danao City', 'Carcar City', 'Toledo City', 'Naga City',
+            'Manila', 'Quezon City', 'Makati', 'Pasig', 'Taguig', 'Mandaluyong',
+            'Davao City', 'Cagayan de Oro', 'Iloilo City', 'Bacolod', 'Baguio',
         ];
 
-        // Philippine provinces (manually curated)
+        // Philippine provinces
         $provinces = [
-            'Metro Manila', 'Rizal', 'Cavite', 'Laguna', 'Bulacan', 'Pampanga', 'Batangas',
-            'Cebu', 'Davao del Sur', 'Misamis Oriental', 'Iloilo', 'Negros Occidental',
-            'Benguet', 'Pangasinan', 'Nueva Ecija', 'Tarlac', 'Zambales'
+            'Cebu', 'Metro Manila', 'Rizal', 'Cavite', 'Laguna', 'Bulacan', 'Pampanga',
+            'Batangas', 'Davao del Sur', 'Misamis Oriental', 'Iloilo', 'Negros Occidental',
+            'Benguet', 'Pangasinan', 'Nueva Ecija', 'Tarlac', 'Zambales',
         ];
 
-        // Common Filipino first names (manually curated for authenticity)
+        // Common Filipino first names
         $firstNames = [
             'Juan', 'Jose', 'Miguel', 'Angelo', 'Gabriel', 'Joshua', 'Christian', 'John', 'Mark', 'James',
             'Andres', 'Alden', 'Jacob', 'Nathaniel', 'Emmanuel', 'Daniel', 'Michael', 'Rafael', 'Luis', 'Carlos',
             'Maria', 'Angela', 'Althea', 'Andrea', 'Samantha', 'Angel', 'Princess', 'Cristina', 'Victoria', 'Isabella',
-            'Sofia', 'Camilla', 'Nathalie', 'Jasmine', 'Mariel', 'Clarissa', 'Lourdes', 'Theresa', 'Rosa', 'Elena'
+            'Sofia', 'Camilla', 'Nathalie', 'Jasmine', 'Mariel', 'Clarissa', 'Lourdes', 'Theresa', 'Rosa', 'Elena',
+            'Sherilyn', 'Jessa', 'Jasmine', 'Katrina', 'Christine', 'Mary Grace', 'Nicole', 'Janine', 'Rhea', 'Mae',
         ];
 
-        // Common Filipino last names (manually curated for authenticity)
+        // Common Filipino last names
         $lastNames = [
             'Dela Cruz', 'Reyes', 'Santos', 'Garcia', 'Cruz', 'Ramos', 'Mendoza', 'Torres', 'Flores', 'Rivera',
             'Gonzales', 'Bautista', 'Fernandez', 'Castro', 'Villanueva', 'Domingo', 'Aquino', 'Perez', 'Lopez', 'Salvador',
             'Hernandez', 'Martinez', 'Silva', 'De Guzman', 'Cabrera', 'Lim', 'Tan', 'Ong', 'Chua', 'Sy',
-            'Go', 'Lee', 'Uy', 'Co', 'Yap', 'King', 'Chan', 'Young', 'Tee', 'Wee'
+            'Go', 'Lee', 'Uy', 'Co', 'Yap', 'King', 'Chan', 'Young', 'Tee', 'Wee',
+            'Sanchez', 'Navarro', 'Mercado', 'Rosales', 'Padilla', 'Villamor', 'Abella', 'Cañete', 'Caballero', 'Labrador',
         ];
 
         // PRE-DEFINED PURE ENGLISH TEXT ARRAYS (NO FAKER TEXT GENERATION)
-        
-        // Previous Music Experience - 15 realistic English samples
         $musicExperiences = [
             'Started learning piano at age 8 through school music program. Participated in several school recitals and local competitions. Comfortable reading sheet music and playing basic classical pieces.',
             'Self-taught guitarist with 2 years of experience. Learned primarily through online tutorials and can play basic chords and simple songs. Looking to improve technique and expand repertoire.',
@@ -101,10 +102,9 @@ class StudentSeeder extends Seeder
             'Studied music theory in school and participated in ensemble performances. Good understanding of rhythm and melody but limited instrumental practice.',
             'Learned bass guitar by watching videos and playing along with favorite songs. Can follow chord progressions and wants to learn proper technique.',
             'Took group music classes for one year. Familiar with basic concepts but wants one-on-one instruction to develop skills more effectively.',
-            'Has natural musical talent and good ear for music. Learns quickly by listening but wants to understand music theory and proper technique.'
+            'Has natural musical talent and good ear for music. Learns quickly by listening but wants to understand music theory and proper technique.',
         ];
 
-        // Music Goals - 15 realistic English samples
         $musicGoals = [
             'Want to perform confidently at school events and family gatherings. Goal is to build a repertoire of popular songs and improve sight-reading ability. Also interested in learning music composition basics.',
             'Aspire to join a band and perform with other musicians. Want to develop strong technical skills and learn various music genres including rock, pop, and jazz.',
@@ -120,52 +120,75 @@ class StudentSeeder extends Seeder
             'Interested in exploring different music genres and finding personal style. Goal is to become versatile musician who can adapt to various musical contexts.',
             'Want to play music professionally at weddings and events someday. Need to build extensive repertoire and master different performance techniques.',
             'Looking to collaborate with other musicians and form a band. Want to understand ensemble playing and develop skills for group musical performances.',
-            'Aspire to compose original music and understand music production. Want solid foundation in theory and technique to support creative musical endeavors.'
+            'Aspire to compose original music and understand music production. Want solid foundation in theory and technique to support creative musical endeavors.',
         ];
 
-        // Secondary Instruments - realistic English instrument combinations
         $secondaryInstruments = [
             'Piano, Vocals', 'Drums, Percussion', 'Guitar, Ukulele', 'Bass, Guitar', 'Keyboard, Synthesizer',
             'Violin, Viola', 'Vocals, Piano', 'Percussion, Drums', 'Ukulele, Guitar', 'Flute, Recorder',
-            'Saxophone, Clarinet', 'Trumpet, Cornet', 'Guitar, Bass', 'Piano, Organ', 'Vocals, Guitar'
+            'Saxophone, Clarinet', 'Trumpet, Cornet', 'Guitar, Bass', 'Piano, Organ', 'Vocals, Guitar',
         ];
 
-        // Medical Conditions - realistic, non-sensitive samples (70% null chance)
         $medicalConditions = [
-            null, null, null, null, null, null, null, // 70% null
+            null, null, null, null, null, null, null,
             'Mild asthma, controlled with medication',
             'Seasonal allergies, no major impact',
             'Wears eyeglasses for nearsightedness',
             'History of minor ear infections, fully resolved',
             'Takes daily vitamins for general health',
             'Occasional headaches, managed with rest',
-            'Minor back pain, uses proper posture support'
+            'Minor back pain, uses proper posture support',
         ];
 
-        // Allergies - realistic samples (80% null chance)
         $allergies = [
-            null, null, null, null, null, null, null, null, // 80% null
+            null, null, null, null, null, null, null, null,
             'Mild pollen allergies during summer',
             'Dust sensitivity, manageable',
             'Food allergy to shellfish',
             'Pet dander sensitivity',
-            'Mild lactose intolerance'
+            'Mild lactose intolerance',
         ];
 
-        // Special Needs - realistic samples (90% null chance)
         $specialNeeds = [
-            null, null, null, null, null, null, null, null, null, // 90% null
+            null, null, null, null, null, null, null, null, null,
             'Prefers written instructions along with verbal',
             'Benefits from extra practice time',
             'Needs frequent breaks during lessons',
-            'Learns best with visual demonstrations'
+            'Learns best with visual demonstrations',
         ];
 
         // Generate 50 students
         foreach (range(1, 50) as $i) {
+            /*
+            |--------------------------------------------------------------------------
+            | Filipino Student Name
+            |--------------------------------------------------------------------------
+            |
+            | Names are generated from Filipino-style name arrays.
+            | The same name is used to create the login/profile email.
+            |
+            */
+            $firstName = $faker->randomElement($firstNames);
+            $middleName = $faker->optional(0.7)->randomElement($firstNames);
+            $lastName = $faker->randomElement($lastNames);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Student Login Email
+            |--------------------------------------------------------------------------
+            |
+            | IMPORTANT:
+            | user_account.user_email and student.email must be the same.
+            |
+            | Example:
+            | juan.delacruz.student1@musiclab.com
+            |
+            */
+            $studentEmail = $this->makeFilipinoEmail($firstName, $lastName, $i, 'student');
+
             // Create user account for the student
             $userId = DB::table('user_account')->insertGetId([
-                'user_email' => $faker->unique()->safeEmail,
+                'user_email' => $studentEmail,
                 'user_password' => Hash::make('password'),
                 'is_super_admin' => false,
                 'created_at' => now(),
@@ -177,70 +200,47 @@ class StudentSeeder extends Seeder
             $emergencyPhone = '09' . $faker->numerify('#########');
             $parentPhone = '09' . $faker->numerify('#########');
 
-            // Philippine location data from manual arrays
             $city = $faker->randomElement($cities);
             $province = $faker->randomElement($provinces);
-            $postalCode = $faker->numerify('####'); // Simple 4-digit postal
+            $postalCode = $faker->numerify('####');
 
-            // Streets and schools from manual arrays
             $street = $faker->randomElement($streets);
             $school = $faker->randomElement($schools);
 
-            // Build realistic address
             $buildingNumber = $faker->numberBetween(1, 999);
             $addressLine1 = $buildingNumber . ' ' . $street;
             $addressLine2 = $faker->optional(0.3)->secondaryAddress;
 
-            // Date of birth: student age 10-25 years, format "Month day, Year"
-            $dob = $faker->dateTimeBetween('-25 years', '-10 years')->format('F j, Y');
+            $dob = $faker->dateTimeBetween('-25 years', '-10 years')->format('Y-m-d');
 
-            // Preferred lesson days: comma-separated
             $preferredDaysArray = $faker->randomElements(
-                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'], 
+                ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
                 $faker->numberBetween(2, 5)
             );
             $preferredDays = implode(', ', $preferredDaysArray);
 
-            // Preferred lesson time: realistic 1-2 hour slot
             $startHour = $faker->numberBetween(8, 17);
             $duration = $faker->randomElement([1, 1.5, 2]);
             $endHour = $startHour + $duration;
             $startTime = sprintf('%02d:00', $startHour);
-            $endTime = $duration == 1.5 ? sprintf('%02d:30', $startHour + 1) : sprintf('%02d:00', (int)$endHour);
+            $endTime = $duration == 1.5 ? sprintf('%02d:30', $startHour + 1) : sprintf('%02d:00', (int) $endHour);
             $preferredTime = Carbon::createFromFormat('H:i', $startTime)->format('g:i A') . ' - ' .
-                             Carbon::createFromFormat('H:i', $endTime)->format('g:i A');
+                Carbon::createFromFormat('H:i', $endTime)->format('g:i A');
 
-            // Student name: authentic Filipino
-            $firstName = $faker->randomElement($firstNames);
-            $middleName = $faker->optional(0.7)->randomElement($firstNames);
-            $lastName = $faker->randomElement($lastNames);
-
-            // Guardian/Parent: authentic Filipino name + realistic email
             $parentFirstName = $faker->randomElement($firstNames);
             $parentLastName = $faker->randomElement($lastNames);
             $parentFullName = $parentFirstName . ' ' . $parentLastName;
-            $parentEmail = strtolower(
-                str_replace(' ', '.', $parentFirstName) . '.' . 
-                str_replace(' ', '.', $parentLastName) . '@example.com'
-            );
+            $parentEmail = $this->makeFilipinoEmail($parentFirstName, $parentLastName, $i, 'guardian');
 
-            // Emergency contact: authentic Filipino name
             $emergencyFirstName = $faker->randomElement($firstNames);
             $emergencyLastName = $faker->randomElement($lastNames);
             $emergencyFullName = $emergencyFirstName . ' ' . $emergencyLastName;
 
-            // Generate realistic enrollment timeline (2023 onwards)
             $enrollmentDateObj = Carbon::instance($faker->dateTimeBetween('2023-01-01', 'now'));
-
-            // Simulate short completion: 4-12 weeks after enrollment
             $weeksToComplete = $faker->numberBetween(4, 12);
             $completionDateObj = $enrollmentDateObj->copy()->addWeeks($weeksToComplete);
+            $expectedCompletionDate = $completionDateObj->format('Y-m-d');
 
-            // Display dates in "Month day, Year" format
-            $enrollmentDateDisplay = $enrollmentDateObj->format('F j, Y');
-            $expectedCompletionDateDisplay = $completionDateObj->format('F j, Y');
-
-            // CRITICAL: Select from pre-defined PURE ENGLISH arrays (NO FAKER METHODS)
             $selectedExperience = $faker->randomElement($musicExperiences);
             $selectedGoals = $faker->randomElement($musicGoals);
             $selectedSecondaryInstruments = $faker->optional(0.4)->randomElement($secondaryInstruments);
@@ -248,7 +248,6 @@ class StudentSeeder extends Seeder
             $selectedAllergies = $faker->randomElement($allergies);
             $selectedSpecialNeeds = $faker->randomElement($specialNeeds);
 
-            // Insert student record
             DB::table('student')->insert([
                 'user_id' => $userId,
 
@@ -260,7 +259,7 @@ class StudentSeeder extends Seeder
 
                 // Contact
                 'phone' => $phone,
-                'email' => $faker->safeEmail,
+                'email' => $studentEmail,
 
                 // Address
                 'address_line1' => $addressLine1,
@@ -275,19 +274,19 @@ class StudentSeeder extends Seeder
                 'gender' => $faker->randomElement(['Male', 'Female', 'Other', 'Prefer not to say']),
                 'nationality' => 'Filipino',
 
-                // Emergency Contact - authentic Filipino name
+                // Emergency Contact
                 'emergency_contact_name' => $emergencyFullName,
                 'emergency_contact_relationship' => $faker->randomElement(['Parent', 'Guardian', 'Sibling', 'Relative']),
                 'emergency_contact_phone' => $emergencyPhone,
 
-                // Guardian/Parent Information - authentic Filipino name + realistic email
+                // Guardian/Parent Information
                 'parent_guardian_name' => $parentFullName,
                 'parent_guardian_relationship' => $faker->randomElement(['Father', 'Mother', 'Guardian']),
                 'parent_guardian_phone' => $parentPhone,
                 'parent_guardian_email' => $parentEmail,
                 'parent_guardian_address' => $addressLine1 . ', ' . $city . ', ' . $province . ', Philippines',
 
-                // Musical Background - PURE ENGLISH from pre-defined arrays
+                // Musical Background
                 'instrument_id' => $faker->randomElement($instrumentIds),
                 'secondary_instruments' => $selectedSecondaryInstruments,
                 'previous_music_experience' => $selectedExperience,
@@ -298,14 +297,14 @@ class StudentSeeder extends Seeder
                 'school_name' => $school,
                 'grade_level' => $faker->randomElement(['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10', 'Grade 11', 'Grade 12', 'College']),
 
-                // Medical Information - PURE ENGLISH from pre-defined arrays
+                // Medical Information
                 'medical_conditions' => $selectedMedical,
                 'allergies' => $selectedAllergies,
                 'special_needs' => $selectedSpecialNeeds,
 
                 // Enrollment Information
                 'enrollment_date' => $enrollmentDateObj->format('Y-m-d'),
-                'expected_completion_date' => $expectedCompletionDateDisplay,
+                'expected_completion_date' => $expectedCompletionDate,
                 'student_status_id' => $faker->randomElement($studentStatusIds),
                 'preferred_genre_id' => $faker->randomElement($genreIds),
 
@@ -319,5 +318,22 @@ class StudentSeeder extends Seeder
                 'updated_at' => now(),
             ]);
         }
+
+        $this->command->info('✓ Successfully seeded 50 students with matching Filipino-name-based login/profile emails.');
+    }
+
+    /**
+     * Create a clean Filipino-name-based email.
+     *
+     * Examples:
+     * - juan.delacruz.student1@musiclab.com
+     * - maria.santos.guardian1@musiclab.com
+     */
+    private function makeFilipinoEmail(string $firstName, string $lastName, int $number, string $role): string
+    {
+        $cleanFirstName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $firstName));
+        $cleanLastName = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', $lastName));
+
+        return $cleanFirstName . '.' . $cleanLastName . '.' . $role . $number . '@musiclab.com';
     }
 }

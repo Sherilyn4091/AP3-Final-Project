@@ -1,4 +1,5 @@
 <?php
+
 // database/seeders/DatabaseSeeder.php
 
 namespace Database\Seeders;
@@ -12,94 +13,153 @@ class DatabaseSeeder extends Seeder
 
     /**
      * ============================================================================
-     * DATABASE SEEDER - PROPER EXECUTION ORDER
+     * DATABASE SEEDER - FINAL MUSIC LAB ORDER
      * ============================================================================
-     * Seeds are organized by dependency level to avoid foreign key constraint errors.
-     * Each level depends on the previous levels being completed first.
+     *
+     * Purpose:
+     * - Runs seeders in the correct foreign-key order.
+     * - Prevents errors where a child table is seeded before its parent table.
+     *
+     * Important relationship flow:
+     * 1. Instruments and specializations must exist before instructors/enrollments.
+     * 2. Lesson packages must exist before enrollments.
+     * 3. Instructors and students must exist before enrollments.
+     * 4. Enrollments must exist before schedules, payments, and progress.
+     * 5. Schedules must exist before attendance and progress.
+     *
      * ============================================================================
      */
     public function run(): void
     {
-        // ========================================================================
-        // LEVEL 1: LOOKUP/REFERENCE TABLES (No dependencies)
-        // These tables have no foreign keys and are referenced by other tables
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 1: Lookup / reference tables
+        |--------------------------------------------------------------------------
+        |
+        | These tables have no major parent dependencies.
+        | Other tables will reference these values.
+        |
+        */
         $this->call([
-            InstrumentSeeder::class,        // Referenced by: student
-            SpecializationSeeder::class,    // Referenced by: instructor_specialization
-            GenreSeeder::class,             // Referenced by: student
-            StudentStatusSeeder::class,     // Referenced by: student
-            PaymentMethodSeeder::class,     // Referenced by: payment
-            PaymentStatusSeeder::class,     // Referenced by: payment
-            RoomSeeder::class,              // Referenced by: schedule, booking
+            InstrumentSeeder::class,        // Official lessons: Guitar, Bass, Keyboard, Drums, Ukulele, Violin, Voice
+            SpecializationSeeder::class,    // Must match instruments for instructor filtering
+            GenreSeeder::class,             // Used by student profile/preference
+            StudentStatusSeeder::class,     // Used by student records
+            PaymentMethodSeeder::class,     // Used by enrollment/payment
+            PaymentStatusSeeder::class,     // Used by payment records
+            RoomSeeder::class,              // Used by schedule and booking
         ]);
 
-        // ========================================================================
-        // LEVEL 2: USER ACCOUNTS
-        // Core authentication table that all user roles depend on
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 2: Authentication account
+        |--------------------------------------------------------------------------
+        |
+        | Creates the super admin account.
+        | Student and instructor accounts are created by their own seeders.
+        |
+        */
         $this->call([
-            UserAccountSeeder::class,       // Creates super admin and test users
+            UserAccountSeeder::class,
         ]);
 
-        // ========================================================================
-        // LEVEL 3: INDEPENDENT TABLES
-        // No foreign key dependencies (except possibly suppliers)
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 3: Independent business data
+        |--------------------------------------------------------------------------
+        |
+        | Suppliers are used by inventory.
+        | Lesson sessions/packages are used by enrollment.
+        |
+        */
         $this->call([
-            SupplierSeeder::class,          // Referenced by: inventory
-            LessonSessionSeeder::class,     // Referenced by: enrollment
+            SupplierSeeder::class,
+            LessonSessionSeeder::class,
         ]);
 
-        // ========================================================================
-        // LEVEL 4: USER ROLE TABLES
-        // Depend on: user_account, and some lookup tables
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 4: User role tables
+        |--------------------------------------------------------------------------
+        |
+        | InstructorSeeder:
+        | - creates user_account rows for instructors
+        | - creates instructor rows
+        | - assigns instructor specializations
+        |
+        | StudentSeeder:
+        | - creates user_account rows for students
+        | - creates student profile rows
+        |
+        */
         $this->call([
-            InstructorSeeder::class,        // Depends on: user_account
-                                            // Referenced by: instructor_specialization, enrollment, schedule
-            
-            StudentSeeder::class,           // Depends on: user_account, student_status, instrument, genre
-                                            // Referenced by: enrollment, schedule, payment, attendance
+            InstructorSeeder::class,
+            StudentSeeder::class,
         ]);
 
-
-        // ========================================================================
-        // LEVEL 5: INVENTORY
-        // Depends on: supplier
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 5: Inventory
+        |--------------------------------------------------------------------------
+        |
+        | Inventory depends on supplier data.
+        |
+        */
         $this->call([
-            InventorySeeder::class,         // Depends on: supplier
+            InventorySeeder::class,
         ]);
 
-        // ========================================================================
-        // LEVEL 7: ENROLLMENTS
-        // Depend on: student, instructor, lesson_session
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 6: Enrollments
+        |--------------------------------------------------------------------------
+        |
+        | Enrollment depends on:
+        | - student
+        | - instructor
+        | - instrument
+        | - lesson_session
+        | - payment_methods
+        |
+        | This is the table that connects:
+        | student + instrument + instructor + package
+        |
+        */
         $this->call([
-            EnrollmentSeeder::class,        // Depends on: student, instructor, lesson_session
-                                            // Referenced by: schedule, payment, progress
+            EnrollmentSeeder::class,
         ]);
 
-        // ========================================================================
-        // LEVEL 8: SCHEDULES
-        // Depend on: enrollment, student, instructor
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 7: Schedules
+        |--------------------------------------------------------------------------
+        |
+        | Schedule depends on enrollment.
+        | Each schedule must match the enrollment's student and instructor.
+        |
+        */
         $this->call([
-            ScheduleSeeder::class,          // Depends on: enrollment, student, instructor
-                                            // Referenced by: attendance, progress
+            ScheduleSeeder::class,
         ]);
 
-        // ========================================================================
-        // LEVEL 9: TRANSACTIONS & TRACKING
-        // Depend on: enrollment, schedule, student
-        // ========================================================================
+        /*
+        |--------------------------------------------------------------------------
+        | Level 8: Transactions and tracking
+        |--------------------------------------------------------------------------
+        |
+        | Payment depends on enrollment and student.
+        | Attendance depends on schedule.
+        | Progress depends on schedule and enrollment.
+        |
+        */
         $this->call([
-            PaymentSeeder::class,        // Depends on: student, enrollment, payment_method, payment_status
-            AttendanceSeeder::class,     // Depends on: schedule, student, instructor, user_account
-            ProgressSeeder::class,       // Depends on: student, enrollment, instructor, schedule
+            PaymentSeeder::class,
+            BookingSeeder::class,
+            AttendanceSeeder::class,
+            ProgressSeeder::class,
+            ReviewSeeder::class,
         ]);
 
-        $this->command->info('✓ All seeders completed successfully!');
+        $this->command->info('All Music Lab seeders completed successfully.');
     }
 }

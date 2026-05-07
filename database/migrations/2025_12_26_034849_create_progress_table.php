@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 return new class extends Migration
 {
     /**
+     * database/migrations/2025_12_26_034849_create_progress_table.php
      * Run the migrations.
      */
     public function up(): void

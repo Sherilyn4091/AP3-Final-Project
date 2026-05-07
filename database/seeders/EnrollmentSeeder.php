@@ -2,132 +2,265 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 /**
  * ============================================================================
- * ENROLLMENT SEEDER - FIXED FOR AUTO-ENROLLMENT-DATE TRIGGER
+ * ENROLLMENT SEEDER
  * ============================================================================
- * - REMOVED enrollment_date from INSERT (trigger handles it)
- * - Uses student's actual enrollment_date via trigger
- * - Proper FK relationships maintained
+ *
+ * Creates demo enrollments that follow Music Lab's real rule:
+ * - One student can have many enrollments.
+ * - Each enrollment has one instrument.
+ * - Each enrollment has one instructor.
+ * - The instructor should be connected to the instrument specialization.
+ *
+ * Example:
+ * Angel Flores -> Guitar -> Instructor A
+ * Angel Flores -> Keyboard -> Instructor B
  * ============================================================================
  */
 class EnrollmentSeeder extends Seeder
 {
     public function run(): void
     {
-        // Fetch required foreign keys
-        $studentIds = DB::table('student')->pluck('student_id')->toArray();
-        $sessionIds = DB::table('lesson_session')->pluck('session_id')->toArray();
-        $instructorIds = DB::table('instructor')->pluck('instructor_id')->toArray();
-        $paymentMethodIds = DB::table('payment_methods')->pluck('method_id')->toArray();
+        $students = DB::table('student')
+            ->select('student_id', 'enrollment_date')
+            ->orderBy('student_id')
+            ->get();
 
-        if (empty($studentIds)) {
+        $packages = DB::table('lesson_session')
+            ->select('session_id', 'session_count', 'price')
+            ->where('is_active', true)
+            ->orderBy('session_count')
+            ->get();
+
+        $instruments = DB::table('instrument')
+            ->select('instrument_id', 'instrument_name')
+            ->where('is_active', true)
+            ->orderBy('instrument_name')
+            ->get();
+
+        $paymentMethodIds = DB::table('payment_methods')
+            ->pluck('method_id')
+            ->toArray();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Required Data Checks
+        |--------------------------------------------------------------------------
+        |
+        | This prevents confusing errors if another seeder was not run first.
+        |
+        */
+        if ($students->isEmpty()) {
             $this->command->error('No students found. Run StudentSeeder first.');
             return;
         }
-        if (empty($sessionIds)) {
-            $this->command->error('No lesson_session found. Run LessonSessionSeeder first.');
+
+        if ($packages->isEmpty()) {
+            $this->command->error('No lesson packages found. Run LessonSessionSeeder first.');
             return;
         }
-        if (empty($instructorIds)) {
-            $this->command->error('No instructors found. Run InstructorSeeder first.');
+
+        if ($instruments->isEmpty()) {
+            $this->command->error('No instruments found. Run InstrumentSeeder first.');
             return;
         }
+
         if (empty($paymentMethodIds)) {
-            $this->command->error('No payment_method found. Check payment_method table.');
+            $this->command->error('No payment methods found. Run PaymentMethodSeeder first.');
             return;
         }
 
-        // Number of enrollments to create
-        $count = 30;
+        if (DB::table('enrollment')->exists()) {
+            $this->command->warn('Enrollments already exist. EnrollmentSeeder skipped to avoid duplicates.');
+            return;
+        }
 
-        // Get current year-month for enrollment_id prefix
-        $ym = now()->format('Y-m');
+        /*
+        |--------------------------------------------------------------------------
+        | Safe Target Count
+        |--------------------------------------------------------------------------
+        |
+        | We cannot create more unique student + instrument pairs than possible.
+        | This prevents an infinite loop.
+        |
+        */
+        $requestedCount = 30;
+        $maxPossiblePairs = $students->count() * $instruments->count();
+        $targetCount = min($requestedCount, $maxPossiblePairs);
 
-        // Find the highest sequence number for this month
-        $maxSeq = DB::table('enrollment')
-            ->where('enrollment_id', 'LIKE', $ym . '-%')
-            ->selectRaw("MAX(CAST(SUBSTRING(enrollment_id FROM 9) AS BIGINT)) AS max_seq")
-            ->value('max_seq');
+        $created = 0;
+        $attempts = 0;
+        $maxAttempts = $targetCount * 20;
 
-        $seq = $maxSeq ? (int)$maxSeq + 1 : 1;
+        $usedStudentInstrumentPairs = [];
 
-        $this->command->info("Seeding {$count} enrollments starting from {$ym}-" . str_pad($seq, 7, '0', STR_PAD_LEFT) . "...");
+        $this->command->info("Seeding {$targetCount} Music Lab enrollments...");
 
-        for ($i = 0; $i < $count; $i++) {
-            $studentId = $studentIds[array_rand($studentIds)];
-            $sessionId = $sessionIds[array_rand($sessionIds)];
-            $instructorId = $instructorIds[array_rand($instructorIds)];
+        while ($created < $targetCount && $attempts < $maxAttempts) {
+            $attempts++;
+
+            $student = $students->random();
+            $instrument = $instruments->random();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Avoid Duplicate Student + Instrument Pair
+            |--------------------------------------------------------------------------
+            */
+            $pairKey = $student->student_id . '|' . $instrument->instrument_id;
+
+            if (isset($usedStudentInstrumentPairs[$pairKey])) {
+                continue;
+            }
+
+            $qualifiedInstructorIds = $this->getQualifiedInstructorIds($instrument->instrument_name);
+
+            if (empty($qualifiedInstructorIds)) {
+                $this->command->warn("No available instructor found for {$instrument->instrument_name}. Skipped.");
+                continue;
+            }
+
+            $package = $packages->random();
+            $instructorId = $qualifiedInstructorIds[array_rand($qualifiedInstructorIds)];
             $paymentMethodId = $paymentMethodIds[array_rand($paymentMethodIds)];
 
-            // Get student's enrollment_date (will be auto-set by trigger)
-            $student = DB::table('student')->where('student_id', $studentId)->first();
+            $totalSessions = (int) $package->session_count;
+            $completedSessions = random_int(0, min(3, $totalSessions));
+            $remainingSessions = $totalSessions - $completedSessions;
 
-            // Get session package details
-            $pkg = DB::table('lesson_session')
-                ->where('session_id', $sessionId)
-                ->select('session_count', 'price')
-                ->first();
+            /*
+            |--------------------------------------------------------------------------
+            | Demo Payment Status
+            |--------------------------------------------------------------------------
+            */
+            $randomPayment = random_int(1, 100);
 
-            $totalSessions = (int)$pkg->session_count;
-            $totalAmount = (float)$pkg->price;
-
-            // Random completion progress
-            $completed = rand(0, min(3, $totalSessions));
-            $remaining = $totalSessions - $completed;
-
-            // Random payment status
-            $rand = rand(1, 100);
-            if ($rand <= 75) {
+            if ($randomPayment <= 75) {
                 $paymentStatus = 'paid';
-                $amountPaid = $totalAmount;
-            } elseif ($rand <= 90) {
+                $amountPaid = (float) $package->price;
+            } elseif ($randomPayment <= 90) {
                 $paymentStatus = 'partial';
-                $amountPaid = $totalAmount * 0.5;
+                $amountPaid = (float) $package->price * 0.5;
             } else {
                 $paymentStatus = 'pending';
                 $amountPaid = 0.00;
             }
 
-            // Calculate start/end dates based on student's enrollment_date
-            $startDate = Carbon::parse($student->enrollment_date)->addDays(rand(1, 5))->toDateString();
-            $endDate = Carbon::parse($startDate)->addDays(rand(30, 90))->toDateString();
+            /*
+            |--------------------------------------------------------------------------
+            | Demo Dates
+            |--------------------------------------------------------------------------
+            */
+            $enrollmentDate = Carbon::parse($student->enrollment_date ?? now())->toDateString();
+            $startDate = Carbon::parse($enrollmentDate)->addDays(random_int(1, 5))->toDateString();
+            $endDate = Carbon::parse($startDate)->addWeeks($totalSessions)->toDateString();
 
-            // Generate enrollment_id
-            $enrollmentId = $ym . '-' . str_pad((string)$seq, 7, '0', STR_PAD_LEFT);
-            $seq++;
+            $enrollmentId = $this->generateEnrollmentId($created + 1);
 
-            // REMOVED enrollment_date - trigger auto-sets it from student table
             DB::table('enrollment')->insert([
                 'enrollment_id' => $enrollmentId,
-                'student_id' => $studentId,
-                'session_id' => $sessionId,
+                'student_id' => $student->student_id,
+                'instrument_id' => $instrument->instrument_id,
+                'session_id' => $package->session_id,
                 'instructor_id' => $instructorId,
-                // enrollment_date AUTO-SET by trigger from student.enrollment_date
+                'payment_method_id' => $paymentMethodId,
+                'enrollment_date' => $enrollmentDate,
                 'start_date' => $startDate,
                 'end_date' => $endDate,
                 'total_sessions' => $totalSessions,
-                'completed_sessions' => $completed,
-                'remaining_sessions' => $remaining,
-                'status' => $remaining > 0 ? 'active' : 'completed',
+                'completed_sessions' => $completedSessions,
+                'remaining_sessions' => $remainingSessions,
+                'status' => $remainingSessions > 0 ? 'active' : 'completed',
                 'payment_status' => $paymentStatus,
-                'payment_method_id' => $paymentMethodId,
-                'total_amount' => $totalAmount,
+                'total_amount' => $package->price,
                 'amount_paid' => $amountPaid,
-                'notes' => 'Demo enrollment - seeded',
+                'notes' => "Demo {$instrument->instrument_name} enrollment generated by EnrollmentSeeder.",
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            if (($i + 1) % 10 === 0) {
-                $this->command->info("   ✓ Created " . ($i + 1) . " enrollments...");
+            /*
+            |--------------------------------------------------------------------------
+            | Optional Student Profile Sync
+            |--------------------------------------------------------------------------
+            |
+            | The actual lesson instrument is saved in enrollment.instrument_id.
+            | This update only keeps student.instrument_id useful as the latest or
+            | preferred display value.
+            |
+            */
+            DB::table('student')
+                ->where('student_id', $student->student_id)
+                ->update([
+                    'instrument_id' => $instrument->instrument_id,
+                    'updated_at' => now(),
+                ]);
+
+            $usedStudentInstrumentPairs[$pairKey] = true;
+            $created++;
+
+            if ($created % 10 === 0) {
+                $this->command->info("Created {$created} enrollments...");
             }
         }
 
-        $this->command->info("Successfully seeded {$count} enrollments!");
+        $this->command->info("Successfully seeded {$created} Music Lab enrollments.");
+
+        if ($created < $targetCount) {
+            $this->command->warn("Only {$created} enrollments were created because the available valid data was limited.");
+        }
+    }
+
+    /**
+     * Find instructors whose specialization matches the selected instrument.
+     */
+    private function getQualifiedInstructorIds(string $instrumentName): array
+    {
+        $ids = DB::table('instructor as i')
+            ->join('instructor_specialization as isp', 'i.instructor_id', '=', 'isp.instructor_id')
+            ->join('specialization as sp', 'isp.specialization_id', '=', 'sp.specialization_id')
+            ->where('i.is_active', true)
+            ->where('i.is_available', true)
+            ->whereRaw('LOWER(sp.specialization_name) = ?', [strtolower($instrumentName)])
+            ->pluck('i.instructor_id')
+            ->unique()
+            ->values()
+            ->toArray();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Fallback
+        |--------------------------------------------------------------------------
+        |
+        | This prevents the seeder from failing if demo instructor specialization
+        | data is incomplete. In real enrollment, the controller still validates
+        | the correct specialization.
+        |
+        */
+        if (empty($ids)) {
+            $ids = DB::table('instructor')
+                ->where('is_active', true)
+                ->where('is_available', true)
+                ->pluck('instructor_id')
+                ->toArray();
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Generate readable enrollment IDs.
+     *
+     * Example:
+     * 2026-05-0000001
+     */
+    private function generateEnrollmentId(int $sequence): string
+    {
+        return now()->format('Y-m') . '-' . str_pad((string) $sequence, 7, '0', STR_PAD_LEFT);
     }
 }

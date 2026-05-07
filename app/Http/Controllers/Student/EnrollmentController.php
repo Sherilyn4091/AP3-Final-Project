@@ -3,82 +3,106 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
+use App\Models\Enrollment;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
-use App\Models\Enrollment;
+use Illuminate\Support\Facades\Log;
 
+/**
+ * app/Http/Controllers/Student/EnrollmentController.php
+ *
+ * Handles student enrollment actions:
+ * - Browse lesson packages
+ * - View enrollment history
+ * - View enrollment details
+ * - Submit a new enrollment
+ * - Filter instructors by selected instrument
+ *
+ * Important Music Lab rule:
+ * - One student can have many enrollments.
+ * - Each enrollment has one instrument.
+ * - Each enrollment has one assigned instructor.
+ * - The assigned instructor must be qualified for the selected instrument.
+ */
 class EnrollmentController extends Controller
 {
     /**
-     * app/Http/Controllers/Student/EnrollmentController.php
-     * Display available lesson packages for enrollment
-     * Purpose: Browse lesson packages TO PURCHASE (Requirement #7)
-     * Data Source: lesson_session table WHERE is_active = TRUE
+     * Display all active lesson packages.
+     *
+     * Example:
+     * - 5 Sessions Package
+     * - 10 Sessions Package
+     * - 20 Sessions Package
      */
     public function packages()
     {
-        // Fetch all active lesson packages from lesson_session table
         $packages = DB::table('lesson_session')
             ->where('is_active', true)
-            ->orderBy('session_count')  // Order: 5, 10, 20 sessions
+            ->orderBy('session_count')
             ->get();
 
         return view('student.packages', compact('packages'));
     }
 
     /**
-     * Display all the student's enrollments/packages (PAST PURCHASES)
-     * Purpose: View enrollment history and current packages
-     * Shows current and past lesson packages with progress tracking
+     * Display all enrollments of the authenticated student.
+     *
+     * This includes:
+     * - package details
+     * - enrolled instrument
+     * - assigned instructor
      */
     public function index()
     {
-        // Get student record using authenticated user ID
-        $student = DB::table('student')->where('user_id', Auth::id())->first();
-        
-        // Validate student exists
+        $student = DB::table('student')
+            ->where('user_id', Auth::id())
+            ->first();
+
         if (!$student) {
-            abort(404, 'Student record not found');
+            abort(404, 'Student record not found.');
         }
 
-        // Fetch all enrollments with related lesson session and instructor data
         $enrollments = Enrollment::where('student_id', $student->student_id)
             ->with([
-                'lessonSession',  // Get package details (5, 10, 20 sessions)
-                'instructor' => function ($q) {
-                    $q->select('instructor_id', 'first_name', 'last_name');
-                }
+                'lessonSession',
+                'instrument',
+                'instructor' => function ($query) {
+                    $query->select('instructor_id', 'first_name', 'last_name');
+                },
             ])
-            ->orderByDesc('enrollment_date')  // Most recent first
+            ->orderByDesc('enrollment_date')
             ->get();
 
         return view('student.enrollments', compact('enrollments'));
     }
 
     /**
-     * Show details of a specific enrollment/package
-     * Includes progress history for that enrollment
+     * Show details of one enrollment.
+     *
+     * Security:
+     * - The enrollment must belong to the authenticated student.
      */
     public function show($enrollmentId)
     {
-        // Get student record using authenticated user ID
-        $student = DB::table('student')->where('user_id', Auth::id())->first();
-        
-        // Validate student exists
+        $student = DB::table('student')
+            ->where('user_id', Auth::id())
+            ->first();
+
         if (!$student) {
-            abort(404, 'Student record not found');
+            abort(404, 'Student record not found.');
         }
 
-        // Fetch specific enrollment with security check (student_id match)
         $enrollment = Enrollment::where('enrollment_id', $enrollmentId)
-            ->where('student_id', $student->student_id)  // Security: only own enrollments
+            ->where('student_id', $student->student_id)
             ->with([
-                'lessonSession',  // Package details
-                'instructor',     // Instructor info
-                'progress' => function ($q) use ($student) {
-                    $q->where('student_id', $student->student_id);  // Only this student's progress
-                }
+                'lessonSession',
+                'instrument',
+                'instructor',
+                'progress' => function ($query) use ($student) {
+                    $query->where('student_id', $student->student_id);
+                },
             ])
             ->firstOrFail();
 
@@ -86,154 +110,289 @@ class EnrollmentController extends Controller
     }
 
     /**
-     * Show enrollment form for a specific package
-     * Purpose: Allow student to enroll in a selected package
+     * Show enrollment form for the selected lesson package.
+     *
+     * The form needs:
+     * - selected package
+     * - official Music Lab instruments
+     * - available instructors
+     * - payment methods
      */
     public function enrollmentForm($sessionId)
     {
-        // Get student record
-        $student = DB::table('student')->where('user_id', Auth::id())->first();
-        
+        $student = DB::table('student')
+            ->where('user_id', Auth::id())
+            ->first();
+
         if (!$student) {
-            abort(404, 'Student record not found');
+            abort(404, 'Student record not found.');
         }
 
-        // Get the selected package
         $package = DB::table('lesson_session')
             ->where('session_id', $sessionId)
             ->where('is_active', true)
             ->first();
 
         if (!$package) {
-            abort(404, 'Package not found or inactive');
+            abort(404, 'Package not found or inactive.');
         }
 
-        // Get available instructors
+        $instruments = DB::table('instrument')
+            ->where('is_active', true)
+            ->orderBy('instrument_name')
+            ->get();
+
         $instructors = DB::table('instructor')
             ->where('is_active', true)
             ->where('is_available', true)
             ->select('instructor_id', 'first_name', 'last_name')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
             ->get();
 
-        // Get payment methods
         $paymentMethods = DB::table('payment_methods')
             ->where('is_active', true)
+            ->orderBy('method_name')
             ->get();
 
-        return view('student.enroll-form', compact('student', 'package', 'instructors', 'paymentMethods'));
+        return view('student.enroll-form', compact(
+            'student',
+            'package',
+            'instruments',
+            'instructors',
+            'paymentMethods'
+        ));
     }
 
     /**
-     * Process enrollment form submission
-     * Inserts into enrollment table with auto-generated enrollment_id
+     * Process student enrollment.
+     *
+     * Important:
+     * - instrument_id is saved in enrollment, not only in student profile.
+     * - This supports one student enrolling in different instruments.
      */
     public function processEnrollment(Request $request)
     {
-        // Validate input
         $validated = $request->validate([
             'session_id' => 'required|exists:lesson_session,session_id',
             'instrument_id' => 'required|exists:instrument,instrument_id',
             'preferred_genre_id' => 'nullable|exists:genre,genre_id',
             'instructor_id' => 'required|exists:instructor,instructor_id',
+            'payment_method_id' => 'nullable|exists:payment_methods,method_id',
             'start_date' => 'required|date|after_or_equal:today',
             'notes' => 'nullable|string|max:1000',
         ]);
 
-        // Get student record
-        $student = DB::table('student')->where('user_id', Auth::id())->first();
-        
+        $student = DB::table('student')
+            ->where('user_id', Auth::id())
+            ->first();
+
         if (!$student) {
-            return redirect()->back()->with('error', 'Student record not found');
+            return back()
+                ->withInput()
+                ->with('error', 'Student record not found.');
         }
 
-        // Get package details
-        $package = DB::table('lesson_session')->where('session_id', $validated['session_id'])->first();
-        
+        $package = DB::table('lesson_session')
+            ->where('session_id', $validated['session_id'])
+            ->where('is_active', true)
+            ->first();
+
         if (!$package) {
-            return redirect()->back()->with('error', 'Package not found');
+            return back()
+                ->withInput()
+                ->with('error', 'Selected package not found or inactive.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Validate Instructor Qualification
+        |--------------------------------------------------------------------------
+        |
+        | This prevents wrong pairings such as:
+        | - Guitar enrollment assigned to a Voice instructor
+        | - Keyboard enrollment assigned to a Drums instructor
+        */
+        if (!$this->instructorCanTeachInstrument(
+            (int) $validated['instructor_id'],
+            (int) $validated['instrument_id']
+        )) {
+            return back()
+                ->withInput()
+                ->with('error', 'The selected instructor does not teach this instrument. Please choose a qualified instructor.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Prevent Duplicate Active Enrollment
+        |--------------------------------------------------------------------------
+        |
+        | A student can enroll in different instruments at the same time.
+        | But the student should not have two active enrollments for the same
+        | instrument at the same time.
+        */
+        $hasSameActiveEnrollment = DB::table('enrollment')
+            ->where('student_id', $student->student_id)
+            ->where('instrument_id', $validated['instrument_id'])
+            ->where('status', 'active')
+            ->exists();
+
+        if ($hasSameActiveEnrollment) {
+            return back()
+                ->withInput()
+                ->with('error', 'You already have an active enrollment for this instrument.');
         }
 
         try {
             DB::beginTransaction();
 
-            // Update student's instrument and genre if provided
+            $enrollmentId = $this->generateEnrollmentId();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Update Student Profile Preference
+            |--------------------------------------------------------------------------
+            |
+            | This is only for profile/preferred display.
+            | The real enrolled instrument is saved below in enrollment.instrument_id.
+            */
             DB::table('student')
                 ->where('student_id', $student->student_id)
                 ->update([
                     'instrument_id' => $validated['instrument_id'],
-                    'preferred_genre_id' => $validated['preferred_genre_id'],
+                    'preferred_genre_id' => $validated['preferred_genre_id'] ?? $student->preferred_genre_id,
                     'updated_at' => now(),
                 ]);
 
-            // Insert enrollment (enrollment_id auto-generated by trigger)
+            /*
+            |--------------------------------------------------------------------------
+            | Insert Enrollment
+            |--------------------------------------------------------------------------
+            |
+            | This row connects:
+            | student + instrument + instructor + lesson package
+            */
             DB::table('enrollment')->insert([
+                'enrollment_id' => $enrollmentId,
                 'student_id' => $student->student_id,
+                'instrument_id' => $validated['instrument_id'],
                 'session_id' => $validated['session_id'],
                 'instructor_id' => $validated['instructor_id'],
-                'enrollment_date' => now(),
+                'payment_method_id' => $validated['payment_method_id'] ?? null,
+
+                'enrollment_date' => now()->toDateString(),
                 'start_date' => $validated['start_date'],
+                'end_date' => Carbon::parse($validated['start_date'])
+                    ->addWeeks((int) $package->session_count)
+                    ->toDateString(),
+
                 'total_sessions' => $package->session_count,
                 'completed_sessions' => 0,
                 'remaining_sessions' => $package->session_count,
+
                 'status' => 'active',
                 'payment_status' => 'pending',
+
                 'total_amount' => $package->price,
                 'amount_paid' => 0,
-                'notes' => $validated['notes'],
+
+                'notes' => $validated['notes'] ?? null,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
             DB::commit();
 
-            return redirect()->route('student.enrollments')
-                ->with('success', 'Enrollment successful! Your package is now active.');
+            return redirect()
+                ->route('student.enrollments')
+                ->with('success', 'Enrollment successful. Your package is now active.');
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             DB::rollBack();
-            \Log::error('Enrollment error: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Enrollment failed. Please try again.');
+
+            Log::error('Student enrollment failed', [
+                'message' => $e->getMessage(),
+                'student_id' => $student->student_id,
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Enrollment failed. Please try again.');
         }
     }
 
     /**
-     * API: Get instructors filtered by instrument specialization
+     * API: Get instructors filtered by instrument specialization.
+     *
+     * Used when the student selects an instrument in the enrollment form.
      */
     public function getInstructorsByInstrument($instrumentId)
     {
-        // First get specialization_id that matches the instrument name
-        $instrument = DB::table('instrument')->where('instrument_id', $instrumentId)->first();
-        
+        $instrument = DB::table('instrument')
+            ->where('instrument_id', $instrumentId)
+            ->where('is_active', true)
+            ->first();
+
         if (!$instrument) {
             return response()->json([]);
         }
 
-        // Find matching specialization
-        $specialization = DB::table('specialization')
-            ->where('specialization_name', 'LIKE', '%' . $instrument->instrument_name . '%')
-            ->first();
-
-        if (!$specialization) {
-            // If no match, return all available instructors
-            $instructors = DB::table('instructor')
-                ->where('is_active', true)
-                ->where('is_available', true)
-                ->select('instructor_id', 'first_name', 'last_name')
-                ->get();
-            
-            return response()->json($instructors);
-        }
-
-        // Get instructors with this specialization
         $instructors = DB::table('instructor as i')
-            ->join('instructor_specialization as is', 'i.instructor_id', '=', 'is.instructor_id')
-            ->where('is.specialization_id', $specialization->specialization_id)
+            ->join('instructor_specialization as isp', 'i.instructor_id', '=', 'isp.instructor_id')
+            ->join('specialization as sp', 'isp.specialization_id', '=', 'sp.specialization_id')
             ->where('i.is_active', true)
             ->where('i.is_available', true)
+            ->whereRaw('LOWER(sp.specialization_name) = ?', [strtolower($instrument->instrument_name)])
             ->select('i.instructor_id', 'i.first_name', 'i.last_name')
             ->distinct()
+            ->orderBy('i.first_name')
+            ->orderBy('i.last_name')
             ->get();
 
         return response()->json($instructors);
+    }
+
+    /**
+     * Check if instructor has a specialization that matches the selected instrument.
+     */
+    private function instructorCanTeachInstrument(int $instructorId, int $instrumentId): bool
+    {
+        $instrument = DB::table('instrument')
+            ->where('instrument_id', $instrumentId)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$instrument) {
+            return false;
+        }
+
+        return DB::table('instructor_specialization as isp')
+            ->join('specialization as sp', 'isp.specialization_id', '=', 'sp.specialization_id')
+            ->where('isp.instructor_id', $instructorId)
+            ->whereRaw('LOWER(sp.specialization_name) = ?', [strtolower($instrument->instrument_name)])
+            ->exists();
+    }
+
+    /**
+     * Generate a custom enrollment ID.
+     *
+     * Format:
+     * YYYY-MM-0000001
+     *
+     * Example:
+     * 2026-05-0000001
+     */
+    private function generateEnrollmentId(): string
+    {
+        $prefix = now()->format('Y-m');
+
+        $maxSequence = DB::table('enrollment')
+            ->where('enrollment_id', 'LIKE', $prefix . '-%')
+            ->selectRaw("MAX(CAST(SUBSTRING(enrollment_id FROM 9) AS BIGINT)) AS max_sequence")
+            ->value('max_sequence');
+
+        $nextSequence = $maxSequence ? ((int) $maxSequence + 1) : 1;
+
+        return $prefix . '-' . str_pad((string) $nextSequence, 7, '0', STR_PAD_LEFT);
     }
 }

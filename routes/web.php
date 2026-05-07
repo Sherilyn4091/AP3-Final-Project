@@ -105,7 +105,8 @@ Route::middleware('auth')->group(function () {
         ->name('logout');
 
     // Role-Specific Dashboard Routes
-    Route::get('/student/dashboard', [App\Http\Controllers\Student\DashboardController::class, 'index'])->name('student.dashboard');
+    // Student dashboard is defined inside the student route group below.
+    // This avoids duplicate /student/dashboard routes.
 
     Route::get('/instructor/dashboard', function () {
         return view('dashboards.instructor');
@@ -387,113 +388,107 @@ Route::middleware('auth')->group(function () {
     // STUDENT ROUTES
     // ============================================================================
     Route::prefix('student')->name('student.')->group(function () {
-        
-        Route::get('/dashboard', function () {
-            $userId = Auth::id();
-            
-            // Get student record
-            $student = DB::table('student')->where('user_id', $userId)->first();
-            
-            if (!$student) {
-                abort(404, 'Student record not found');
-            }
-            
-            // Get current enrollment with lesson session details
-            $currentEnrollment = DB::table('enrollment as e')
-                ->leftJoin('lesson_session as ls', 'e.session_id', '=', 'ls.session_id')
-                ->where('e.student_id', $student->student_id)
-                ->where('e.status', 'active')
-                ->select('e.*', 'ls.session_count', 'ls.session_name', 'ls.price')
-                ->first();
-            
-            // Calculate progress percentage
-            $progressPercentage = 0;
-            if ($currentEnrollment && $currentEnrollment->total_sessions > 0) {
-                $progressPercentage = round(($currentEnrollment->completed_sessions / $currentEnrollment->total_sessions) * 100);
-            }
-            
-            // Get next lesson with instructor details
-            $nextLesson = DB::table('schedule as s')
-                ->leftJoin('instructor as i', 's.instructor_id', '=', 'i.instructor_id')
-                ->where('s.student_id', $student->student_id)
-                ->where('s.schedule_date', '>=', now()->toDateString())
-                ->where('s.status', 'scheduled')
-                ->select('s.*', 'i.first_name as instructor_first_name', 'i.last_name as instructor_last_name')
-                ->orderBy('s.schedule_date')
-                ->orderBy('s.start_time')
-                ->first();
-            
-            // Get recent progress
-            $recentProgress = DB::table('progress')
-                ->where('student_id', $student->student_id)
-                ->orderBy('progress_date', 'desc')
-                ->limit(6)
-                ->get();
-            
-            // Convert dates to Carbon instances
-            if ($currentEnrollment) {
-                $currentEnrollment->enrollment_date = $currentEnrollment->enrollment_date 
-                    ? \Carbon\Carbon::parse($currentEnrollment->enrollment_date) : null;
-            }
-            
-            if ($nextLesson) {
-                $nextLesson->schedule_date = \Carbon\Carbon::parse($nextLesson->schedule_date);
-                $nextLesson->start_time = \Carbon\Carbon::parse($nextLesson->start_time);
-                $nextLesson->end_time = \Carbon\Carbon::parse($nextLesson->end_time);
-                $nextLesson->instructor = (object)[
-                    'first_name' => $nextLesson->instructor_first_name,
-                    'last_name' => $nextLesson->instructor_last_name,
-                ];
-            }
-            
-            $recentProgress = $recentProgress->map(function($p) {
-                $p->progress_date = \Carbon\Carbon::parse($p->progress_date);
-                return $p;
-            });
-            
-            if ($currentEnrollment) {
-                $currentEnrollment->lessonSession = (object)[
-                    'session_count' => $currentEnrollment->session_count,
-                    'session_name' => $currentEnrollment->session_name,
-                    'price' => $currentEnrollment->price,
-                ];
-            }
-            
-            return view('dashboards.student', compact('student', 'currentEnrollment', 'progressPercentage', 'nextLesson', 'recentProgress'));
-        })->name('dashboard');
-        
-        // Schedule, Progress, Profile routes
-        Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])->name('schedule');
-        Route::get('/progress', [App\Http\Controllers\Student\ProgressController::class, 'index'])->name('progress');
-        Route::get('/profile', [App\Http\Controllers\Student\ProfileController::class, 'index'])->name('profile');
-        Route::patch('/profile', [App\Http\Controllers\Student\ProfileController::class, 'update'])->name('profile.update');
 
-        // Enrollment routes
-        Route::get('/packages', [App\Http\Controllers\Student\EnrollmentController::class, 'packages'])->name('packages');
-        Route::get('/enroll/{sessionId}', [App\Http\Controllers\Student\EnrollmentController::class, 'enrollmentForm'])->name('enroll.form');
-        Route::get('/enrollments', [App\Http\Controllers\Student\EnrollmentController::class, 'index'])->name('enrollments');
+        /*
+        |--------------------------------------------------------------------------
+        | Student Dashboard
+        |--------------------------------------------------------------------------
+        |
+        | Uses app/Http/Controllers/Student/DashboardController.php
+        | This keeps dashboard logic clean and prevents duplicate route logic.
+        |
+        */
+        Route::get('/dashboard', [App\Http\Controllers\Student\DashboardController::class, 'index'])
+            ->name('dashboard');
 
-        // Process enrollment form
-        Route::post('/enroll/process', [App\Http\Controllers\Student\EnrollmentController::class, 'processEnrollment'])->name('enroll.process');
+        /*
+        |--------------------------------------------------------------------------
+        | Student Schedule, Progress, and Profile
+        |--------------------------------------------------------------------------
+        */
+        Route::get('/schedule', [App\Http\Controllers\Student\ScheduleController::class, 'index'])
+            ->name('schedule');
 
-        // API: Get instructors by instrument
-        Route::get('/api/instructors-by-instrument/{instrumentId}', [App\Http\Controllers\Student\EnrollmentController::class, 'getInstructorsByInstrument']);
+        Route::get('/progress', [App\Http\Controllers\Student\ProgressController::class, 'index'])
+            ->name('progress');
 
+        Route::get('/profile', [App\Http\Controllers\Student\ProfileController::class, 'index'])
+            ->name('profile');
+
+        Route::patch('/profile', [App\Http\Controllers\Student\ProfileController::class, 'update'])
+            ->name('profile.update');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Enrollment
+        |--------------------------------------------------------------------------
+        |
+        | packages:
+        | - shows available 5, 10, and 20 session packages
+        |
+        | enroll.form:
+        | - shows the form for the selected package
+        |
+        | enroll.process:
+        | - saves the selected instrument, instructor, and package into enrollment
+        |
+        */
+        Route::get('/packages', [App\Http\Controllers\Student\EnrollmentController::class, 'packages'])
+            ->name('packages');
+
+        Route::get('/enroll/{sessionId}', [App\Http\Controllers\Student\EnrollmentController::class, 'enrollmentForm'])
+            ->name('enroll.form');
+
+        Route::post('/enroll/process', [App\Http\Controllers\Student\EnrollmentController::class, 'processEnrollment'])
+            ->name('enroll.process');
+
+        Route::get('/enrollments', [App\Http\Controllers\Student\EnrollmentController::class, 'index'])
+            ->name('enrollments');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Enrollment API
+        |--------------------------------------------------------------------------
+        |
+        | Used by the enrollment form to filter instructors based on the selected
+        | instrument specialization.
+        |
+        */
+        Route::get('/api/instructors-by-instrument/{instrumentId}', [App\Http\Controllers\Student\EnrollmentController::class, 'getInstructorsByInstrument'])
+            ->name('api.instructors-by-instrument');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Student Password
+        |--------------------------------------------------------------------------
+        */
         Route::post('/password/change', [App\Http\Controllers\Student\ProfileController::class, 'changePassword'])
             ->name('password.change');
 
-        // ============================================================
-        // SOUND CHECK / GUITAR ANALYZER
-        // ============================================================
-            Route::prefix('sound-check')->name('guitar.')->group(function () {
+        /*
+        |--------------------------------------------------------------------------
+        | SOUND CHECK / GUITAR ANALYZER
+        |--------------------------------------------------------------------------
+        */
+        Route::prefix('sound-check')->name('guitar.')->group(function () {
+            Route::get('/', [GuitarAnalyzerController::class, 'index'])
+                ->name('index');
 
-                Route::get('/',                         [GuitarAnalyzerController::class, 'index'])->name('index');
-                Route::get('/history',                  [GuitarAnalyzerController::class, 'history'])->name('history');
-                Route::post('/session/start',           [GuitarAnalyzerController::class, 'startSession'])->name('session.start');
-                Route::post('/session/{session}/end',   [GuitarAnalyzerController::class, 'endSession'])->name('session.end');
-                Route::post('/session/{session}/event', [GuitarAnalyzerController::class, 'storeEvent'])->name('session.event');
-                Route::delete('/session/{session}/delete', [GuitarAnalyzerController::class, 'deleteSession'])->name('session.delete');
-            });
+            Route::get('/history', [GuitarAnalyzerController::class, 'history'])
+                ->name('history');
+
+            Route::post('/session/start', [GuitarAnalyzerController::class, 'startSession'])
+                ->name('session.start');
+
+            Route::post('/session/{session}/end', [GuitarAnalyzerController::class, 'endSession'])
+                ->name('session.end');
+
+            Route::post('/session/{session}/event', [GuitarAnalyzerController::class, 'storeEvent'])
+                ->name('session.event');
+
+            Route::delete('/session/{session}/delete', [GuitarAnalyzerController::class, 'deleteSession'])
+                ->name('session.delete');
+        });
 
         /*
         |--------------------------------------------------------------------------
@@ -504,15 +499,24 @@ Route::middleware('auth')->group(function () {
         |
         */
         Route::prefix('pitch-monitor')->name('pitch-monitor.')->group(function () {
-            Route::get('/', [PitchMonitorController::class, 'index'])->name('index');
-            Route::get('/history', [PitchMonitorController::class, 'history'])->name('history');
+            Route::get('/', [PitchMonitorController::class, 'index'])
+                ->name('index');
 
-            Route::post('/session/start', [PitchMonitorController::class, 'startSession'])->name('session.start');
-            Route::post('/session/{session}/end', [PitchMonitorController::class, 'endSession'])->name('session.end');
-            Route::post('/session/{session}/event', [PitchMonitorController::class, 'storeEvent'])->name('session.event');
-            Route::delete('/session/{session}/delete', [PitchMonitorController::class, 'deleteSession'])->name('session.delete');
+            Route::get('/history', [PitchMonitorController::class, 'history'])
+                ->name('history');
+
+            Route::post('/session/start', [PitchMonitorController::class, 'startSession'])
+                ->name('session.start');
+
+            Route::post('/session/{session}/end', [PitchMonitorController::class, 'endSession'])
+                ->name('session.end');
+
+            Route::post('/session/{session}/event', [PitchMonitorController::class, 'storeEvent'])
+                ->name('session.event');
+
+            Route::delete('/session/{session}/delete', [PitchMonitorController::class, 'deleteSession'])
+                ->name('session.delete');
         });
-
     });
 
     // ============================================================================
