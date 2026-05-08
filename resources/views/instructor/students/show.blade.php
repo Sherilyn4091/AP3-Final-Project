@@ -1,107 +1,101 @@
+{{-- resources/views/instructor/students/show.blade.php --}}
 @extends('layouts.instructor')
 
 @section('content')
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+@php
+    $progressPercent = $enrollment->total_sessions > 0 ? round(($enrollment->completed_sessions / $enrollment->total_sessions) * 100) : 0;
+@endphp
 
-    <div class="flex items-start justify-between gap-4 mb-6">
+<div class="space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">
-                {{ $student->first_name }} {{ $student->last_name }}
-            </h1>
-            <p class="text-gray-600">
-                {{ $student->instrument->instrument_name ?? 'N/A' }} •
-                {{ ucfirst($student->skill_level ?? 'Beginner') }}
-                @if($student->status?->status_name)
-                    • {{ $student->status->status_name }}
-                @endif
-            </p>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#B4833D]">Student Monitoring</p>
+            <h1 class="mt-2 text-3xl font-extrabold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">{{ $student->student_name }}</h1>
+            <p class="mt-2 text-sm text-[#61677A]">{{ $enrollment->instrument_name }} • {{ ucfirst($enrollment->status) }} enrollment • {{ $student->email ?? 'No email' }}</p>
         </div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+            <a href="{{ route('instructor.attendance.edit', $student->student_id) }}" class="rounded-2xl border border-[#959D90] bg-white px-4 py-2 text-center text-sm font-bold text-[#2F4F4F] hover:bg-[#FFF6E0]">Manage Attendance</a>
+            <a href="{{ route('instructor.progress.create', ['student_id' => $student->student_id]) }}" class="rounded-2xl bg-[#2F4F4F] px-4 py-2 text-center text-sm font-bold text-white hover:bg-[#B4833D]">Add Progress</a>
+        </div>
+    </header>
 
-        <a href="{{ route('instructor.students.index') }}"
-           class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition text-sm">
-            Back
-        </a>
-    </div>
+    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div class="rounded-[24px] border border-[#D8D9DA] bg-white p-5"><p class="text-xs font-bold uppercase text-[#61677A]">Total Sessions</p><p class="mt-2 text-3xl font-black text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $enrollment->total_sessions }}</p></div>
+        <div class="rounded-[24px] border border-[#D8D9DA] bg-white p-5"><p class="text-xs font-bold uppercase text-[#61677A]">Completed</p><p class="mt-2 text-3xl font-black text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $enrollment->completed_sessions }}</p></div>
+        <div class="rounded-[24px] border border-[#D8D9DA] bg-white p-5"><p class="text-xs font-bold uppercase text-[#61677A]">Remaining</p><p class="mt-2 text-3xl font-black text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $enrollment->remaining_sessions }}</p></div>
+        <div class="rounded-[24px] border border-[#D8D9DA] bg-white p-5"><p class="text-xs font-bold uppercase text-[#61677A]">Progress</p><p class="mt-2 text-3xl font-black text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $progressPercent }}%</p></div>
+    </section>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        {{-- Basic Info --}}
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Student Info</h2>
-
-            @php $enroll = $student->latestEnrollment; @endphp
-
-            <div class="space-y-3 text-sm">
-                <div>
-                    <p class="text-gray-500">Email</p>
-                    <p class="font-medium text-gray-900">{{ $student->email ?? 'N/A' }}</p>
-                </div>
-                <div>
-                    <p class="text-gray-500">Phone</p>
-                    <p class="font-medium text-gray-900">{{ $student->phone ?? 'N/A' }}</p>
-                </div>
-
-                <div class="pt-2 border-t border-gray-100">
-                    <p class="text-gray-500">Sessions</p>
-                    <p class="font-medium text-gray-900">
-                        {{ $enroll->completed_sessions ?? 0 }} / {{ $enroll->total_sessions ?? 0 }}
-                        (Remaining: {{ $enroll->remaining_sessions ?? 0 }})
-                    </p>
-                </div>
+    <section class="grid grid-cols-1 gap-5 xl:grid-cols-3">
+        <div class="rounded-[28px] border border-[#D8D9DA] bg-white p-5 shadow-sm xl:col-span-2">
+            <h2 class="text-xl font-bold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Recent Schedules</h2>
+            <div class="mt-5 space-y-3">
+                @forelse($recentSchedules as $schedule)
+                    <div class="rounded-2xl border border-[#D8D9DA] bg-[#fcf3e3] p-4">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p class="font-bold text-[#272829]">{{ $schedule->lesson_topic ?? 'No topic' }}</p>
+                                <p class="text-sm text-[#61677A]">{{ $schedule->room_number ?? 'No room' }} • {{ ucfirst(str_replace('_', ' ', $schedule->schedule_status)) }}</p>
+                            </div>
+                            <div class="text-left sm:text-right">
+                                <p class="font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($schedule->schedule_date)->format('M d, Y') }}</p>
+                                <p class="text-sm text-[#61677A]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($schedule->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($schedule->end_time)->format('h:i A') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <p class="rounded-2xl border border-dashed border-[#959D90] bg-[#FFF6E0] p-5 text-sm text-[#523D35]">No schedules found for this student.</p>
+                @endforelse
             </div>
         </div>
 
-        {{-- Next Class --}}
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Next Class</h2>
+        <aside class="space-y-5">
+            <div class="rounded-[28px] border border-[#D8D9DA] bg-white p-5 shadow-sm">
+                <h2 class="text-xl font-bold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Next Class</h2>
+                @if($nextClass)
+                    <p class="mt-4 text-2xl font-black text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($nextClass->schedule_date)->format('M d') }}</p>
+                    <p class="mt-1 text-sm text-[#61677A]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($nextClass->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($nextClass->end_time)->format('h:i A') }}</p>
+                    <p class="mt-2 text-sm text-[#523D35]">{{ $nextClass->lesson_topic ?? 'No topic yet' }}</p>
+                @else
+                    <p class="mt-4 text-sm text-[#61677A]">No upcoming class found.</p>
+                @endif
+            </div>
 
-            @if($nextClass)
-                <div class="space-y-2 text-sm">
-                    <div>
-                        <p class="text-gray-500">Date</p>
-                        <p class="font-medium text-gray-900">{{ $nextClass->schedule_date }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Time</p>
-                        <p class="font-medium text-gray-900">{{ $nextClass->start_time }} - {{ $nextClass->end_time }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Topic</p>
-                        <p class="font-medium text-gray-900">{{ $nextClass->lesson_topic ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Room</p>
-                        <p class="font-medium text-gray-900">{{ $nextClass->room_number ?? 'N/A' }}</p>
-                    </div>
-                </div>
-            @else
-                <p class="text-gray-600 text-sm">No upcoming class scheduled.</p>
-            @endif
+            <div class="rounded-[28px] border border-[#D8D9DA] bg-white p-5 shadow-sm">
+                <h2 class="text-xl font-bold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Latest Homework</h2>
+                @if($latestHomework)
+                    <p class="mt-4 text-sm leading-6 text-[#523D35]">{{ $latestHomework->homework }}</p>
+                    <a href="{{ route('instructor.progress.show', $latestHomework->progress_id) }}" class="mt-4 inline-block text-sm font-bold text-[#B4833D] hover:text-[#523D35]">Open progress record</a>
+                @else
+                    <p class="mt-4 text-sm text-[#61677A]">No homework recorded yet.</p>
+                @endif
+            </div>
+        </aside>
+    </section>
+
+    <section class="rounded-[28px] border border-[#D8D9DA] bg-white p-5 shadow-sm">
+        <div class="flex items-center justify-between gap-3">
+            <div>
+                <h2 class="text-xl font-bold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Progress Records</h2>
+                <p class="text-sm text-[#61677A]">Latest progress notes, homework, ratings, and next lesson focus.</p>
+            </div>
         </div>
 
-        {{-- Attendance --}}
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Attendance</h2>
-
-            @if($attendance->isEmpty())
-                <p class="text-gray-600 text-sm">No attendance records yet.</p>
-            @else
-                <div class="space-y-3">
-                    @foreach($attendance as $a)
-                        <div class="flex items-center justify-between text-sm border-b border-gray-100 pb-2">
-                            <div>
-                                <p class="font-medium text-gray-900">{{ $a->attendance_date }}</p>
-                                <p class="text-gray-500">Schedule ID: {{ $a->schedule_id ?? 'N/A' }}</p>
-                            </div>
-                            <span class="px-2 py-1 rounded bg-gray-200 text-gray-800 text-xs font-medium">
-                                {{ strtoupper($a->attendance_status) }}
-                            </span>
+        <div class="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
+            @forelse($progressRecords as $record)
+                <a href="{{ route('instructor.progress.show', $record->progress_id) }}" class="rounded-2xl border border-[#D8D9DA] bg-[#fcf3e3] p-4 hover:border-[#B4833D] hover:bg-[#FFF6E0]">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="font-bold text-[#272829]">{{ $record->lesson_topic ?? 'No topic' }}</p>
+                            <p class="mt-1 line-clamp-2 text-sm text-[#61677A]">{{ $record->instructor_notes ?? $record->homework ?? 'No detailed note' }}</p>
                         </div>
-                    @endforeach
-                </div>
-            @endif
+                        <p class="font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $record->performance_rating ?? '—' }}/10</p>
+                    </div>
+                </a>
+            @empty
+                <p class="rounded-2xl border border-dashed border-[#959D90] bg-[#FFF6E0] p-5 text-sm text-[#523D35] lg:col-span-2">No progress records yet.</p>
+            @endforelse
         </div>
-
-    </div>
+    </section>
 </div>
 @endsection

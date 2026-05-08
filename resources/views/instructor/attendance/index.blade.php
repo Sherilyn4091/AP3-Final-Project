@@ -1,113 +1,62 @@
+{{-- resources/views/instructor/attendance/index.blade.php --}}
 @extends('layouts.instructor')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-    <div class="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+<div class="space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Attendance</h1>
-            <p class="mt-1 text-gray-600">Track lesson attendance for your students</p>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#B4833D]">Attendance</p>
+            <h1 class="mt-2 text-3xl font-extrabold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Lesson Attendance</h1>
+            <p class="mt-2 max-w-2xl text-sm text-[#61677A]">Attendance is connected through schedule records, so it still works even if older attendance rows have missing instructor_id.</p>
         </div>
 
-        <form method="GET" action="{{ route('instructor.attendance.index') }}" class="relative w-full sm:w-80">
-            <input
-                type="text"
-                name="q"
-                value="{{ $q ?? '' }}"
-                placeholder="Search student..."
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-            </div>
+        <form method="GET" action="{{ route('instructor.attendance.index') }}" class="flex gap-2">
+            <input name="q" value="{{ $q ?? '' }}" placeholder="Search attendance..." class="w-full rounded-2xl border border-[#D8D9DA] bg-white px-4 py-2 text-sm focus:border-[#959D90] focus:ring-[#959D90] sm:w-72">
+            <button class="rounded-2xl bg-[#2F4F4F] px-4 py-2 text-sm font-bold text-white hover:bg-[#B4833D]">Search</button>
         </form>
-    </div>
+    </header>
 
-    @if($attendance->count() === 0)
-        <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
-            <h3 class="text-xl font-medium text-gray-700">No attendance records</h3>
-            <p class="mt-2 text-gray-500">
-                Once schedules are created and attendance is marked, records will show here.
-            </p>
-        </div>
-    @else
-        <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-gray-50 border-b border-gray-100">
-                        <tr class="text-left text-gray-600">
-                            <th class="px-6 py-3 font-medium">Date</th>
-                            <th class="px-6 py-3 font-medium">Scheduled Time</th>
-                            <th class="px-6 py-3 font-medium">Student</th>
-                            <th class="px-6 py-3 font-medium">Status</th>
-                            <th class="px-6 py-3 font-medium text-right">Action</th>
+    <section class="overflow-hidden rounded-[28px] border border-[#D8D9DA] bg-white shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-[#D8D9DA] text-sm">
+                <thead class="bg-[#272829] text-[#D8D9DA]">
+                    <tr>
+                        <th class="px-5 py-4 text-left font-bold">Date</th>
+                        <th class="px-5 py-4 text-left font-bold">Student</th>
+                        <th class="px-5 py-4 text-left font-bold">Instrument</th>
+                        <th class="px-5 py-4 text-left font-bold">Time</th>
+                        <th class="px-5 py-4 text-left font-bold">Status</th>
+                        <th class="px-5 py-4 text-right font-bold">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#D8D9DA]">
+                    @forelse($attendance as $row)
+                        @php
+                            $badge = match($row->attendance_status) {
+                                'present' => 'bg-[#2F4F4F] text-white',
+                                'late' => 'bg-[#B4833D] text-white',
+                                'absent' => 'bg-[#523D35] text-white',
+                                default => 'bg-[#FFF6E0] text-[#523D35]',
+                            };
+                        @endphp
+                        <tr class="hover:bg-[#FFF6E0]">
+                            <td class="px-5 py-4 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($row->attendance_date)->format('M d, Y') }}</td>
+                            <td class="px-5 py-4 font-bold text-[#272829]">{{ $row->student_name }}</td>
+                            <td class="px-5 py-4 text-[#61677A]">{{ $row->instrument_name ?? '—' }}</td>
+                            <td class="px-5 py-4 text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($row->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($row->end_time)->format('h:i A') }}</td>
+                            <td class="px-5 py-4"><span class="rounded-full px-3 py-1 text-xs font-bold {{ $badge }}">{{ ucfirst($row->attendance_status) }}</span></td>
+                            <td class="px-5 py-4 text-right"><a href="{{ route('instructor.attendance.edit', $row->student_id) }}" class="rounded-2xl bg-[#2F4F4F] px-4 py-2 text-xs font-bold text-white hover:bg-[#B4833D]">Manage</a></td>
                         </tr>
-                    </thead>
-
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach($attendance as $a)
-                            @php
-                                $status = $a->attendance_status ?? '—';
-
-                                $badge = match($status) {
-                                    'present' => 'bg-gray-800 text-white',
-                                    'late' => 'bg-gray-200 text-gray-900',
-                                    'absent' => 'bg-gray-100 text-gray-700',
-                                    'excused' => 'bg-gray-50 text-gray-700',
-                                    default => 'bg-gray-100 text-gray-700',
-                                };
-
-                                // Requires Attendance model relationship: schedule()
-                                $start = $a->schedule?->start_time;
-                                $end   = $a->schedule?->end_time;
-                            @endphp
-
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 text-gray-900 whitespace-nowrap">
-                                    {{ $a->attendance_date ? \Carbon\Carbon::parse($a->attendance_date)->format('Y-m-d') : 'N/A' }}
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-700 whitespace-nowrap">
-                                    @if($start && $end)
-                                        {{ \Carbon\Carbon::createFromFormat('H:i:s', $start)->format('h:i A') }}
-                                        -
-                                        {{ \Carbon\Carbon::createFromFormat('H:i:s', $end)->format('h:i A') }}
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-900">
-                                    {{ $a->student->first_name ?? '' }} {{ $a->student->last_name ?? '' }}
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium {{ $badge }}">
-                                        {{ ucfirst($status) }}
-                                    </span>
-                                </td>
-
-                                <td class="px-6 py-4 text-right">
-                                    <a href="{{ route('instructor.attendance.edit', $a->student_id) }}"
-                                       class="inline-flex items-center px-3 py-1.5 border border-gray-300 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-xs font-medium">
-                                        Manage
-                                    </a>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-
-                </table>
-            </div>
+                    @empty
+                        <tr><td colspan="6" class="px-5 py-10 text-center text-[#61677A]">No attendance records found.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+    </section>
 
-        <div class="mt-8">
-            {{ $attendance->links() }}
-        </div>
+    @if($attendance->hasPages())
+        <div>{{ $attendance->links() }}</div>
     @endif
-
 </div>
 @endsection

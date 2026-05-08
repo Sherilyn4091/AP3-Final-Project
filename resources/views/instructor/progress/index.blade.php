@@ -1,113 +1,65 @@
+{{-- resources/views/instructor/progress/index.blade.php --}}
 @extends('layouts.instructor')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-    <!-- Header + Search + Add -->
-    <div class="mb-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+<div class="space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Progress Records</h1>
-            <p class="mt-1 text-gray-600">View and manage lesson progress notes you’ve recorded</p>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#B4833D]">Progress</p>
+            <h1 class="mt-2 text-3xl font-extrabold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Progress Records</h1>
+            <p class="mt-2 max-w-2xl text-sm text-[#61677A]">Progress includes lesson notes, ratings, homework, practice recommendations, and next lesson focus.</p>
         </div>
 
-        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-            <form method="GET" action="{{ route('instructor.progress.index') }}" class="relative w-full sm:w-80">
-                <input
-                    type="text"
-                    name="q"
-                    value="{{ $q ?? '' }}"
-                    placeholder="Search student or topic..."
-                    class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-400"
-                >
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+            <form method="GET" action="{{ route('instructor.progress.index') }}" class="flex gap-2">
+                <input name="q" value="{{ $q ?? '' }}" placeholder="Search progress..." class="w-full rounded-2xl border border-[#D8D9DA] bg-white px-4 py-2 text-sm focus:border-[#959D90] focus:ring-[#959D90] sm:w-72">
+                <button class="rounded-2xl bg-[#2F4F4F] px-4 py-2 text-sm font-bold text-white hover:bg-[#B4833D]">Search</button>
             </form>
-
-            <a href="{{ route('instructor.progress.create') }}"
-               class="inline-flex items-center justify-center px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-sm">
-                + Add Progress
-            </a>
+            <a href="{{ route('instructor.progress.create') }}" class="rounded-2xl bg-[#3C4B33] px-4 py-2 text-center text-sm font-bold text-white hover:bg-[#B4833D]">Add Progress</a>
         </div>
-    </div>
+    </header>
 
-    @if (session('success'))
-        <div class="mb-6 bg-gray-50 border border-gray-200 text-gray-800 rounded-lg px-4 py-3 text-sm">
-            {{ session('success') }}
-        </div>
-    @endif
+    <section class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        @forelse($progress as $record)
+            <article class="rounded-[26px] border border-[#D8D9DA] bg-white p-5 shadow-sm transition hover:border-[#B4833D] hover:shadow-md">
+                <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#61677A]">{{ $record->instrument_name ?? 'No instrument' }}</p>
+                        <h2 class="mt-1 text-xl font-bold text-[#272829]" style="font-family: 'Sora', sans-serif;">{{ $record->student_name }}</h2>
+                        <p class="mt-1 text-sm text-[#61677A]">{{ $record->lesson_topic ?? 'No topic' }}</p>
+                    </div>
+                    <p class="rounded-full bg-[#FFF6E0] px-3 py-1 text-xs font-black text-[#523D35]" style="font-family: 'JetBrains Mono', monospace;">{{ $record->performance_rating ?? '—' }}/10</p>
+                </div>
 
-    @if($progress->isEmpty())
-        <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
-            <h3 class="text-xl font-medium text-gray-700">No progress records yet</h3>
-            <p class="mt-2 text-gray-500">
-                Click <span class="font-medium">Add Progress</span> after lessons to record notes and ratings.
-            </p>
-        </div>
-    @else
-        <div class="bg-white rounded-xl border border-gray-100 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-gray-50 border-b border-gray-100">
-                        <tr class="text-left text-gray-600">
-                            <th class="px-6 py-3 font-medium">Date</th>
-                            <th class="px-6 py-3 font-medium">Student</th>
-                            <th class="px-6 py-3 font-medium">Lesson Topic</th>
-                            <th class="px-6 py-3 font-medium">Ratings</th>
-                            <th class="px-6 py-3 font-medium text-right">Actions</th>
-                        </tr>
-                    </thead>
+                <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    <div class="rounded-2xl bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Date</p><p class="mt-1 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($record->progress_date)->format('M d, Y') }}</p></div>
+                    <div class="rounded-2xl bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Technical</p><p class="mt-1 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $record->technical_skills_rating ?? '—' }}/10</p></div>
+                    <div class="rounded-2xl bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Effort</p><p class="mt-1 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $record->effort_rating ?? '—' }}/10</p></div>
+                </div>
 
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach($progress as $p)
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4 text-gray-900 whitespace-nowrap">
-                                    {{ optional($p->progress_date)->format('Y-m-d') ?? 'N/A' }}
-                                </td>
+                @if($record->homework)
+                    <div class="mt-4 rounded-2xl border border-[#D8D9DA] bg-[#FFF6E0] p-3">
+                        <p class="text-xs font-bold uppercase text-[#61677A]">Homework</p>
+                        <p class="mt-1 line-clamp-2 text-sm text-[#523D35]">{{ $record->homework }}</p>
+                    </div>
+                @endif
 
-                                <td class="px-6 py-4 text-gray-900">
-                                    {{ $p->student->first_name ?? '' }} {{ $p->student->last_name ?? '' }}
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-700">
-                                    {{ $p->lesson_topic ?? '—' }}
-                                </td>
-
-                                <td class="px-6 py-4 text-gray-700 whitespace-nowrap">
-                                    P: {{ $p->performance_rating ?? '-' }}
-                                    • T: {{ $p->technical_skills_rating ?? '-' }}
-                                    • M: {{ $p->musicality_rating ?? '-' }}
-                                    • E: {{ $p->effort_rating ?? '-' }}
-                                </td>
-
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-end gap-2">
-                                        <a href="{{ route('instructor.progress.show', $p->progress_id) }}"
-                                           class="inline-flex items-center px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition text-xs">
-                                            View
-                                        </a>
-
-                                        <a href="{{ route('instructor.progress.edit', $p->progress_id) }}"
-                                           class="inline-flex items-center px-3 py-1.5 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition text-xs">
-                                            Edit
-                                        </a>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-
-                </table>
+                <div class="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
+                    <a href="{{ route('instructor.progress.show', $record->progress_id) }}" class="rounded-2xl bg-[#2F4F4F] px-4 py-2 text-center text-sm font-bold text-white hover:bg-[#B4833D]">View</a>
+                    <a href="{{ route('instructor.progress.edit', $record->progress_id) }}" class="rounded-2xl border border-[#959D90] px-4 py-2 text-center text-sm font-bold text-[#2F4F4F] hover:bg-[#FFF6E0]">Edit</a>
+                </div>
+            </article>
+        @empty
+            <div class="rounded-[28px] border border-dashed border-[#959D90] bg-white p-10 text-center lg:col-span-2">
+                <h2 class="text-2xl font-bold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">No progress records found</h2>
+                <p class="mt-2 text-sm text-[#61677A]">Add a progress record after a lesson to save notes and homework.</p>
+                <a href="{{ route('instructor.progress.create') }}" class="mt-5 inline-block rounded-2xl bg-[#2F4F4F] px-5 py-3 text-sm font-bold text-white hover:bg-[#B4833D]">Add Progress</a>
             </div>
-        </div>
+        @endforelse
+    </section>
 
-        <div class="mt-8">
-            {{ $progress->links() }}
-        </div>
+    @if($progress->hasPages())
+        <div>{{ $progress->links() }}</div>
     @endif
-
 </div>
 @endsection

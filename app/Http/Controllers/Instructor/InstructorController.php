@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Instructor/InstructorController.php
 
 namespace App\Http\Controllers\Instructor;
 
@@ -9,78 +10,41 @@ use Illuminate\Support\Facades\Auth;
 class InstructorController extends Controller
 {
     /**
-     * Show the instructor dashboard redirect / overview
-     * (This can serve as a fallback or quick redirect if needed)
+     * Fallback entry point for the instructor portal.
+     * The main dashboard uses InstructorDashboardController.
      */
     public function index()
     {
-        // Redirect to the main dashboard (most common pattern)
-        return redirect()->route('instructor.profile');
-        
-        // Alternative: If you want a simple instructor home page instead:
-        // return view('instructor.index');
+        return redirect()->route('instructor.dashboard');
     }
 
     /**
-     * Show the instructor's own profile
+     * Keep old calls safe by redirecting to the current profile route.
      */
     public function profile()
     {
-        $instructor = Auth::user()->instructor;
-
-        // Load additional useful relationships if needed
-        $instructor->load([
-            'specializations' => function ($q) {
-                $q->with('specialization');
-            }
-        ]);
-
-        return view('instructor.profile', compact('instructor'));
+        return redirect()->route('instructor.profile.index');
     }
 
     /**
-     * Update instructor profile (basic info, availability, etc.)
-     */
-    public function updateProfile(Request $request)
-    {
-        $instructor = Auth::user()->instructor;
-
-        $validated = $request->validate([
-            'bio'                  => 'nullable|string|max:2000',
-            'teaching_style'       => 'nullable|string|max:1000',
-            'available_days'       => 'nullable|string|max:500',
-            'preferred_time_slots' => 'nullable|string|max:500',
-            'max_students_per_day' => 'nullable|integer|min:1|max:20',
-            'phone'                => 'nullable|regex:/^09\d{9}$/',
-        ]);
-
-        $instructor->update($validated);
-
-        return redirect()
-            ->route('instructor.profile')
-            ->with('success', 'Profile updated successfully!');
-    }
-
-    /**
-     * Show instructor's availability calendar (placeholder)
+     * Availability is currently edited through the profile page.
      */
     public function availability()
     {
-        $instructor = Auth::user()->instructor;
-
-        return view('instructor.availability', compact('instructor'));
+        return redirect()->route('instructor.profile.index');
     }
 
     /**
-     * Quick redirect to instructor's own schedule
+     * Quick redirect to the instructor schedule page.
      */
     public function mySchedule()
     {
-        return redirect()->route('instructor.schedule');
+        return redirect()->route('instructor.schedule.index');
     }
 
     /**
-     * Logout from instructor portal (optional - can be global)
+     * Optional instructor logout helper.
+     * The main logout route remains the global authenticated logout route.
      */
     public function logout(Request $request)
     {

@@ -1,145 +1,196 @@
 <?php
+// app/Http/Controllers/Instructor/StudentController.php
 
 namespace App\Http\Controllers\Instructor;
 
 use App\Http\Controllers\Controller;
-use App\Models\Instructor;
-use App\Models\Student;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Schedule;
-use App\Models\Attendance;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
-    public function index(Request $request)
+    private function instructorIdOrAbort(): int
     {
-        $userId = Auth::user()->user_id;
+        $instructorId = DB::table('instructor')
+            ->where('user_id', Auth::user()->user_id)
+            ->value('instructor_id');
 
-        $instructor = Instructor::where('user_id', $userId)->first();
-
-        if (!$instructor) {
+        if (!$instructorId) {
             abort(403, 'Instructor profile not found.');
         }
 
+        return (int) $instructorId;
+    }
+
+    /**
+     * Student monitoring list.
+     * Uses enrollment as the true relationship between instructor and student.
+     */
+    public function index(Request $request)
+    {
+        $instructorId = $this->instructorIdOrAbort();
         $q = trim((string) $request->query('q', ''));
 
-        $students = Student::query()
-            // only students that have enrollments under this instructor
-            ->whereHas('enrollments', function ($enroll) use ($instructor) {
-                $enroll->where('instructor_id', $instructor->instructor_id);
-            })
-            // eager load relations used in blade
-            ->with([
-                'instrument:instrument_id,instrument_name',
-                'status:status_id,status_name',
-                'latestEnrollment' => function ($q) {
-                    $q->select([
-                        'enrollment.enrollment_id',
-                        'enrollment.student_id',
-                        'enrollment.total_sessions',
-                        'enrollment.completed_sessions',
-                        'enrollment.remaining_sessions',
-                        'enrollment.enrollment_date',
-                    ]);
-                },
-            ])
-            // search
+        $students = DB::table('enrollment as e')
+            ->join('student as st', 'st.student_id', '=', 'e.student_id')
+            ->join('instrument as ins', 'ins.instrument_id', '=', 'e.instrument_id')
+            ->leftJoin('student_status as ss', 'ss.status_id', '=', 'st.student_status_id')
+            ->where('e.instructor_id', $instructorId)
             ->when($q !== '', function ($query) use ($q) {
                 $query->where(function ($qq) use ($q) {
-                    $qq->where('first_name', 'ilike', "%{$q}%")
-                       ->orWhere('last_name', 'ilike', "%{$q}%")
-                       ->orWhere('email', 'ilike', "%{$q}%")
-                       ->orWhere('phone', 'ilike', "%{$q}%");
+                    $qq->where('st.first_name', 'ilike', "%{$q}%")
+                        ->orWhere('st.last_name', 'ilike', "%{$q}%")
+                        ->orWhere('st.email', 'ilike', "%{$q}%")
+                        ->orWhere('st.phone', 'ilike', "%{$q}%")
+                        ->orWhere('ins.instrument_name', 'ilike', "%{$q}%");
                 });
             })
-            ->orderBy('last_name')
-            ->orderBy('first_name')
+            ->select([
+                'st.student_id',
+                DB::raw("TRIM(st.first_name || ' ' || COALESCE(st.middle_name || ' ', '') || st.last_name) as student_name"),
+                'st.email',
+                'st.phone',
+                'st.skill_level',
+                'ss.status_name',
+                'ins.instrument_name',
+                'e.enrollment_id',
+                'e.status as enrollment_status',
+                'e.payment_status',
+                'e.total_sessions',
+                'e.completed_sessions',
+                'e.remaining_sessions',
+                'e.enrollment_date',
+                DB::raw("(
+                    SELECT MAX(a.attendance_date)
+                    FROM attendance a
+                    JOIN schedule s2 ON s2.schedule_id = a.schedule_id
+                    WHERE a.student_id = st.student_id
+                      AND s2.instructor_id = {$instructorId}
+                      AND a.attendance_type = 'lesson'
+                ) as last_lesson_date"),
+                DB::raw("(
+                    SELECT COUNT(*)
+                    FROM progress p
+                    WHERE p.student_id = st.student_id
+                      AND p.instructor_id = {$instructorId}
+                ) as progress_count"),
+            ])
+            ->orderBy('st.last_name')
+            ->orderBy('st.first_name')
             ->paginate(12)
             ->withQueryString();
 
         return view('instructor.students.index', compact('students', 'q'));
     }
 
-  public function show($studentId)
-{
-    if (!is_numeric($studentId)) {
-        abort(404);
+    /**
+     * Detailed student monitoring page.
+     */
+    public function show($studentId)
+    {
+        $instructorId = $this->instructorIdOrAbort();
+        $studentId = (int) $studentId;
+
+        $student = DB::table('student as st')
+            ->leftJoin('student_status as ss', 'ss.status_id', '=', 'st.student_status_id')
+            ->where('st.student_id', $studentId)
+            ->select([
+                'st.*',
+                'ss.status_name',
+                DB::raw("TRIM(st.first_name || ' ' || COALESCE(st.middle_name || ' ', '') || st.last_name) as student_name"),
+            ])
+            ->first();
+
+        if (!$student) {
+            abort(404, 'Student not found.');
+        }
+
+        $enrollment = DB::table('enrollment as e')
+            ->join('instrument as ins', 'ins.instrument_id', '=', 'e.instrument_id')
+            ->join('lesson_session as ls', 'ls.session_id', '=', 'e.session_id')
+            ->where('e.student_id', $studentId)
+            ->where('e.instructor_id', $instructorId)
+            ->select([
+                'e.*',
+                'ins.instrument_name',
+                'ls.session_name',
+                'ls.session_count',
+                'ls.duration_minutes',
+            ])
+            ->orderByDesc('e.enrollment_date')
+            ->orderByDesc('e.enrollment_id')
+            ->first();
+
+        if (!$enrollment) {
+            abort(403, 'You are not assigned to this student.');
+        }
+
+        $today = Carbon::today()->toDateString();
+
+        $nextClass = DB::table('schedule')
+            ->where('student_id', $studentId)
+            ->where('instructor_id', $instructorId)
+            ->whereDate('schedule_date', '>=', $today)
+            ->whereNotIn('status', ['cancelled', 'no_class', 'rescheduled'])
+            ->orderBy('schedule_date')
+            ->orderBy('start_time')
+            ->first();
+
+        $recentSchedules = DB::table('schedule as s')
+            ->leftJoin('attendance as a', function ($join) {
+                $join->on('a.schedule_id', '=', 's.schedule_id')
+                    ->where('a.attendance_type', '=', 'lesson');
+            })
+            ->where('s.student_id', $studentId)
+            ->where('s.instructor_id', $instructorId)
+            ->select('s.*', 'a.attendance_status')
+            ->orderByDesc('s.schedule_date')
+            ->orderByDesc('s.start_time')
+            ->limit(10)
+            ->get();
+
+        $attendanceStats = [
+            'present' => DB::table('attendance as a')
+                ->join('schedule as s', 's.schedule_id', '=', 'a.schedule_id')
+                ->where('a.student_id', $studentId)
+                ->where('s.instructor_id', $instructorId)
+                ->whereIn('a.attendance_status', ['present', 'late'])
+                ->count(),
+            'absent' => DB::table('attendance as a')
+                ->join('schedule as s', 's.schedule_id', '=', 'a.schedule_id')
+                ->where('a.student_id', $studentId)
+                ->where('s.instructor_id', $instructorId)
+                ->where('a.attendance_status', 'absent')
+                ->count(),
+        ];
+
+        $progressRecords = DB::table('progress')
+            ->where('student_id', $studentId)
+            ->where('instructor_id', $instructorId)
+            ->orderByDesc('progress_date')
+            ->orderByDesc('progress_id')
+            ->limit(8)
+            ->get();
+
+        $latestHomework = DB::table('progress')
+            ->where('student_id', $studentId)
+            ->where('instructor_id', $instructorId)
+            ->whereNotNull('homework')
+            ->whereRaw("NULLIF(TRIM(homework), '') IS NOT NULL")
+            ->orderByDesc('progress_date')
+            ->orderByDesc('progress_id')
+            ->first();
+
+        return view('instructor.students.show', compact(
+            'student',
+            'enrollment',
+            'nextClass',
+            'recentSchedules',
+            'attendanceStats',
+            'progressRecords',
+            'latestHomework'
+        ));
     }
-
-    $studentId = (int) $studentId;
-
-    $userId = Auth::user()->user_id;
-
-    $instructor = Instructor::where('user_id', $userId)->first();
-    if (!$instructor) {
-        abort(403, 'Instructor profile not found.');
-    }
-
-    // Student exists?
-    $studentExists = Student::where('student_id', $studentId)->exists();
-    if (!$studentExists) {
-        abort(404, 'Student not found.');
-    }
-
-    // Assigned to this instructor?
-    $assigned = Student::query()
-        ->where('student_id', $studentId)
-        ->whereHas('enrollments', function ($enroll) use ($instructor) {
-            $enroll->where('instructor_id', $instructor->instructor_id);
-        })
-        ->exists();
-
-    if (!$assigned) {
-        abort(403, 'You are not assigned to this student (enrollment instructor_id mismatch).');
-    }
-
-    // Load full student data
-    $student = Student::query()
-        ->where('student_id', $studentId)
-        ->with([
-            'instrument:instrument_id,instrument_name',
-            'status:status_id,status_name',
-            'latestEnrollment' => function ($q) use ($instructor) {
-                $q->select([
-                        'enrollment.enrollment_id',
-                        'enrollment.student_id',
-                        'enrollment.total_sessions',
-                        'enrollment.completed_sessions',
-                        'enrollment.remaining_sessions',
-                        'enrollment.enrollment_date',
-                        'enrollment.instructor_id',
-                        'enrollment.status',
-                        'enrollment.payment_status',
-                    ])
-                    ->where('enrollment.instructor_id', $instructor->instructor_id);
-            },
-        ])
-        ->firstOrFail();
-
-    $attendance = Attendance::query()
-        ->where('student_id', $student->student_id)
-        ->where('attendance_type', 'lesson')
-        ->orderByDesc('attendance_date')
-        ->orderByDesc('attendance_id')
-        ->limit(20)
-        ->get();
-
-    $today = Carbon::today()->toDateString();
-
-    $nextClass = Schedule::query()
-        ->where('student_id', $student->student_id)
-        ->where('instructor_id', $instructor->instructor_id)
-        ->where('schedule_date', '>=', $today)
-        ->whereNotIn('status', ['cancelled', 'no_class'])
-        ->orderBy('schedule_date')
-        ->orderBy('start_time')
-        ->first();
-
-    return view('instructor.students.show', compact('student', 'attendance', 'nextClass'));
-}
-
-
-
 }

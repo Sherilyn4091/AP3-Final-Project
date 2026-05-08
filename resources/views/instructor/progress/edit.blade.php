@@ -1,25 +1,19 @@
+{{-- resources/views/instructor/progress/edit.blade.php --}}
 @extends('layouts.instructor')
 
 @section('content')
-<div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-    <div class="flex items-start justify-between gap-4 mb-6">
+<div class="mx-auto max-w-5xl space-y-6">
+    <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Edit Progress</h1>
-            <p class="mt-1 text-gray-600">Update notes and ratings for this lesson</p>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#B4833D]">Progress</p>
+            <h1 class="mt-2 text-3xl font-extrabold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Edit Progress</h1>
+            <p class="mt-2 text-sm text-[#61677A]">Update notes, ratings, homework, and next lesson focus.</p>
         </div>
+        <a href="{{ route('instructor.progress.show', $progress->progress_id) }}" class="rounded-2xl border border-[#959D90] bg-white px-4 py-2 text-sm font-bold text-[#2F4F4F] hover:bg-[#FFF6E0]">Back</a>
+    </header>
 
-        <a href="{{ route('instructor.progress.show', $progress->progress_id) }}"
-           class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition text-sm">
-            Back
-        </a>
-    </div>
-
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
-        @include('instructor.progress._form', [
-            'mode' => 'edit',
-            'progress' => $progress,
-        ])
+    <div class="rounded-[28px] border border-[#D8D9DA] bg-white p-5 shadow-sm sm:p-6">
+        @include('instructor.progress._form', ['mode' => 'edit', 'progress' => $progress])
     </div>
 </div>
 @endsection

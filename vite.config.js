@@ -17,6 +17,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/instructor.css',
                 'resources/css/style.css',
                 'resources/css/student-instructor.css',
 

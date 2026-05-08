@@ -1,136 +1,63 @@
+{{-- resources/views/instructor/students/index.blade.php --}}
 @extends('layouts.instructor')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-    <!-- Header + Search -->
-    <div class="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+<div class="space-y-6">
+    <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My Students</h1>
-            <p class="mt-1 text-gray-600">Track progress and manage your assigned students</p>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#B4833D]">Student Monitoring</p>
+            <h1 class="mt-2 text-3xl font-extrabold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">My Students</h1>
+            <p class="mt-2 max-w-2xl text-sm text-[#61677A]">Students are shown through real enrollment records assigned to your instructor account.</p>
         </div>
 
-        {{-- IMPORTANT: action MUST point to students.index --}}
-        <form method="GET"
-              action="{{ route('instructor.students.index') }}"
-              class="relative w-full sm:w-72">
-            <input
-                type="text"
-                name="q"
-                value="{{ $q ?? '' }}"
-                placeholder="Search students..."
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg
-                       focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                </svg>
-            </div>
+        <form method="GET" action="{{ route('instructor.students.index') }}" class="flex gap-2">
+            <input name="q" value="{{ $q ?? '' }}" placeholder="Search student..." class="w-full rounded-2xl border border-[#D8D9DA] bg-white px-4 py-2 text-sm focus:border-[#959D90] focus:ring-[#959D90] sm:w-72">
+            <button class="rounded-2xl bg-[#2F4F4F] px-4 py-2 text-sm font-bold text-white hover:bg-[#B4833D]">Search</button>
         </form>
-    </div>
+    </header>
 
-    <!-- Students Grid -->
-    @if($students->isEmpty())
-        <div class="bg-white rounded-xl border border-gray-100 p-12 text-center">
-            <h3 class="text-xl font-medium text-gray-700">No students assigned yet</h3>
-            <p class="mt-2 text-gray-500">
-                Once students are enrolled under you, they will appear here.
-            </p>
-        </div>
-    @else
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach($students as $student)
-                @php
-                    $enroll = $student->latestEnrollment;
-                    $total = $enroll->total_sessions ?? 0;
-                    $completed = $enroll->completed_sessions ?? 0;
-                    $remaining = $enroll->remaining_sessions ?? 0;
-                    $percentage = $total > 0 ? round(($completed / $total) * 100) : 0;
-                @endphp
-
-                <div class="bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition">
-                    <div class="p-6">
-
-                        <!-- Student Header -->
-                        <div class="flex items-center justify-between mb-5">
-                            <div class="flex items-center gap-4">
-                                <div class="w-14 h-14 rounded-full bg-gray-800
-                                            flex items-center justify-center
-                                            text-white font-bold text-xl">
-                                    {{ strtoupper(substr($student->first_name, 0, 1)) }}
-                                </div>
-
-                                <div>
-                                    <h3 class="font-semibold text-gray-900 text-lg">
-                                        {{ $student->first_name }} {{ $student->last_name }}
-                                    </h3>
-                                    <p class="text-sm text-gray-600">
-                                        {{ $student->instrument->instrument_name ?? 'No instrument' }}
-                                        • {{ ucfirst($student->skill_level ?? 'Beginner') }}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <span class="px-3 py-1 bg-gray-200 text-gray-800 text-xs font-medium rounded-full">
-                                Active
-                            </span>
-                        </div>
-
-                        <!-- Progress -->
-                        <div class="space-y-4">
-                            <div>
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span class="text-gray-600">Sessions</span>
-                                    <span class="font-medium">
-                                        {{ $completed }} / {{ $total ?: '?' }}
-                                    </span>
-                                </div>
-
-                                <div class="w-full bg-gray-200 rounded-full h-2.5">
-                                    <div class="bg-gray-800 h-2.5 rounded-full transition-all"
-                                         style="width: {{ $percentage }}%">
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Quick Info -->
-                            <div class="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                    <p class="text-gray-500">Remaining</p>
-                                    <p class="font-medium text-gray-900">
-                                        {{ $remaining }} sessions
-                                    </p>
-                                </div>
-                                <div>
-                                    <p class="text-gray-500">Last Lesson</p>
-                                    <p class="font-medium text-gray-900">
-                                        {{ $student->last_lesson_date ?? 'N/A' }}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+    <section class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        @forelse($students as $student)
+            @php
+                $percent = $student->total_sessions > 0 ? round(($student->completed_sessions / $student->total_sessions) * 100) : 0;
+            @endphp
+            <article class="rounded-[26px] border border-[#D8D9DA] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:border-[#B4833D] hover:shadow-md">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-bold uppercase tracking-wide text-[#61677A]">{{ $student->instrument_name }}</p>
+                        <h2 class="mt-1 text-xl font-bold text-[#272829]" style="font-family: 'Sora', sans-serif;">{{ $student->student_name }}</h2>
+                        <p class="mt-1 text-sm text-[#61677A]">{{ $student->email ?? 'No email' }}</p>
                     </div>
-
-                    <!-- Actions -->
-                    <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex gap-3">
-                        {{-- THIS is the only correct link --}}
-                        <a href="{{ route('instructor.students.show', ['student' => $student->student_id]) }}"
-                           class="flex-1 text-center py-2 bg-gray-800 text-white rounded-lg
-                                  hover:bg-gray-700 transition text-sm">
-                            View Details
-                        </a>
-                    </div>
+                    <span class="rounded-full bg-[#FFF6E0] px-3 py-1 text-xs font-bold text-[#523D35]">{{ ucfirst($student->enrollment_status) }}</span>
                 </div>
-            @endforeach
-        </div>
 
-        <!-- Pagination -->
-        <div class="mt-10">
-            {{ $students->links() }}
-        </div>
+                <div class="mt-5 grid grid-cols-2 gap-3 text-sm">
+                    <div class="rounded-2xl bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Remaining</p><p class="mt-1 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $student->remaining_sessions }}</p></div>
+                    <div class="rounded-2xl bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Progress</p><p class="mt-1 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $percent }}%</p></div>
+                    <div class="rounded-2xl bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Records</p><p class="mt-1 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $student->progress_count }}</p></div>
+                    <div class="rounded-2xl bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Last Lesson</p><p class="mt-1 font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ $student->last_lesson_date ? \Carbon\Carbon::parse($student->last_lesson_date)->format('M d') : '—' }}</p></div>
+                </div>
+
+                <div class="mt-5 h-2 overflow-hidden rounded-full bg-[#D8D9DA]">
+                    <div class="h-full rounded-full bg-[#2F4F4F]" style="width: {{ $percent }}%"></div>
+                </div>
+
+                <div class="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                    <a href="{{ route('instructor.students.show', $student->student_id) }}" class="rounded-2xl bg-[#2F4F4F] px-3 py-2 text-center text-xs font-bold text-white hover:bg-[#B4833D]">Details</a>
+                    <a href="{{ route('instructor.attendance.edit', $student->student_id) }}" class="rounded-2xl border border-[#959D90] px-3 py-2 text-center text-xs font-bold text-[#2F4F4F] hover:bg-[#FFF6E0]">Attendance</a>
+                    <a href="{{ route('instructor.progress.create', ['student_id' => $student->student_id]) }}" class="rounded-2xl border border-[#959D90] px-3 py-2 text-center text-xs font-bold text-[#2F4F4F] hover:bg-[#FFF6E0]">Progress</a>
+                </div>
+            </article>
+        @empty
+            <div class="rounded-[28px] border border-dashed border-[#959D90] bg-white p-10 text-center md:col-span-2 xl:col-span-3">
+                <h2 class="text-2xl font-bold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">No assigned students found</h2>
+                <p class="mt-2 text-sm text-[#61677A]">Students appear here when their enrollment is assigned to your instructor ID.</p>
+            </div>
+        @endforelse
+    </section>
+
+    @if($students->hasPages())
+        <div>{{ $students->links() }}</div>
     @endif
-
 </div>
 @endsection

@@ -1,0 +1,195 @@
+/* resources/css/instructor.css */
+
+/*
+|--------------------------------------------------------------------------
+| Music Lab Instructor Portal Theme
+|--------------------------------------------------------------------------
+|
+| This file is intentionally stored in resources/css so it is compiled by
+| Vite. Do not create public/css hotfix files for instructor styling.
+|
+| Font rules:
+| - Sora: headings and card titles
+| - Inter: normal UI text, forms, buttons, tables
+| - JetBrains Mono: technical/count values
+|
+*/
+
+:root {
+    --ins-main: #2F4F4F;
+    --ins-main-alt: #3C4B33;
+    --ins-brown: #523D35;
+    --ins-deep-brown: #42300B;
+    --ins-gold: #B4833D;
+    --ins-sage: #959D90;
+    --ins-light: #D8D9DA;
+    --ins-cream: #FFF6E0;
+    --ins-dark: #272829;
+    --ins-dim: #61677A;
+    --ins-blue-deep: #013d5a;
+    --ins-page-bg: #fcf3e3;
+    --ins-slate: #394a56;
+    --ins-border: rgba(149, 157, 144, 0.35);
+    --ins-shadow: 0 12px 28px rgba(39, 40, 41, 0.08);
+}
+
+.instructor-body {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--ins-page-bg);
+    color: var(--ins-dark);
+}
+
+.instructor-main {
+    background:
+        radial-gradient(circle at top right, rgba(47, 79, 79, 0.08), transparent 24%),
+        radial-gradient(circle at bottom left, rgba(180, 131, 61, 0.08), transparent 26%),
+        var(--ins-page-bg);
+}
+
+.instructor-heading,
+.instructor-main h1,
+.instructor-main h2,
+.instructor-main h3,
+.instructor-sidebar-title,
+.instructor-nav-label {
+    font-family: 'Sora', sans-serif;
+}
+
+.instructor-mono,
+.instructor-main [style*='JetBrains Mono'] {
+    font-family: 'JetBrains Mono', monospace !important;
+}
+
+.instructor-card {
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid var(--ins-border);
+    border-radius: 1.5rem;
+    box-shadow: var(--ins-shadow);
+}
+
+.instructor-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    background: var(--ins-main);
+    color: #fff;
+    font-weight: 800;
+    transition: background-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.instructor-btn-primary:hover {
+    background: var(--ins-gold);
+    transform: translateY(-1px);
+}
+
+.instructor-btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1rem;
+    border: 1px solid var(--ins-sage);
+    background: #fff;
+    color: var(--ins-main);
+    font-weight: 800;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.instructor-btn-secondary:hover {
+    border-color: var(--ins-gold);
+    background: rgba(255, 246, 224, 0.55);
+    color: var(--ins-brown);
+}
+
+.instructor-input {
+    width: 100%;
+    border-radius: 0.9rem;
+    border: 1px solid rgba(149, 157, 144, 0.55);
+    background: #fff;
+    color: var(--ins-dark);
+    font-size: 0.875rem;
+    padding: 0.65rem 0.8rem;
+}
+
+.instructor-input:focus {
+    outline: none;
+    border-color: var(--ins-sage);
+    box-shadow: 0 0 0 4px rgba(149, 157, 144, 0.18);
+}
+
+.instructor-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: var(--ins-main);
+    font-size: 0.75rem;
+    font-weight: 800;
+}
+
+.instructor-divider {
+    border-top: 1px solid rgba(149, 157, 144, 0.35);
+}
+
+/* Clean line below page headers across instructor pages. */
+.instructor-main > div > header,
+.instructor-main .instructor-page-header {
+    border-bottom: 1px solid rgba(149, 157, 144, 0.40);
+    padding-bottom: 1rem;
+}
+
+/* Cleaner separation inside card headers such as schedule/progress/student cards. */
+.instructor-main article.rounded-\[26px\] > div:first-child,
+.instructor-main article.rounded-\[28px\] > div:first-child {
+    border-bottom: 1px solid rgba(216, 217, 218, 0.95);
+    padding-bottom: 0.85rem;
+}
+
+/* Reduce excessive yellow use while keeping warm highlights. */
+.instructor-main [class*='bg-[#FFF6E0]'] {
+    background-color: rgba(255, 246, 224, 0.62) !important;
+}
+
+.instructor-main [class*='hover:bg-[#FFF6E0]']:hover {
+    background-color: rgba(255, 246, 224, 0.70) !important;
+}
+
+/* Keep action buttons horizontal when space allows. */
+.instructor-main a,
+.instructor-main button {
+    white-space: nowrap;
+}
+
+/* Compact stat grids on small screens instead of making all cards vertical. */
+@media (max-width: 640px) {
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-4,
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-5 {
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 0.5rem !important;
+    }
+
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-4 > *,
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-5 > * {
+        padding: 0.6rem !important;
+        border-radius: 1rem !important;
+        min-width: 0;
+    }
+
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-4 p,
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-5 p {
+        font-size: 0.58rem !important;
+        line-height: 1.1 !important;
+        letter-spacing: 0.02em !important;
+        word-break: normal;
+        overflow-wrap: normal;
+    }
+
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-4 p:nth-child(2),
+    .instructor-main section.grid.grid-cols-1.gap-4.sm\:grid-cols-2.xl\:grid-cols-5 p:nth-child(2) {
+        font-size: 1rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .instructor-main {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+}

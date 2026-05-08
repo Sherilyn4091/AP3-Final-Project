@@ -1,75 +1,85 @@
+{{-- resources/views/instructor/schedule/create.blade.php --}}
 @extends('layouts.instructor')
 
 @section('content')
-<div class="max-w-3xl mx-auto px-4 py-8">
+<div class="mx-auto max-w-4xl space-y-6">
+    <header class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+            <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#B4833D]">Schedule</p>
+            <h1 class="mt-2 text-3xl font-extrabold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">Create Schedule</h1>
+            <p class="mt-2 text-sm text-[#61677A]">Only students with active enrollments and remaining sessions are shown.</p>
+        </div>
+        <a href="{{ route('instructor.schedule.index') }}" class="rounded-2xl border border-[#959D90] bg-white px-4 py-2 text-sm font-bold text-[#2F4F4F] hover:bg-[#FFF6E0]">Back</a>
+    </header>
 
-    <h1 class="text-2xl font-bold text-gray-900 mb-6">Create Schedule</h1>
-
-    <form method="POST" action="{{ route('instructor.schedule.store') }}"
-          class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 space-y-5">
+    <form method="POST" action="{{ route('instructor.schedule.store') }}" class="rounded-[28px] border border-[#D8D9DA] bg-white p-5 shadow-sm sm:p-6">
         @csrf
 
-        {{-- Student --}}
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Student</label>
-            <select name="student_id" class="w-full rounded-lg border-gray-300" required>
-                <option value="">Select student</option>
-                @foreach($students as $student)
-                    <option value="{{ $student->student_id }}">
-                        {{ $student->first_name }} {{ $student->last_name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+        @if($errors->any())
+            <div class="mb-5 rounded-2xl border border-[#B4833D] bg-[#FFF6E0] p-4 text-sm text-[#523D35]">
+                <strong>Please check the form.</strong>
+                <ul class="mt-2 list-disc pl-5">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-        {{-- Date --}}
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Date</label>
-            <input type="date" name="schedule_date" class="w-full rounded-lg border-gray-300" required>
-        </div>
-
-        {{-- Time --}}
-        <div class="grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                <input type="time" name="start_time" class="w-full rounded-lg border-gray-300" required>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div class="sm:col-span-2">
+                <label class="mb-1 block text-sm font-bold text-[#2F4F4F]">Student / Enrollment</label>
+                <select name="student_id" required class="w-full rounded-2xl border border-[#D8D9DA] px-4 py-3 text-sm focus:border-[#959D90] focus:ring-[#959D90]">
+                    <option value="">Select student</option>
+                    @foreach($students as $student)
+                        <option value="{{ $student->student_id }}" @selected(old('student_id') == $student->student_id)>
+                            {{ $student->student_name }} — {{ $student->instrument_name }} — {{ $student->remaining_sessions }} sessions left
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                <input type="time" name="end_time" class="w-full rounded-lg border-gray-300" required>
+                <label class="mb-1 block text-sm font-bold text-[#2F4F4F]">Date</label>
+                <input type="date" name="schedule_date" value="{{ old('schedule_date') }}" required class="w-full rounded-2xl border border-[#D8D9DA] px-4 py-3 text-sm focus:border-[#959D90] focus:ring-[#959D90]">
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-bold text-[#2F4F4F]">Room</label>
+                <select name="room_number" class="w-full rounded-2xl border border-[#D8D9DA] px-4 py-3 text-sm focus:border-[#959D90] focus:ring-[#959D90]">
+                    <option value="">No room yet</option>
+                    @foreach($rooms as $room)
+                        <option value="{{ $room->room_number }}" @selected(old('room_number') == $room->room_number)>
+                            {{ $room->room_number }}{{ $room->room_name ? ' - ' . $room->room_name : '' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-bold text-[#2F4F4F]">Start Time</label>
+                <input type="time" name="start_time" value="{{ old('start_time') }}" required class="w-full rounded-2xl border border-[#D8D9DA] px-4 py-3 text-sm focus:border-[#959D90] focus:ring-[#959D90]" style="font-family: 'JetBrains Mono', monospace;">
+            </div>
+
+            <div>
+                <label class="mb-1 block text-sm font-bold text-[#2F4F4F]">End Time</label>
+                <input type="time" name="end_time" value="{{ old('end_time') }}" required class="w-full rounded-2xl border border-[#D8D9DA] px-4 py-3 text-sm focus:border-[#959D90] focus:ring-[#959D90]" style="font-family: 'JetBrains Mono', monospace;">
+            </div>
+
+            <div class="sm:col-span-2">
+                <label class="mb-1 block text-sm font-bold text-[#2F4F4F]">Lesson Topic</label>
+                <input type="text" name="lesson_topic" value="{{ old('lesson_topic') }}" class="w-full rounded-2xl border border-[#D8D9DA] px-4 py-3 text-sm focus:border-[#959D90] focus:ring-[#959D90]" placeholder="Example: Basic chord transitions">
+            </div>
+
+            <div class="sm:col-span-2">
+                <label class="mb-1 block text-sm font-bold text-[#2F4F4F]">Notes</label>
+                <textarea name="notes" rows="4" class="w-full rounded-2xl border border-[#D8D9DA] px-4 py-3 text-sm focus:border-[#959D90] focus:ring-[#959D90]" placeholder="Optional reminders or lesson details">{{ old('notes') }}</textarea>
             </div>
         </div>
 
-        {{-- Room --}}
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Room</label>
-            <input type="text" name="room_number" class="w-full rounded-lg border-gray-300">
-        </div>
-
-        {{-- Topic --}}
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Lesson Topic</label>
-            <input type="text" name="lesson_topic" class="w-full rounded-lg border-gray-300">
-        </div>
-
-        {{-- Notes --}}
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-            <textarea name="notes" rows="3" class="w-full rounded-lg border-gray-300"></textarea>
-        </div>
-
-        {{-- Actions --}}
-        <div class="flex justify-end gap-3">
-            <a href="{{ route('instructor.schedule.index') }}"
-               class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">
-                Cancel
-            </a>
-
-            <button type="submit"
-                    class="px-5 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700">
-                Save Schedule
-            </button>
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <a href="{{ route('instructor.schedule.index') }}" class="rounded-2xl border border-[#959D90] px-5 py-3 text-center text-sm font-bold text-[#2F4F4F] hover:bg-[#FFF6E0]">Cancel</a>
+            <button type="submit" class="rounded-2xl bg-[#2F4F4F] px-5 py-3 text-sm font-bold text-white hover:bg-[#B4833D]">Save Schedule</button>
         </div>
     </form>
 </div>

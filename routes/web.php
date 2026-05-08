@@ -31,7 +31,6 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\SupplierController;
 
 # USER INSTRUCTOR
-use App\Http\Controllers\Instructor\InstructorController as InstructorPortalController;
 use App\Http\Controllers\Instructor\InstructorDashboardController;
 use App\Http\Controllers\Instructor\StudentController as InstructorStudentController;
 use App\Http\Controllers\Instructor\ScheduleController as InstructorScheduleController;
@@ -107,12 +106,7 @@ Route::middleware('auth')->group(function () {
     // Role-Specific Dashboard Routes
     // Student dashboard is defined inside the student route group below.
     // This avoids duplicate /student/dashboard routes.
-
-    Route::get('/instructor/dashboard', function () {
-        return view('dashboards.instructor');
-    })->name('instructor.dashboard');
-
-    // ============================================================================
+// ============================================================================
     // ADMIN ROUTES
     // ============================================================================
 
@@ -545,10 +539,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/dashboard', [InstructorDashboardController::class, 'index'])
             ->name('dashboard');
-
-        Route::get('/some-route', [InstructorPortalController::class, 'someMethod']);
-
-        // Students
+// Students
         Route::get('/students', [InstructorStudentController::class, 'index'])
             ->name('students.index');
 
