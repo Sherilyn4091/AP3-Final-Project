@@ -1,7 +1,383 @@
-/* Custom styles
-*\\resources\\css\\app.css
-*/
+/* resources/css/app.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Sora:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+|--------------------------------------------------------------------------
+| Base Theme
+|--------------------------------------------------------------------------
+|
+| Global font and color system for Music Lab Student Portal.
+|
+| STUDENT PORTAL CSS
+*/
+
+@layer base {
+    :root {
+        /* Main palette */
+        --ml-main: #2F4F4F;
+        --ml-main-alt: #3C4B33;
+        --ml-brown: #523D35;
+        --ml-deep-brown: #42300B;
+        --ml-gold: #B4833D;
+
+        /* Supporting palette */
+        --ml-sage: #959D90;
+        --ml-light: #D8D9DA;
+        --ml-cream: #FFF6E0;
+        --ml-dark: #272829;
+        --ml-dim: #61677A;
+
+        /* Optional supporting colors */
+        --ml-blue-deep: #013d5a;
+        --ml-page-bg: #fcf3e3;
+        --ml-slate-soft: #394a56;
+
+        /* Effects */
+        --ml-border-soft: rgba(149, 157, 144, 0.28);
+        --ml-shadow-soft: 0 10px 30px rgba(57, 74, 86, 0.10);
+        --ml-shadow-hover: 0 18px 40px rgba(47, 79, 79, 0.14);
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background-color: var(--ml-page-bg);
+        color: var(--ml-slate-soft);
+        line-height: 1.6;
+    }
+
+    h1, h2, h3, h4, h5, h6,
+    .font-heading {
+        font-family: 'Sora', sans-serif;
+        color: var(--ml-blue-deep);
+    }
+
+    code,
+    pre,
+    .font-technical,
+    .font-mono-ui {
+        font-family: 'JetBrains Mono', monospace;
+    }
+
+    ::selection {
+        background: rgba(180, 131, 61, 0.20);
+        color: var(--ml-deep-brown);
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Reusable Student Portal Components
+|--------------------------------------------------------------------------
+|
+| These classes reduce duplication in Blade views and keep the UI consistent.
+|
+*/
+
+@layer components {
+    /* Main page wrapper */
+    .student-page {
+        background:
+            radial-gradient(circle at top right, rgba(180, 131, 61, 0.10), transparent 20%),
+            radial-gradient(circle at bottom left, rgba(47, 79, 79, 0.08), transparent 25%),
+            var(--ml-page-bg);
+        min-height: 100vh;
+    }
+
+    /* Generic card / surface */
+    .student-surface {
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid var(--ml-border-soft);
+        border-radius: 1.75rem;
+        box-shadow: var(--ml-shadow-soft);
+        transition:
+            transform 0.28s ease,
+            box-shadow 0.28s ease,
+            border-color 0.28s ease,
+            background-color 0.28s ease;
+    }
+
+    .student-surface:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--ml-shadow-hover);
+        border-color: rgba(180, 131, 61, 0.36);
+    }
+
+    /* Section / hero header */
+    .student-hero-card {
+        background: linear-gradient(
+            135deg,
+            rgba(255, 255, 255, 0.96) 0%,
+            rgba(255, 246, 224, 0.96) 100%
+        );
+        border: 1px solid rgba(149, 157, 144, 0.24);
+        border-radius: 2rem;
+        box-shadow: var(--ml-shadow-soft);
+    }
+
+    .student-eyebrow {
+        font-family: 'Sora', sans-serif;
+        font-size: 0.78rem;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--ml-dim);
+    }
+
+    .student-title {
+        font-family: 'Sora', sans-serif;
+        font-weight: 800;
+        color: var(--ml-blue-deep);
+        line-height: 1.15;
+    }
+
+    .student-subtitle {
+        color: var(--ml-slate-soft);
+        font-size: 1rem;
+    }
+
+    /* Buttons */
+    .btn-student-primary {
+        background: linear-gradient(135deg, var(--ml-main), var(--ml-main-alt));
+        color: #ffffff;
+        border: 1px solid transparent;
+        border-radius: 1rem;
+        font-weight: 700;
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease,
+            background 0.25s ease;
+        box-shadow: 0 10px 22px rgba(47, 79, 79, 0.18);
+    }
+
+    .btn-student-primary:hover {
+        background: linear-gradient(135deg, var(--ml-gold), var(--ml-brown));
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(82, 61, 53, 0.20);
+    }
+
+    .btn-student-secondary {
+        background: rgba(255, 255, 255, 0.90);
+        color: var(--ml-main);
+        border: 1px solid rgba(149, 157, 144, 0.35);
+        border-radius: 1rem;
+        font-weight: 700;
+        transition:
+            transform 0.25s ease,
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            color 0.25s ease,
+            box-shadow 0.25s ease;
+    }
+
+    .btn-student-secondary:hover {
+        background-color: var(--ml-cream);
+        border-color: rgba(180, 131, 61, 0.55);
+        color: var(--ml-deep-brown);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 20px rgba(180, 131, 61, 0.12);
+    }
+
+    /* Small stat cards */
+    .student-stat-card {
+        background: rgba(255, 255, 255, 0.95);
+        border: 1px solid var(--ml-border-soft);
+        border-radius: 1.5rem;
+        padding: 1rem;
+        box-shadow: 0 8px 20px rgba(57, 74, 86, 0.08);
+        transition:
+            transform 0.25s ease,
+            box-shadow 0.25s ease,
+            border-color 0.25s ease;
+    }
+
+    .student-stat-card:hover {
+        transform: translateY(-3px) scale(1.01);
+        border-color: rgba(180, 131, 61, 0.45);
+        box-shadow: 0 16px 28px rgba(47, 79, 79, 0.12);
+    }
+
+    .student-stat-label {
+        font-family: 'Sora', sans-serif;
+        font-size: 0.70rem;
+        line-height: 1.1;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--ml-dim);
+    }
+
+    .student-stat-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.75rem;
+        line-height: 1;
+        font-weight: 700;
+        color: var(--ml-blue-deep);
+    }
+
+    .student-stat-meta {
+        font-size: 0.95rem;
+        color: var(--ml-slate-soft);
+        font-weight: 500;
+    }
+
+    /* Badge / status */
+    .student-badge-success {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 9999px;
+        padding: 0.5rem 0.9rem;
+        background: rgba(60, 75, 51, 0.10);
+        border: 1px solid rgba(60, 75, 51, 0.22);
+        color: var(--ml-main-alt);
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+
+    .student-badge-warning {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        border-radius: 9999px;
+        padding: 0.5rem 0.9rem;
+        background: rgba(180, 131, 61, 0.12);
+        border: 1px solid rgba(180, 131, 61, 0.24);
+        color: var(--ml-deep-brown);
+        font-weight: 700;
+        font-size: 0.875rem;
+    }
+
+    /* Panel content blocks */
+    .student-soft-block {
+        background: linear-gradient(
+            135deg,
+            rgba(255, 246, 224, 0.85),
+            rgba(216, 217, 218, 0.28)
+        );
+        border: 1px solid rgba(149, 157, 144, 0.18);
+        border-radius: 1.25rem;
+        padding: 1rem;
+    }
+
+    /* Progress bar */
+    .student-progress-track {
+        width: 100%;
+        height: 0.8rem;
+        border-radius: 9999px;
+        background: rgba(149, 157, 144, 0.22);
+        overflow: hidden;
+    }
+
+    .student-progress-fill {
+        height: 100%;
+        border-radius: 9999px;
+        background: linear-gradient(90deg, var(--ml-main), var(--ml-gold));
+        transition: width 0.5s ease;
+    }
+
+    /* Form controls */
+    .student-input,
+    .student-select,
+    .student-textarea {
+        width: 100%;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(149, 157, 144, 0.36);
+        background: rgba(255, 255, 255, 0.95);
+        color: var(--ml-slate-soft);
+        transition:
+            border-color 0.25s ease,
+            box-shadow 0.25s ease,
+            background-color 0.25s ease;
+    }
+
+    .student-input:focus,
+    .student-select:focus,
+    .student-textarea:focus {
+        outline: none;
+        border-color: var(--ml-sage);
+        box-shadow: 0 0 0 4px rgba(149, 157, 144, 0.16);
+        background: #ffffff;
+    }
+
+    /* Empty states */
+    .student-empty-state {
+        text-align: center;
+        background: linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.95),
+            rgba(255, 246, 224, 0.88)
+        );
+        border: 1px solid rgba(149, 157, 144, 0.26);
+        border-radius: 2rem;
+        box-shadow: var(--ml-shadow-soft);
+    }
+
+    /* Smooth fade-up animation */
+    .animate-fade-up {
+        animation: fadeUp 0.45s ease both;
+    }
+
+    .animate-fade-up-delay-1 {
+        animation: fadeUp 0.55s ease both;
+    }
+
+    .animate-fade-up-delay-2 {
+        animation: fadeUp 0.65s ease both;
+    }
+
+    .animate-fade-up-delay-3 {
+        animation: fadeUp 0.75s ease both;
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Keyframes
+|--------------------------------------------------------------------------
+*/
+
+@layer utilities {
+    @keyframes fadeUp {
+        from {
+            opacity: 0;
+            transform: translateY(14px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Responsive Tweaks
+|--------------------------------------------------------------------------
+|
+| Makes small stat-card labels more readable on smaller screens.
+|
+*/
+
+@media (max-width: 767px) {
+    .student-stat-label {
+        font-size: 0.62rem;
+        letter-spacing: 0.10em;
+    }
+
+    .student-stat-value {
+        font-size: 1.45rem;
+    }
+
+    .student-stat-meta {
+        font-size: 0.82rem;
+    }
+}

@@ -10,6 +10,7 @@
  * Works with any password field by finding the closest parent and toggling the input
  * ***********Used in: Login, Registration Forms**************
  */
+
 window.togglePassword = function(buttonElement) {
     // Find the password input - it's a sibling in the same parent div
     const container = buttonElement.closest('div');
@@ -213,178 +214,174 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // === INSTRUCTOR MULTI-STEP FORM ===
-    const step1 = document.getElementById('step1');
-    const step2 = document.getElementById('step2');
-    const step3 = document.getElementById('step3');
-    const nextBtn1 = document.getElementById('nextStepBtn1');
-    const nextBtn2 = document.getElementById('nextStepBtn2');
-    const prevBtn2 = document.getElementById('prevStepBtn2');
-    const prevBtn3 = document.getElementById('prevStepBtn3');
+        // === REUSABLE MULTI-STEP REGISTRATION FORM ===
+    const registrationConfig = getRegistrationConfig();
+    const registrationSteps = getRegistrationSteps();
     const blurOverlay = document.getElementById('blurOverlay');
     const motivationText = document.getElementById('motivationText');
 
-    const instructorMotivations = [
-        "Almost there! Let's complete your emergency contact...",
-        "Great progress! Just one more step to showcase your expertise...",
-    ];
+    function getRegistrationConfig() {
+        if (document.getElementById('instructorForm')) {
+            return {
+                formId: 'instructorForm',
+                motivations: [
+                    "Almost there! Let's complete your emergency contact...",
+                    "Great progress! Just one more step to showcase your expertise...",
+                ],
+            };
+        }
+
+        if (document.getElementById('studentForm')) {
+            return {
+                formId: 'studentForm',
+                motivations: [
+                    "Great! Now let's add your guardian and emergency contact...",
+                    "Almost done! Time to share your musical background...",
+                ],
+            };
+        }
+
+        return null;
+    }
+
+    function getRegistrationSteps() {
+        return {
+            panels: [
+                document.getElementById('step1'),
+                document.getElementById('step2'),
+                document.getElementById('step3'),
+            ],
+            indicators: Array.from(document.querySelectorAll('.step-item')),
+            buttons: {
+                nextFromStepOne: document.getElementById('nextStepBtn1'),
+                nextFromStepTwo: document.getElementById('nextStepBtn2'),
+                previousFromStepTwo: document.getElementById('prevStepBtn2'),
+                previousFromStepThree: document.getElementById('prevStepBtn3'),
+            },
+        };
+    }
 
     function validateStep(step) {
+        if (!step) {
+            return false;
+        }
+
         const existingError = step.querySelector('.error-message');
-        if (existingError) existingError.remove();
+        if (existingError) {
+            existingError.remove();
+        }
 
-        const inputs = step.querySelectorAll('input[required], select[required]');
-        let valid = true;
-        let emptyFields = [];
+        const fields = step.querySelectorAll('input[required], select[required], textarea[required]');
+        const emptyFields = [];
 
-        inputs.forEach(input => {
-            if (!input.value.trim()) {
-                input.classList.add('border-red-500', 'animate-shake');
-                setTimeout(() => input.classList.remove('animate-shake'), 500);
-                
-                const label = input.closest('div').querySelector('label');
-                if (label) {
-                    emptyFields.push(label.textContent.replace(' *', ''));
-                }
-                valid = false;
+        fields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('border-red-500', 'animate-shake');
+                setTimeout(() => field.classList.remove('animate-shake'), 500);
+
+                const label = field.closest('div')?.querySelector('label');
+                emptyFields.push(label ? label.textContent.replace(' *', '').trim() : field.name);
             } else {
-                input.classList.remove('border-red-500');
+                field.classList.remove('border-red-500');
             }
         });
 
-        if (!valid) {
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `
-                <strong>Please fill in all required fields:</strong>
-                <ul class="list-disc list-inside mt-2">
-                    ${emptyFields.map(field => `<li>${field}</li>`).join('')}
-                </ul>
-            `;
-            step.querySelector('.grid').insertAdjacentElement('afterend', errorDiv);
-            errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (emptyFields.length > 0) {
+            showStepError(step, emptyFields);
+            return false;
         }
 
-        return valid;
+        return true;
     }
 
-    function showMotivation(index, motivationsArray) {
-        motivationText.textContent = motivationsArray[index];
+    function showStepError(step, emptyFields) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.innerHTML = `
+            <strong>Please fill in all required fields:</strong>
+            <ul class="list-disc list-inside mt-2">
+                ${emptyFields.map(field => `<li>${field}</li>`).join('')}
+            </ul>
+        `;
+
+        const grid = step.querySelector('.grid');
+
+        if (grid) {
+            grid.insertAdjacentElement('afterend', errorDiv);
+        } else {
+            step.appendChild(errorDiv);
+        }
+
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function showMotivation(index) {
+        if (!registrationConfig || !blurOverlay || !motivationText) {
+            return;
+        }
+
+        motivationText.textContent = registrationConfig.motivations[index] || '';
         blurOverlay.classList.add('active');
-        setTimeout(() => blurOverlay.classList.remove('active'), 2000);
+
+        setTimeout(() => {
+            blurOverlay.classList.remove('active');
+        }, 2000);
     }
 
-    if (nextBtn1 && nextBtn2 && prevBtn2 && prevBtn3) {
-        nextBtn1.addEventListener('click', () => {
-            if (!validateStep(step1)) return;
-            showMotivation(0, instructorMotivations);
-            setTimeout(() => {
-                step1.classList.remove('active');
-                step1.classList.add('swipe-left');
-                step2.classList.remove('hidden');
-                step2.classList.add('active', 'swipe-right');
-                document.querySelectorAll('.step-item')[1].classList.add('active');
-            }, 500);
-        });
+    function moveToStep(currentIndex, targetIndex, motivationIndex = null) {
+        const currentStep = registrationSteps.panels[currentIndex];
+        const targetStep = registrationSteps.panels[targetIndex];
 
-        nextBtn2.addEventListener('click', () => {
-            if (!validateStep(step2)) return;
-            showMotivation(1, instructorMotivations);
-            setTimeout(() => {
-                step2.classList.remove('active', 'swipe-right');
-                step2.classList.add('swipe-left');
-                step3.classList.remove('hidden');
-                step3.classList.add('active', 'swipe-right');
-                document.querySelectorAll('.step-item')[2].classList.add('active');
-            }, 500);
-        });
+        if (!currentStep || !targetStep) {
+            return;
+        }
 
-        prevBtn2.addEventListener('click', () => {
-            step2.classList.remove('active', 'swipe-right');
-            step2.classList.add('swipe-right-back');
-            step1.classList.remove('swipe-left');
-            step1.classList.add('active');
-            setTimeout(() => {
-                step2.classList.add('hidden');
-                step2.classList.remove('swipe-right-back');
-            }, 600);
-            document.querySelectorAll('.step-item')[1].classList.remove('active');
-        });
+        if (motivationIndex !== null) {
+            showMotivation(motivationIndex);
+        }
 
-        prevBtn3.addEventListener('click', () => {
-            step3.classList.remove('active', 'swipe-right');
-            step3.classList.add('swipe-right-back');
-            step2.classList.remove('swipe-left');
-            step2.classList.add('active');
-            setTimeout(() => {
-                step3.classList.add('hidden');
-                step3.classList.remove('swipe-right-back');
-            }, 600);
-            document.querySelectorAll('.step-item')[2].classList.remove('active');
+        setTimeout(() => {
+            currentStep.classList.remove('active', 'swipe-right', 'swipe-right-back');
+            currentStep.classList.add(targetIndex > currentIndex ? 'swipe-left' : 'swipe-right-back');
+
+            targetStep.classList.remove('hidden', 'swipe-left', 'swipe-right-back');
+            targetStep.classList.add('active', 'swipe-right');
+
+            updateStepIndicators(targetIndex);
+        }, motivationIndex !== null ? 500 : 0);
+    }
+
+    function updateStepIndicators(activeIndex) {
+        registrationSteps.indicators.forEach((item, index) => {
+            item.classList.toggle('active', index <= activeIndex);
         });
     }
 
-    // === STUDENT MULTI-STEP FORM ===
-    const studentStep1 = document.getElementById('step1');
-    const studentStep2 = document.getElementById('step2');
-    const studentStep3 = document.getElementById('step3');
-    const studentNextBtn1 = document.getElementById('nextStepBtn1');
-    const studentNextBtn2 = document.getElementById('nextStepBtn2');
-    const studentPrevBtn2 = document.getElementById('prevStepBtn2');
-    const studentPrevBtn3 = document.getElementById('prevStepBtn3');
+    if (registrationConfig && registrationSteps.panels.every(Boolean)) {
+        const buttons = registrationSteps.buttons;
 
-    const studentMotivations = [
-        "Great! Now let's add your emergency contacts...",
-        "Almost done! Time to share your musical background...",
-    ];
+        buttons.nextFromStepOne?.addEventListener('click', () => {
+            if (!validateStep(registrationSteps.panels[0])) {
+                return;
+            }
 
-    if (studentNextBtn1 && studentNextBtn2 && studentPrevBtn2 && studentPrevBtn3) {
-        studentNextBtn1.addEventListener('click', () => {
-            if (!validateStep(studentStep1)) return;
-            showMotivation(0, studentMotivations);
-            setTimeout(() => {
-                studentStep1.classList.remove('active');
-                studentStep1.classList.add('swipe-left');
-                studentStep2.classList.remove('hidden');
-                studentStep2.classList.add('active', 'swipe-right');
-                document.querySelectorAll('.step-item')[1].classList.add('active');
-            }, 500);
+            moveToStep(0, 1, 0);
         });
 
-        studentNextBtn2.addEventListener('click', () => {
-            if (!validateStep(studentStep2)) return;
-            showMotivation(1, studentMotivations);
-            setTimeout(() => {
-                studentStep2.classList.remove('active', 'swipe-right');
-                studentStep2.classList.add('swipe-left');
-                studentStep3.classList.remove('hidden');
-                studentStep3.classList.add('active', 'swipe-right');
-                document.querySelectorAll('.step-item')[2].classList.add('active');
-            }, 500);
+        buttons.nextFromStepTwo?.addEventListener('click', () => {
+            if (!validateStep(registrationSteps.panels[1])) {
+                return;
+            }
+
+            moveToStep(1, 2, 1);
         });
 
-        studentPrevBtn2.addEventListener('click', () => {
-            studentStep2.classList.remove('active', 'swipe-right');
-            studentStep2.classList.add('swipe-right-back');
-            studentStep1.classList.remove('swipe-left');
-            studentStep1.classList.add('active');
-            setTimeout(() => {
-                studentStep2.classList.add('hidden');
-                studentStep2.classList.remove('swipe-right-back');
-            }, 600);
-            document.querySelectorAll('.step-item')[1].classList.remove('active');
+        buttons.previousFromStepTwo?.addEventListener('click', () => {
+            moveToStep(1, 0);
         });
 
-        studentPrevBtn3.addEventListener('click', () => {
-            studentStep3.classList.remove('active', 'swipe-right');
-            studentStep3.classList.add('swipe-right-back');
-            studentStep2.classList.remove('swipe-left');
-            studentStep2.classList.add('active');
-            setTimeout(() => {
-                studentStep3.classList.add('hidden');
-                studentStep3.classList.remove('swipe-right-back');
-            }, 600);
-            document.querySelectorAll('.step-item')[2].classList.remove('active');
+        buttons.previousFromStepThree?.addEventListener('click', () => {
+            moveToStep(2, 1);
         });
     }
 
@@ -500,54 +497,350 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // === FINAL FORM SUBMISSION (Student Registration) ===
+    // === STUDENT REGISTRATION DRAFT + FINAL FORM SUBMISSION ===
+    const STUDENT_REGISTRATION_DRAFT_KEY = 'musiclab.student.registration.draft.v1';
+    const STUDENT_REGISTRATION_CLEAR_COOKIE = 'musiclab_clear_student_registration_draft';
     const studentForm = document.getElementById('studentForm');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Student Registration Storage Helpers
+    |--------------------------------------------------------------------------
+    |
+    | These helpers are intentionally small and reusable:
+    | - removeStorageItem() safely removes localStorage data
+    | - hasCookie() checks if Laravel marked the account creation as successful
+    | - deleteCookie() removes the temporary cookie after localStorage is cleared
+    |
+    */
+    function removeStorageItem(key) {
+        try {
+            localStorage.removeItem(key);
+        } catch (error) {
+            console.warn('Unable to remove stored registration draft:', error);
+        }
+    }
+
+    function hasCookie(cookieName) {
+        return document.cookie
+            .split(';')
+            .some(cookie => cookie.trim().startsWith(cookieName + '='));
+    }
+
+    function deleteCookie(cookieName) {
+        document.cookie = cookieName + '=; Max-Age=0; path=/; SameSite=Lax';
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Clear Draft Only After Successful Create Account & Login
+    |--------------------------------------------------------------------------
+    |
+    | This does not run just because the user reaches /create-account.
+    | It only runs when Laravel sends the success cookie after account creation.
+    |
+    */
+    function clearStudentRegistrationDraftAfterSuccessfulAccountCreation() {
+        if (!hasCookie(STUDENT_REGISTRATION_CLEAR_COOKIE)) {
+            return;
+        }
+
+        removeStorageItem(STUDENT_REGISTRATION_DRAFT_KEY);
+        deleteCookie(STUDENT_REGISTRATION_CLEAR_COOKIE);
+    }
+
+    clearStudentRegistrationDraftAfterSuccessfulAccountCreation();
+
+
     if (studentForm) {
+        const studentRegistrationDraft = createStudentRegistrationDraftManager(studentForm);
+        const guardianSync = createGuardianEmergencySync(studentForm, studentRegistrationDraft);
+
+        studentRegistrationDraft.restoreDraft();
+        guardianSync.initialize();
+        studentRegistrationDraft.bindAutoSave();
+
         studentForm.addEventListener('submit', function (e) {
             document.querySelectorAll('#secondary-instruments-container > div').forEach(div => {
                 const input = div.querySelector('input');
-                if (input && !input.value.trim()) div.remove();
-            });
 
-            const requiredFields = [
-                'first_name', 'last_name', 'phone', 'user_email',
-                'address_line1', 'city', 'province', 'postal_code', 'country',
-                'date_of_birth', 'gender',
-                'emergency_contact_name', 'emergency_contact_relationship', 'emergency_contact_phone',
-                'parent_guardian_name', 'parent_guardian_relationship', 'parent_guardian_phone',
-                'instrument_id', 'skill_level'
-            ];
-
-            let allValid = true;
-            requiredFields.forEach(fieldName => {
-                const field = document.querySelector(`[name="${fieldName}"]`);
-                if (field && !field.value.trim()) {
-                    alert(`Please fill in: ${fieldName.replace(/_/g, ' ')}`);
-                    allValid = false;
+                if (input && !input.value.trim()) {
+                    div.remove();
                 }
             });
 
-            if (!allValid) {
+            guardianSync.syncIfSameGuardian();
+            studentRegistrationDraft.saveDraftNow();
+
+            const requiredFields = [
+                'first_name',
+                'last_name',
+                'phone',
+                'user_email',
+                'address_line1',
+                'city',
+                'province',
+                'postal_code',
+                'country',
+                'date_of_birth',
+                'gender',
+                'parent_guardian_name',
+                'parent_guardian_relationship',
+                'parent_guardian_phone',
+                'emergency_contact_name',
+                'emergency_contact_relationship',
+                'emergency_contact_phone',
+                'instrument_id',
+                'skill_level',
+            ];
+
+            const missingField = requiredFields.find(fieldName => {
+                const field = studentForm.querySelector(`[name="${fieldName}"]`);
+                return field && !field.value.trim();
+            });
+
+            if (missingField) {
+                alert(`Please fill in: ${missingField.replace(/_/g, ' ')}`);
                 e.preventDefault();
                 return;
             }
 
-            const submitBtn = this.querySelector('button[type="submit"]');
-            if (submitBtn) {
-                submitBtn.disabled = true;
-                const originalText = submitBtn.innerHTML;
-                submitBtn.innerHTML = `
-                    <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                `;
-                setTimeout(() => {
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }, 10000);
-            }
+            setSubmitLoadingState(this.querySelector('button[type="submit"]'));
         });
+    }
+
+    function createStudentRegistrationDraftManager(form) {
+        const draftStatus = document.getElementById('studentDraftStatus');
+        const ignoredFieldTypes = new Set(['password', 'file', 'submit', 'button', 'hidden']);
+        let saveTimer = null;
+
+        function getDraftableFields() {
+            return Array.from(form.elements).filter(field => {
+                return field.name && !ignoredFieldTypes.has(field.type);
+            });
+        }
+
+        function collectDraftData() {
+            const fields = {};
+
+            getDraftableFields().forEach(field => {
+                if (field.type === 'radio') {
+                    if (field.checked) {
+                        fields[field.name] = field.value;
+                    }
+
+                    return;
+                }
+
+                if (field.type === 'checkbox') {
+                    fields[field.name] = field.checked;
+                    return;
+                }
+
+                if (field.name.endsWith('[]')) {
+                    fields[field.name] = fields[field.name] || [];
+                    fields[field.name].push(field.value);
+                    return;
+                }
+
+                fields[field.name] = field.value;
+            });
+
+            return {
+                updatedAt: new Date().toISOString(),
+                fields,
+            };
+        }
+
+        function readDraft() {
+            try {
+                const rawDraft = localStorage.getItem(STUDENT_REGISTRATION_DRAFT_KEY);
+                return rawDraft ? JSON.parse(rawDraft) : null;
+            } catch (error) {
+                console.warn('Unable to read student registration draft:', error);
+                return null;
+            }
+        }
+
+        function saveDraftNow() {
+            try {
+                localStorage.setItem(STUDENT_REGISTRATION_DRAFT_KEY, JSON.stringify(collectDraftData()));
+                updateStatus('Progress saved on this device.');
+            } catch (error) {
+                console.warn('Unable to save student registration draft:', error);
+                updateStatus('Auto-save is not available in this browser session.');
+            }
+        }
+
+        function saveDraftSoon() {
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(saveDraftNow, 250);
+        }
+
+        function restoreDraft() {
+            const draft = readDraft();
+
+            if (!draft?.fields) {
+                return;
+            }
+
+            getDraftableFields().forEach(field => {
+                if (!Object.prototype.hasOwnProperty.call(draft.fields, field.name)) {
+                    return;
+                }
+
+                const savedValue = draft.fields[field.name];
+
+                if (field.type === 'radio') {
+                    field.checked = field.value === savedValue;
+                    return;
+                }
+
+                if (field.type === 'checkbox') {
+                    field.checked = Boolean(savedValue);
+                    return;
+                }
+
+                if (field.name.endsWith('[]')) {
+                    return;
+                }
+
+                field.value = savedValue;
+            });
+
+            updateStatus('Saved draft restored. You can continue your registration.');
+        }
+
+        function bindAutoSave() {
+            form.addEventListener('input', saveDraftSoon);
+            form.addEventListener('change', saveDraftSoon);
+            window.addEventListener('beforeunload', saveDraftNow);
+        }
+
+        function updateStatus(message) {
+            if (draftStatus) {
+                draftStatus.textContent = message;
+            }
+        }
+
+        return {
+            bindAutoSave,
+            restoreDraft,
+            saveDraftNow,
+            saveDraftSoon,
+        };
+    }
+
+    function createGuardianEmergencySync(form, draftManager) {
+        const guardianFields = {
+            name: form.querySelector('[name="parent_guardian_name"]'),
+            relationship: form.querySelector('[name="parent_guardian_relationship"]'),
+            phone: form.querySelector('[name="parent_guardian_phone"]'),
+        };
+
+        const emergencyFields = {
+            name: form.querySelector('[name="emergency_contact_name"]'),
+            relationship: form.querySelector('[name="emergency_contact_relationship"]'),
+            phone: form.querySelector('[name="emergency_contact_phone"]'),
+        };
+
+        const sameGuardianRadios = form.querySelectorAll('[name="emergency_same_as_guardian"]');
+        const sameGuardianHint = document.getElementById('sameGuardianHint');
+
+        function initialize() {
+            sameGuardianRadios.forEach(radio => {
+                radio.addEventListener('change', handleSameGuardianChange);
+            });
+
+            Object.values(guardianFields).forEach(field => {
+                field?.addEventListener('input', () => {
+                    syncIfSameGuardian();
+                    draftManager.saveDraftSoon();
+                });
+            });
+
+            handleSameGuardianChange();
+        }
+
+        function isSameGuardianSelected() {
+            const selected = form.querySelector('[name="emergency_same_as_guardian"]:checked');
+            return selected?.value === 'yes';
+        }
+
+        function copyGuardianToEmergency() {
+            if (emergencyFields.name) {
+                emergencyFields.name.value = guardianFields.name?.value || '';
+            }
+
+            if (emergencyFields.relationship) {
+                emergencyFields.relationship.value = guardianFields.relationship?.value || '';
+            }
+
+            if (emergencyFields.phone) {
+                emergencyFields.phone.value = guardianFields.phone?.value || '';
+            }
+        }
+
+        function setEmergencyReadonlyState(isReadonly) {
+            Object.values(emergencyFields).forEach(field => {
+                if (!field) {
+                    return;
+                }
+
+                /*
+                 * readonly is used instead of disabled so Laravel still receives
+                 * the copied emergency contact values during form submission.
+                 */
+                field.readOnly = isReadonly;
+                field.classList.toggle('bg-gray-100', isReadonly);
+                field.classList.toggle('cursor-not-allowed', isReadonly);
+            });
+
+            sameGuardianHint?.classList.toggle('hidden', !isReadonly);
+        }
+
+        function syncIfSameGuardian() {
+            if (isSameGuardianSelected()) {
+                copyGuardianToEmergency();
+            }
+        }
+
+        function handleSameGuardianChange() {
+            const shouldCopy = isSameGuardianSelected();
+
+            if (shouldCopy) {
+                copyGuardianToEmergency();
+            }
+
+            setEmergencyReadonlyState(shouldCopy);
+            draftManager.saveDraftSoon();
+        }
+
+        return {
+            initialize,
+            syncIfSameGuardian,
+        };
+    }
+
+    function setSubmitLoadingState(submitBtn) {
+        if (!submitBtn) {
+            return;
+        }
+
+        submitBtn.disabled = true;
+
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = `
+            <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+        `;
+
+        setTimeout(() => {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }, 10000);
     }
 
 }); // End of DOMContentLoaded

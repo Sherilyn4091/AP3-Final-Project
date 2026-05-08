@@ -418,6 +418,10 @@ Route::middleware('auth')->group(function () {
         Route::patch('/profile', [App\Http\Controllers\Student\ProfileController::class, 'update'])
             ->name('profile.update');
 
+        Route::get('/schedule/{id}/details', [App\Http\Controllers\Student\ScheduleController::class, 'getDetails'])
+            ->whereNumber('id')
+            ->name('schedule.details');
+
         /*
         |--------------------------------------------------------------------------
         | Student Enrollment
@@ -444,6 +448,18 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/enrollments', [App\Http\Controllers\Student\EnrollmentController::class, 'index'])
             ->name('enrollments');
+        
+        Route::get('/enrollments/{enrollmentId}', [App\Http\Controllers\Student\EnrollmentController::class, 'show'])
+            ->name('enrollments.show');
+
+        Route::patch('/enrollments/{enrollmentId}', [App\Http\Controllers\Student\EnrollmentController::class, 'update'])
+            ->name('enrollments.update');
+
+        Route::post('/enrollments/{enrollmentId}/cancel', [App\Http\Controllers\Student\EnrollmentController::class, 'cancel'])
+            ->name('enrollments.cancel');
+
+        Route::post('/enrollments/{enrollmentId}/withdrawal-request', [App\Http\Controllers\Student\EnrollmentController::class, 'requestWithdrawal'])
+            ->name('enrollments.withdrawal-request');
 
         /*
         |--------------------------------------------------------------------------

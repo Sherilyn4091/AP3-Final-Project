@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 
 class Enrollment extends Model
@@ -32,6 +33,8 @@ class Enrollment extends Model
         'payment_method_id',
         'enrollment_date',
         'start_date',
+        'preferred_lesson_days',
+        'preferred_lesson_time',
         'end_date',
         'total_sessions',
         'completed_sessions',
@@ -41,6 +44,10 @@ class Enrollment extends Model
         'total_amount',
         'amount_paid',
         'notes',
+        'cancellation_reason',
+        'cancelled_at',
+        'withdrawal_reason',
+        'withdrawal_requested_at',
     ];
 
     /**
@@ -55,6 +62,8 @@ class Enrollment extends Model
         'remaining_sessions' => 'integer',
         'total_amount' => 'decimal:2',
         'amount_paid' => 'decimal:2',
+        'cancelled_at' => 'datetime',
+        'withdrawal_requested_at' => 'datetime',
     ];
 
     /*
@@ -96,5 +105,65 @@ class Enrollment extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class, 'enrollment_id', 'enrollment_id');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Small Helpers for Student UI
+    |--------------------------------------------------------------------------
+    |
+    | These helpers keep view files readable and avoid duplicated date/status
+    | logic across dashboard, enrollment cards, and action buttons.
+    |
+    */
+    public function getProgressPercentAttribute(): float
+    {
+        if ((int) $this->total_sessions <= 0) {
+            return 0;
+        }
+
+        return round(((int) $this->completed_sessions / (int) $this->total_sessions) * 100, 1);
+    }
+
+    public function getHasStartedAttribute(): bool
+    {
+        if (!$this->start_date) {
+            return false;
+        }
+
+        return Carbon::parse($this->start_date)->startOfDay()->lte(now()->startOfDay());
+    }
+
+    public function getCanBeEditedAttribute(): bool
+    {
+        return $this->status === 'active'
+            && !$this->has_started
+            && (int) $this->completed_sessions === 0
+            && $this->schedules()->count() === 0;
+    }
+
+    public function getCanBeCancelledAttribute(): bool
+    {
+        return $this->status === 'active'
+            && !$this->has_started
+            && (int) $this->completed_sessions === 0;
+    }
+
+    public function getCanRequestWithdrawalAttribute(): bool
+    {
+        return $this->status === 'active'
+            && ($this->has_started || (int) $this->completed_sessions > 0 || $this->schedules()->count() > 0);
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'active' => 'Active',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
+            'withdrawal_requested' => 'Withdrawal Requested',
+            'withdrawn' => 'Withdrawn',
+            default => ucwords(str_replace('_', ' ', (string) $this->status)),
+        };
     }
 }

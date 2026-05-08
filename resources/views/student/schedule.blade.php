@@ -1,232 +1,154 @@
+{{-- resources/views/student/schedule.blade.php --}}
+
 @extends('layouts.student')
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="min-h-full bg-[#F5F7F4] px-4 py-8 sm:px-6 lg:px-8" style="font-family: 'Inter', sans-serif;">
+    <div class="mx-auto max-w-7xl space-y-6">
 
-    {{-- Page Header --}}
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">My schedule</h1>
-        <p class="mt-2 text-base text-gray-700">Your upcoming and past lessons</p>
-    </div>
-
-    {{-- Empty State --}}
-    @if($schedules->isEmpty())
-        <div class="bg-white border border-gray-300 rounded-xl shadow p-12 text-center">
-            <svg class="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
-            <h3 class="text-xl font-bold text-gray-900 mb-2">No lessons scheduled yet</h3>
-            <p class="text-base text-gray-600 font-medium">Once enrolled, your lessons will appear here</p>
+        {{-- Page Header --}}
+        <div>
+            <p class="text-xs font-bold uppercase tracking-[0.25em] text-[#768A96]">Lesson Calendar</p>
+            <h1 class="mt-2 text-2xl font-bold text-[#223030] sm:text-3xl" style="font-family: 'Sora', sans-serif;">My Schedule</h1>
+            <p class="mt-2 text-sm text-[#44576D]">Your confirmed lessons and pending schedule preferences.</p>
         </div>
-    @else
-        {{-- Schedule List Grouped by Date --}}
-        <div class="space-y-6">
-            @foreach($schedules as $date => $dailySchedules)
-                <div class="bg-white border border-gray-300 rounded-xl shadow overflow-hidden">
-                    
-                    {{-- Date Header --}}
-                    <div class="px-6 py-4 bg-gray-100 border-b border-gray-300">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-bold text-gray-900">
-                                {{ \Carbon\Carbon::parse($date)->format('l, F d, Y') }}
-                            </h3>
-                            @if($date === now()->toDateString())
-                                <span class="px-3 py-1 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow-sm">Today</span>
-                            @elseif(\Carbon\Carbon::parse($date)->isFuture())
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-bold rounded-lg border border-blue-300">Upcoming</span>
-                            @else
-                                <span class="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-bold rounded-lg border border-gray-300">Past</span>
-                            @endif
-                        </div>
-                    </div>
 
-                    {{-- Lessons for this Date --}}
-                    <div class="divide-y divide-gray-200">
-                        @foreach($dailySchedules as $schedule)
-                            <div class="px-6 py-5 hover:bg-gray-50 transition">
-                                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                    
-                                    {{-- Left: Time & Details --}}
-                                    <div class="flex-1">
-                                        <div class="flex items-center gap-3 mb-2">
-                                            {{-- Time --}}
-                                            <div class="flex items-center gap-2 text-gray-900">
-                                                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                </svg>
-                                                <span class="font-bold">
-                                                    {{ \Carbon\Carbon::parse($schedule->start_time)->format('g:i A') }} – 
-                                                    {{ \Carbon\Carbon::parse($schedule->end_time)->format('g:i A') }}
+        {{-- Pending Schedule Confirmation --}}
+        @if(isset($pendingEnrollments) && $pendingEnrollments->isNotEmpty())
+            <section class="rounded-[28px] border border-[#D8DDD8] bg-white p-5 shadow-sm sm:p-6">
+                <div class="mb-4">
+                    <h2 class="text-lg font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">Pending schedule confirmation</h2>
+                    <p class="mt-1 text-sm text-[#44576D]">These packages are enrolled, but final lesson schedules have not been created yet.</p>
+                </div>
+
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    @foreach($pendingEnrollments as $enrollment)
+                        <div class="rounded-2xl border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]">{{ $enrollment->instrument_name ?? 'Instrument' }}</p>
+                            <h3 class="mt-1 font-bold text-[#223030]">{{ $enrollment->session_count }}-Session Package</h3>
+                            <div class="mt-3 space-y-1 text-sm text-[#44576D]">
+                                <p>Instructor: <span class="font-bold text-[#223030]">{{ $enrollment->instructor_full_name ?? 'TBA' }}</span></p>
+                                <p>Start date: <span class="font-bold text-[#223030]">{{ $enrollment->start_date ? \Carbon\Carbon::parse($enrollment->start_date)->format('M d, Y') : '—' }}</span></p>
+                                <p>Preferred days: <span class="font-bold text-[#223030]">{{ $enrollment->preferred_lesson_days ?? 'Not set' }}</span></p>
+                                <p>Preferred time: <span class="font-bold text-[#223030]">{{ $enrollment->preferred_lesson_time ?? 'Not set' }}</span></p>
+                            </div>
+                            <div class="mt-4 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-[#768A96]">
+                                Admin or instructor will confirm the actual date, time, and room.
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        {{-- Empty State --}}
+        @if($schedules->isEmpty())
+            <div class="rounded-[28px] border border-[#D8DDD8] bg-white p-10 text-center shadow-sm">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-[#F5F7F4] text-[#768A96]">
+                    <svg class="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h3 class="mt-4 text-xl font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">No confirmed lessons yet</h3>
+                <p class="mt-2 text-sm text-[#44576D]">Your confirmed lessons will appear here once admin or instructor creates your schedule.</p>
+            </div>
+        @else
+            {{-- Schedule List Grouped by Date --}}
+            <div class="space-y-5">
+                @foreach($schedules as $date => $dailySchedules)
+                    <section class="overflow-hidden rounded-[28px] border border-[#D8DDD8] bg-white shadow-sm">
+                        {{-- Date Header --}}
+                        <div class="border-b border-[#D8DDD8] bg-[#FCFCFA] px-5 py-4">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <h2 class="text-lg font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">
+                                    {{ \Carbon\Carbon::parse($date)->format('l, F d, Y') }}
+                                </h2>
+                                @if($date === now()->toDateString())
+                                    <span class="w-fit rounded-2xl bg-[#29353C] px-3 py-1 text-xs font-bold text-white">Today</span>
+                                @elseif(\Carbon\Carbon::parse($date)->isFuture())
+                                    <span class="w-fit rounded-2xl border border-[#D8DDD8] bg-[#F5F7F4] px-3 py-1 text-xs font-bold text-[#29353C]">Upcoming</span>
+                                @else
+                                    <span class="w-fit rounded-2xl border border-[#D8DDD8] bg-[#F5F7F4] px-3 py-1 text-xs font-bold text-[#768A96]">Past</span>
+                                @endif
+                            </div>
+                        </div>
+
+                        {{-- Lessons for this Date --}}
+                        <div class="divide-y divide-[#EEF1EC]">
+                            @foreach($dailySchedules as $schedule)
+                                @php
+                                    $statusClasses = match($schedule->status) {
+                                        'scheduled' => 'border-[#B9C6D6] bg-[#EEF2F4] text-[#29353C]',
+                                        'completed' => 'border-[#A7DDB5] bg-[#EAF8EE] text-[#23613B]',
+                                        'cancelled' => 'border-[#C56B5F]/40 bg-[#F6EFEC] text-[#523D35]',
+                                        'in_progress' => 'border-[#DDBF7A] bg-[#FFF8E6] text-[#725A19]',
+                                        default => 'border-[#D8DDD8] bg-[#F5F7F4] text-[#44576D]',
+                                    };
+                                @endphp
+
+                                <div class="px-5 py-5 transition hover:bg-[#FCFCFA]">
+                                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                        <div class="flex-1">
+                                            <div class="flex flex-wrap items-center gap-3">
+                                                <div class="flex items-center gap-2 text-[#223030]">
+                                                    <svg class="h-5 w-5 text-[#44576D]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                                    </svg>
+                                                    <span class="font-bold" style="font-family: 'JetBrains Mono', monospace;">
+                                                        {{ \Carbon\Carbon::parse($schedule->start_time)->format('g:i A') }} – {{ \Carbon\Carbon::parse($schedule->end_time)->format('g:i A') }}
+                                                    </span>
+                                                </div>
+
+                                                <span class="rounded-2xl border px-3 py-1 text-xs font-bold {{ $statusClasses }}">
+                                                    {{ ucfirst(str_replace('_', ' ', $schedule->status)) }}
                                                 </span>
                                             </div>
 
-                                            {{-- Status Badge --}}
-                                            @php
-                                                $statusColors = [
-                                                    'scheduled' => 'bg-blue-100 text-blue-800 border-blue-300',
-                                                    'completed' => 'bg-green-100 text-green-800 border-green-300',
-                                                    'cancelled' => 'bg-red-100 text-red-800 border-red-300',
-                                                    'no_class' => 'bg-gray-100 text-gray-700 border-gray-300',
-                                                    'rescheduled' => 'bg-yellow-100 text-yellow-800 border-yellow-300',
-                                                    'substitute' => 'bg-orange-100 text-orange-800 border-orange-300',
-                                                    'no_show' => 'bg-red-100 text-red-800 border-red-300',
-                                                    'in_progress' => 'bg-purple-100 text-purple-800 border-purple-300',
-                                                ];
-                                                $statusClass = $statusColors[$schedule->status] ?? 'bg-gray-100 text-gray-700 border-gray-300';
-                                            @endphp
-                                            <span class="px-3 py-1 text-xs font-bold rounded-lg border {{ $statusClass }}">
-                                                {{ ucfirst(str_replace('_', ' ', $schedule->status)) }}
-                                            </span>
-                                        </div>
-
-                                        {{-- Instructor --}}
-                                        <div class="flex items-center gap-2 text-gray-700 mb-1 ml-7">
-                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                                            </svg>
-                                            <span class="text-sm font-semibold">
-                                                Instructor: {{ $schedule->instructor->first_name ?? 'N/A' }} {{ $schedule->instructor->last_name ?? '' }}
-                                            </span>
-                                        </div>
-
-                                        {{-- Room --}}
-                                        <div class="flex items-center gap-2 text-gray-600 ml-7">
-                                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                            </svg>
-                                            <span class="text-sm">Room: {{ $schedule->room_number ?? 'TBA' }}</span>
-                                        </div>
-
-                                        {{-- Lesson Topic --}}
-                                        @if($schedule->lesson_topic)
-                                            <div class="flex items-center gap-2 text-gray-600 mt-1 ml-7">
-                                                <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                                </svg>
-                                                <span class="text-sm font-medium">{{ $schedule->lesson_topic }}</span>
+                                            <div class="mt-3 grid gap-2 text-sm text-[#44576D] sm:grid-cols-2 lg:grid-cols-4">
+                                                <p>Instrument: <span class="font-bold text-[#223030]">{{ $schedule->enrollment?->instrument?->instrument_name ?? 'Lesson' }}</span></p>
+                                                <p>Instructor: <span class="font-bold text-[#223030]">{{ trim(($schedule->instructor->first_name ?? '') . ' ' . ($schedule->instructor->middle_name ?? '') . ' ' . ($schedule->instructor->last_name ?? '') . ' ' . ($schedule->instructor->suffix ?? '')) ?: 'TBA' }}</span></p>
+                                                <p>Room: <span class="font-bold text-[#223030]">{{ $schedule->room_number ?? 'TBA' }}</span></p>
+                                                <p>Topic: <span class="font-bold text-[#223030]">{{ $schedule->lesson_topic ?? 'Regular Lesson' }}</span></p>
                                             </div>
-                                        @endif
-                                    </div>
+                                        </div>
 
-                                    {{-- Right: View Details Button --}}
-                                    <div>
-                                        <button onclick="showLessonDetails({{ $schedule->schedule_id }})"
-                                                class="px-4 py-2 text-sm font-semibold text-indigo-700 hover:text-white hover:bg-indigo-600 rounded-lg transition border border-indigo-300 hover:border-indigo-600 shadow-sm">
+                                        <button type="button" onclick="showLessonDetails({{ $schedule->schedule_id }})" class="rounded-2xl border border-[#D8DDD8] bg-white px-4 py-2 text-sm font-bold text-[#29353C] transition hover:bg-[#F5F7F4]">
                                             View details
                                         </button>
                                     </div>
                                 </div>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
-
+                            @endforeach
+                        </div>
+                    </section>
+                @endforeach
+            </div>
+        @endif
+    </div>
 </div>
 
 {{-- Lesson Details Modal --}}
-<div id="lessonModal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div class="sticky top-0 bg-white px-6 py-4 border-b border-gray-300 flex items-center justify-between">
-            <h3 class="text-xl font-bold text-gray-900">Lesson details</h3>
-            <button onclick="closeLessonModal()" class="text-gray-500 hover:text-gray-700 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<div id="lessonModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+    <div class="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white shadow-2xl">
+        <div class="sticky top-0 flex items-center justify-between border-b border-[#D8DDD8] bg-white px-6 py-4">
+            <h3 class="text-lg font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">Lesson details</h3>
+            <button type="button" onclick="closeLessonModal()" class="rounded-xl p-2 text-[#768A96] hover:bg-[#F5F7F4]">
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
         </div>
         <div id="lessonDetailsContent" class="p-6">
-            <div class="text-center py-8">
-                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                <p class="text-gray-600 mt-4 font-medium">Loading...</p>
-            </div>
+            <p class="text-sm font-semibold text-[#44576D]">Loading lesson details...</p>
         </div>
     </div>
 </div>
-
-{{-- JavaScript for Modal --}}
-<script>
-function showLessonDetails(scheduleId) {
-    const modal = document.getElementById('lessonModal');
-    const content = document.getElementById('lessonDetailsContent');
-    
-    modal.classList.remove('hidden');
-    
-    // Fetch lesson details
-    fetch(`/student/schedule/${scheduleId}`)
-        .then(response => response.json())
-        .then(data => {
-            content.innerHTML = `
-                <div class="space-y-6">
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="bg-gray-50 border border-gray-300 rounded-lg p-4">
-                            <p class="text-sm font-bold text-gray-600 mb-1 uppercase tracking-wide">Date</p>
-                            <p class="text-base font-bold text-gray-900">${data.schedule_date}</p>
-                        </div>
-                        <div class="bg-gray-50 border border-gray-300 rounded-lg p-4">
-                            <p class="text-sm font-bold text-gray-600 mb-1 uppercase tracking-wide">Time</p>
-                            <p class="text-base font-bold text-gray-900">${data.start_time} – ${data.end_time}</p>
-                        </div>
-                    </div>
-                    
-                    ${data.lesson_content ? `
-                        <div class="bg-blue-50 border border-blue-300 rounded-lg p-4">
-                            <p class="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                                </svg>
-                                Lesson content
-                            </p>
-                            <p class="text-gray-800 leading-relaxed">${data.lesson_content}</p>
-                        </div>
-                    ` : ''}
-                    
-                    ${data.notes ? `
-                        <div class="bg-yellow-50 border border-yellow-300 rounded-lg p-4">
-                            <p class="text-sm font-bold text-yellow-900 mb-2 flex items-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
-                                </svg>
-                                Notes
-                            </p>
-                            <p class="text-gray-800 leading-relaxed">${data.notes}</p>
-                        </div>
-                    ` : ''}
-                </div>
-            `;
-        })
-        .catch(error => {
-            content.innerHTML = `
-                <div class="text-center py-8">
-                    <svg class="w-16 h-16 mx-auto mb-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <p class="text-red-600 font-semibold">Error loading details</p>
-                </div>
-            `;
-            console.error('Error:', error);
-        });
-}
-
-function closeLessonModal() {
-    document.getElementById('lessonModal').classList.add('hidden');
-}
-
-// Close modal on outside click
-document.getElementById('lessonModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        closeLessonModal();
-    }
-});
-
-// Close modal on Escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        closeLessonModal();
-    }
-});
-</script>
 @endsection
+
+@push('styles')
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@500;600;700;800&display=swap');
+</style>
+@endpush
+
+@push('scripts')
+@endpush

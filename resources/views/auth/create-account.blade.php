@@ -180,10 +180,10 @@
                 </div>
             </div>
 
-            {{-- Link to Start Over --}}
+            {{-- Link back to student registration --}}
             <div class="text-center">
-                <a href="{{ route('register') }}" class="text-sm text-secondary-blue hover:text-primary-dark font-medium underline">
-                    ← Start registration over
+                <a href="{{ route('register.student.form') }}" class="text-sm text-secondary-blue hover:text-primary-dark font-medium underline">
+                    ← Back to registration
                 </a>
             </div>
 

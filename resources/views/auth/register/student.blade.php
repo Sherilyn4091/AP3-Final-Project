@@ -23,8 +23,8 @@
         {{-- Header with Official Music Lab Logo --}}
         <div class="text-center mb-6 animate-fade-in">
             <a href="{{ route('home') }}" class="inline-block hover:opacity-90 transition-opacity">
-                <img src="https://res.cloudinary.com/dibojpqg2/image/upload/v1766933637/music-lab-logo_1_lfcsqw.png" 
-                     alt="Music Lab - Lessons & Instruments" 
+                <img src="https://res.cloudinary.com/dibojpqg2/image/upload/v1766933637/music-lab-logo_1_lfcsqw.png"
+                     alt="Music Lab - Lessons & Instruments"
                      class="mx-auto h-16 md:h-20 object-contain drop-shadow-2xl">
             </a>
             <h1 class="text-2xl font-bold text-primary-dark mt-4">Student registration</h1>
@@ -56,6 +56,12 @@
                     </div>
                 </div>
 
+                {{-- Auto-save Notice - Helps users recover progress after refresh or accidental browser close --}}
+                <div id="studentDraftStatus"
+                     class="mb-5 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-xs text-secondary-blue transition-all duration-200">
+                    Your registration progress is temporarily saved on this device while you complete the form.
+                </div>
+
                 {{-- ============================================================================ --}}
                 {{-- STEP 1: Personal Information --}}
                 {{-- ============================================================================ --}}
@@ -69,15 +75,18 @@
                             <input type="text" id="first_name" name="first_name" value="{{ old('first_name') }}" required class="input-field text-sm capitalize-words">
                             @error('first_name')<p class="error-text text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
+
                         <div>
                             <label for="last_name" class="label-required text-xs">Last name</label>
                             <input type="text" id="last_name" name="last_name" value="{{ old('last_name') }}" required class="input-field text-sm capitalize-words">
                             @error('last_name')<p class="error-text text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
+
                         <div>
                             <label for="middle_name" class="text-xs">Middle name</label>
                             <input type="text" id="middle_name" name="middle_name" value="{{ old('middle_name') }}" class="input-field text-sm capitalize-words">
                         </div>
+
                         <div>
                             <label for="suffix" class="text-xs">Suffix</label>
                             <input type="text" id="suffix" name="suffix" value="{{ old('suffix') }}" class="input-field text-sm" placeholder="e.g., Jr., III">
@@ -89,6 +98,7 @@
                             <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" required class="input-field text-sm" placeholder="09123456789">
                             @error('phone')<p class="error-text text-xs mt-1">{{ $message }}</p>@enderror
                         </div>
+
                         <div>
                             <label for="user_email" class="label-required text-xs">Email address</label>
                             <input type="email" id="user_email" name="user_email" value="{{ old('user_email') }}" required class="input-field text-sm lowercase-email">
@@ -100,22 +110,27 @@
                             <label for="address_line1" class="label-required text-xs">Address line 1</label>
                             <input type="text" id="address_line1" name="address_line1" value="{{ old('address_line1') }}" required class="input-field text-sm capitalize-words">
                         </div>
+
                         <div class="md:col-span-2">
                             <label for="address_line2" class="text-xs">Address line 2</label>
                             <input type="text" id="address_line2" name="address_line2" value="{{ old('address_line2') }}" class="input-field text-sm capitalize-words">
                         </div>
+
                         <div>
                             <label for="city" class="label-required text-xs">City/Municipality</label>
                             <input type="text" id="city" name="city" value="{{ old('city') }}" required class="input-field text-sm capitalize-words">
                         </div>
+
                         <div>
                             <label for="province" class="label-required text-xs">Province</label>
                             <input type="text" id="province" name="province" value="{{ old('province') }}" required class="input-field text-sm capitalize-words">
                         </div>
+
                         <div>
                             <label for="postal_code" class="label-required text-xs">Postal code</label>
                             <input type="text" id="postal_code" name="postal_code" value="{{ old('postal_code') }}" required class="input-field text-sm">
                         </div>
+
                         <div>
                             <label for="country" class="label-required text-xs">Country</label>
                             <input type="text" id="country" name="country" value="{{ old('country', 'Philippines') }}" required class="input-field text-sm capitalize-words">
@@ -127,16 +142,18 @@
                             <input type="date" id="date_of_birth" name="date_of_birth" value="{{ old('date_of_birth') }}" required class="input-field text-sm">
                             <p class="text-xs text-secondary-blue mt-1">Age: <span id="age-display" class="font-semibold">—</span></p>
                         </div>
+
                         <div>
                             <label for="gender" class="label-required text-xs">Gender</label>
                             <select id="gender" name="gender" required class="select-field text-sm">
                                 <option value="">Select gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                                <option value="Prefer not to say">Prefer not to say</option>
+                                <option value="Male" {{ old('gender') == 'Male' ? 'selected' : '' }}>Male</option>
+                                <option value="Female" {{ old('gender') == 'Female' ? 'selected' : '' }}>Female</option>
+                                <option value="Other" {{ old('gender') == 'Other' ? 'selected' : '' }}>Other</option>
+                                <option value="Prefer not to say" {{ old('gender') == 'Prefer not to say' ? 'selected' : '' }}>Prefer not to say</option>
                             </select>
                         </div>
+
                         <div class="md:col-span-2">
                             <label for="nationality" class="text-xs">Nationality</label>
                             <input type="text" id="nationality" name="nationality" value="{{ old('nationality') }}" class="input-field text-sm capitalize-words" placeholder="e.g., Filipino">
@@ -180,39 +197,14 @@
                 </div>
 
                 {{-- ============================================================================ --}}
-                {{-- STEP 2: Emergency & Guardian Contacts --}}
+                {{-- STEP 2: Parent/Guardian and Emergency Contacts --}}
                 {{-- ============================================================================ --}}
                 <div id="step2" class="step-panel hidden">
                     <h2 class="text-xl font-bold text-primary-dark mb-6 text-center">Emergency & guardian contacts</h2>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {{-- Emergency Contact Section --}}
+                        {{-- Parent/Guardian Section - Placed first because the emergency contact can copy this information --}}
                         <div class="md:col-span-2">
-                            <h3 class="text-base font-bold text-forest-green mb-3 flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
-                                </svg>
-                                Emergency contact
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label for="emergency_contact_name" class="label-required text-xs">Name</label>
-                            <input type="text" id="emergency_contact_name" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" required class="input-field text-sm capitalize-words">
-                        </div>
-
-                        <div>
-                            <label for="emergency_contact_relationship" class="label-required text-xs">Relationship</label>
-                            <input type="text" id="emergency_contact_relationship" name="emergency_contact_relationship" value="{{ old('emergency_contact_relationship') }}" required class="input-field text-sm capitalize-words">
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label for="emergency_contact_phone" class="label-required text-xs">Phone number</label>
-                            <input type="tel" id="emergency_contact_phone" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}" required class="input-field text-sm" placeholder="09123456789">
-                        </div>
-
-                        {{-- Parent/Guardian Section --}}
-                        <div class="md:col-span-2 section-divider pt-4">
                             <h3 class="text-base font-bold text-golden-yellow mb-3 flex items-center">
                                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
@@ -245,6 +237,62 @@
                             <label for="parent_guardian_address" class="text-xs">Address</label>
                             <textarea id="parent_guardian_address" name="parent_guardian_address" rows="2" class="textarea-field text-sm capitalize-words" placeholder="Complete address">{{ old('parent_guardian_address') }}</textarea>
                         </div>
+
+                        {{-- Emergency Contact Section - Can be auto-filled from Parent/Guardian --}}
+                        <div class="md:col-span-2 section-divider pt-4">
+                            <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                                <h3 class="text-base font-bold text-forest-green flex items-center">
+                                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/>
+                                    </svg>
+                                    Emergency contact
+                                </h3>
+
+                                {{-- Radio buttons are used so the user cannot choose Yes and No at the same time --}}
+                                <div class="flex flex-wrap items-center gap-3 rounded-xl bg-gray-50 px-3 py-2">
+                                    <span class="text-xs font-semibold text-primary-dark">Same as guardian?</span>
+
+                                    <label for="emergency_same_guardian_yes" class="flex items-center gap-2 text-xs text-primary-dark cursor-pointer">
+                                        <input type="radio"
+                                               id="emergency_same_guardian_yes"
+                                               name="emergency_same_as_guardian"
+                                               value="yes"
+                                               class="h-4 w-4 accent-primary-dark"
+                                               {{ old('emergency_same_as_guardian') === 'yes' ? 'checked' : '' }}>
+                                        Yes
+                                    </label>
+
+                                    <label for="emergency_same_guardian_no" class="flex items-center gap-2 text-xs text-primary-dark cursor-pointer">
+                                        <input type="radio"
+                                               id="emergency_same_guardian_no"
+                                               name="emergency_same_as_guardian"
+                                               value="no"
+                                               class="h-4 w-4 accent-primary-dark"
+                                               {{ old('emergency_same_as_guardian', 'no') === 'no' ? 'checked' : '' }}>
+                                        No
+                                    </label>
+                                </div>
+                            </div>
+
+                            <p id="sameGuardianHint" class="hidden mt-2 text-xs text-secondary-blue">
+                                Emergency contact fields are copied from the parent/guardian information.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label for="emergency_contact_name" class="label-required text-xs">Name</label>
+                            <input type="text" id="emergency_contact_name" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" required class="input-field text-sm capitalize-words">
+                        </div>
+
+                        <div>
+                            <label for="emergency_contact_relationship" class="label-required text-xs">Relationship</label>
+                            <input type="text" id="emergency_contact_relationship" name="emergency_contact_relationship" value="{{ old('emergency_contact_relationship') }}" required class="input-field text-sm capitalize-words">
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <label for="emergency_contact_phone" class="label-required text-xs">Phone number</label>
+                            <input type="tel" id="emergency_contact_phone" name="emergency_contact_phone" value="{{ old('emergency_contact_phone') }}" required class="input-field text-sm" placeholder="09123456789">
+                        </div>
                     </div>
 
                     {{-- Step 2 Navigation - Previous and Next Buttons --}}
@@ -276,9 +324,9 @@
                             <select id="instrument_id" name="instrument_id" required class="select-field text-sm">
                                 <option value="">Select instrument</option>
                                 @foreach($instruments as $instrument)
-                                <option value="{{ $instrument->instrument_id }}" {{ old('instrument_id') == $instrument->instrument_id ? 'selected' : '' }}>
-                                    {{ $instrument->instrument_name }}
-                                </option>
+                                    <option value="{{ $instrument->instrument_id }}" {{ old('instrument_id') == $instrument->instrument_id ? 'selected' : '' }}>
+                                        {{ $instrument->instrument_name }}
+                                    </option>
                                 @endforeach
                             </select>
                             @error('instrument_id')<p class="error-text text-xs mt-1">{{ $message }}</p>@enderror
@@ -301,9 +349,9 @@
                             <select id="preferred_genre_id" name="preferred_genre_id" class="select-field text-sm">
                                 <option value="">Select genre</option>
                                 @foreach($genres as $genre)
-                                <option value="{{ $genre->genre_id }}" {{ old('preferred_genre_id') == $genre->genre_id ? 'selected' : '' }}>
-                                    {{ $genre->genre_name }}
-                                </option>
+                                    <option value="{{ $genre->genre_id }}" {{ old('preferred_genre_id') == $genre->genre_id ? 'selected' : '' }}>
+                                        {{ $genre->genre_name }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -351,25 +399,25 @@
                             <label for="grade_level" class="text-xs">Grade level</label>
                             <select id="grade_level" name="grade_level" class="select-field text-sm">
                                 <option value="">Select grade level</option>
-                                <option value="Kindergarten">Kindergarten</option>
-                                <option value="Grade 1">Grade 1</option>
-                                <option value="Grade 2">Grade 2</option>
-                                <option value="Grade 3">Grade 3</option>
-                                <option value="Grade 4">Grade 4</option>
-                                <option value="Grade 5">Grade 5</option>
-                                <option value="Grade 6">Grade 6</option>
-                                <option value="Grade 7">Grade 7</option>
-                                <option value="Grade 8">Grade 8</option>
-                                <option value="Grade 9">Grade 9</option>
-                                <option value="Grade 10">Grade 10</option>
-                                <option value="Grade 11">Grade 11</option>
-                                <option value="Grade 12">Grade 12</option>
-                                <option value="1st Year College">1st year college</option>
-                                <option value="2nd Year College">2nd year college</option>
-                                <option value="3rd Year College">3rd year college</option>
-                                <option value="4th Year College">4th year college</option>
-                                <option value="Graduate">Graduate</option>
-                                <option value="Not in School">Not in school</option>
+                                <option value="Kindergarten" {{ old('grade_level') == 'Kindergarten' ? 'selected' : '' }}>Kindergarten</option>
+                                <option value="Grade 1" {{ old('grade_level') == 'Grade 1' ? 'selected' : '' }}>Grade 1</option>
+                                <option value="Grade 2" {{ old('grade_level') == 'Grade 2' ? 'selected' : '' }}>Grade 2</option>
+                                <option value="Grade 3" {{ old('grade_level') == 'Grade 3' ? 'selected' : '' }}>Grade 3</option>
+                                <option value="Grade 4" {{ old('grade_level') == 'Grade 4' ? 'selected' : '' }}>Grade 4</option>
+                                <option value="Grade 5" {{ old('grade_level') == 'Grade 5' ? 'selected' : '' }}>Grade 5</option>
+                                <option value="Grade 6" {{ old('grade_level') == 'Grade 6' ? 'selected' : '' }}>Grade 6</option>
+                                <option value="Grade 7" {{ old('grade_level') == 'Grade 7' ? 'selected' : '' }}>Grade 7</option>
+                                <option value="Grade 8" {{ old('grade_level') == 'Grade 8' ? 'selected' : '' }}>Grade 8</option>
+                                <option value="Grade 9" {{ old('grade_level') == 'Grade 9' ? 'selected' : '' }}>Grade 9</option>
+                                <option value="Grade 10" {{ old('grade_level') == 'Grade 10' ? 'selected' : '' }}>Grade 10</option>
+                                <option value="Grade 11" {{ old('grade_level') == 'Grade 11' ? 'selected' : '' }}>Grade 11</option>
+                                <option value="Grade 12" {{ old('grade_level') == 'Grade 12' ? 'selected' : '' }}>Grade 12</option>
+                                <option value="1st Year College" {{ old('grade_level') == '1st Year College' ? 'selected' : '' }}>1st year college</option>
+                                <option value="2nd Year College" {{ old('grade_level') == '2nd Year College' ? 'selected' : '' }}>2nd year college</option>
+                                <option value="3rd Year College" {{ old('grade_level') == '3rd Year College' ? 'selected' : '' }}>3rd year college</option>
+                                <option value="4th Year College" {{ old('grade_level') == '4th Year College' ? 'selected' : '' }}>4th year college</option>
+                                <option value="Graduate" {{ old('grade_level') == 'Graduate' ? 'selected' : '' }}>Graduate</option>
+                                <option value="Not in School" {{ old('grade_level') == 'Not in School' ? 'selected' : '' }}>Not in school</option>
                             </select>
                         </div>
                     </div>
@@ -386,7 +434,7 @@
         {{-- Login Link for Existing Users --}}
         <div class="text-center mt-6">
             <p class="text-xs text-secondary-blue">
-                Already have an account? 
+                Already have an account?
                 <a href="{{ route('login') }}" class="font-bold text-primary-dark hover:text-secondary-blue underline">Sign in</a>
             </p>
         </div>

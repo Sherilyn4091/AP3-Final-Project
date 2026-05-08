@@ -322,8 +322,38 @@ class RegistrationController extends Controller
             Auth::login($user);
 
             // Redirect to appropriate dashboard
-            return redirect()->route($dashboardRoute)
+            $redirect = redirect()->route($dashboardRoute)
                 ->with('success', 'Welcome! Your account has been created successfully.');
+
+            /*
+            |--------------------------------------------------------------------------
+            | Clear Student Registration Browser Draft After Successful Account Creation
+            |--------------------------------------------------------------------------
+            |
+            | The browser localStorage draft should only be cleared after the account
+            | is successfully created and the user is logged in.
+            |
+            | Important:
+            | - Do not clear the draft after Step 3 Complete Registration.
+            | - Do not clear the draft when the user clicks Back to registration.
+            | - The JavaScript reads this temporary cookie and clears localStorage.
+            |
+            */
+            if ($role === 'student') {
+                $redirect->withCookie(cookie(
+                    'musiclab_clear_student_registration_draft',
+                    '1',
+                    10,
+                    '/',
+                    null,
+                    false,
+                    false,
+                    false,
+                    'Lax'
+                ));
+            }
+
+            return $redirect;
 
         } catch (\Exception $e) {
             DB::rollBack();
