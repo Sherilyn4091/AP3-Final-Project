@@ -7,16 +7,132 @@
   - Render compact summary cards, animated bars, and tables
   - Search/filter students on the client side
   - Provide inline expandable risk reasons
-
-  Code-smell prevention:
-  - No global variables except the Laravel config object
-  - Small rendering functions
-  - No duplicated table-row construction logic
-  - Route URLs are read from window.studentRiskAnalyticsConfig
 */
 
 (() => {
     'use strict';
+
+    /*
+    |--------------------------------------------------------------------------
+    | Table Pagination State
+    |--------------------------------------------------------------------------
+    |
+    | Keeps pagination small and reusable.
+    | Each table has its own page number.
+    | Maximum rows per page is fixed at 10 based on admin requirement.
+    |
+    */
+
+    const ROWS_PER_PAGE = 10;
+
+    const tablePaginationState = {
+        topRisk: 1,
+        allStudents: 1,
+        instructors: 1,
+    };
+
+    /**
+     * Return only the rows that belong to the current page.
+     */
+    function getPaginatedRows(rows, page) {
+        const safeRows = Array.isArray(rows) ? rows : [];
+        const startIndex = (page - 1) * ROWS_PER_PAGE;
+        const endIndex = startIndex + ROWS_PER_PAGE;
+
+        return safeRows.slice(startIndex, endIndex);
+    }
+
+    /**
+     * Create a compact responsive pagination footer for a table.
+     */
+    function renderPaginationControls({
+        container,
+        rows,
+        currentPage,
+        onPageChange,
+    }) {
+        if (!container) {
+            return;
+        }
+
+        const totalRows = Array.isArray(rows) ? rows.length : 0;
+        const totalPages = Math.max(1, Math.ceil(totalRows / ROWS_PER_PAGE));
+
+        const safeCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+        const startRow = totalRows === 0 ? 0 : ((safeCurrentPage - 1) * ROWS_PER_PAGE) + 1;
+        const endRow = Math.min(safeCurrentPage * ROWS_PER_PAGE, totalRows);
+
+        container.innerHTML = `
+            <div class="mt-3 flex flex-col gap-2 border-t border-[#D8D9DA] px-4 py-3 text-xs text-[#61677A] sm:flex-row sm:items-center sm:justify-between">
+                <div class="font-['Inter']">
+                    Showing 
+                    <span class="font-['JetBrains_Mono'] text-[#2F4F4F]">${startRow}</span>
+                    –
+                    <span class="font-['JetBrains_Mono'] text-[#2F4F4F]">${endRow}</span>
+                    of
+                    <span class="font-['JetBrains_Mono'] text-[#2F4F4F]">${totalRows}</span>
+                </div>
+
+                <div class="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
+                    <button
+                        type="button"
+                        class="pagination-prev rounded-2xl border border-[#D8D9DA] px-3 py-1.5 text-xs font-semibold text-[#394a56] transition hover:bg-[#fcf3e3] disabled:cursor-not-allowed disabled:opacity-40"
+                        ${safeCurrentPage <= 1 ? 'disabled' : ''}
+                    >
+                        Previous
+                    </button>
+
+                    <span class="font-['JetBrains_Mono'] text-[11px] text-[#959D90]">
+                        Page ${safeCurrentPage} of ${totalPages}
+                    </span>
+
+                    <button
+                        type="button"
+                        class="pagination-next rounded-2xl border border-[#D8D9DA] px-3 py-1.5 text-xs font-semibold text-[#394a56] transition hover:bg-[#fcf3e3] disabled:cursor-not-allowed disabled:opacity-40"
+                        ${safeCurrentPage >= totalPages ? 'disabled' : ''}
+                    >
+                        Next
+                    </button>
+                </div>
+            </div>
+        `;
+
+        container.querySelector('.pagination-prev')?.addEventListener('click', () => {
+            onPageChange(safeCurrentPage - 1);
+        });
+
+        container.querySelector('.pagination-next')?.addEventListener('click', () => {
+            onPageChange(safeCurrentPage + 1);
+        });
+    }
+
+    /**
+     * Ensure a pagination container exists directly after a table wrapper.
+     */
+    function getOrCreatePaginationContainer(tableId) {
+        const table = document.getElementById(tableId);
+
+        if (!table) {
+            return null;
+        }
+
+        const wrapper = table.closest('.overflow-x-auto') || table.parentElement;
+
+        if (!wrapper) {
+            return null;
+        }
+
+        const paginationId = `${tableId}Pagination`;
+        let container = document.getElementById(paginationId);
+
+        if (!container) {
+            container = document.createElement('div');
+            container.id = paginationId;
+            wrapper.insertAdjacentElement('afterend', container);
+        }
+
+        return container;
+    }
 
     const config = window.studentRiskAnalyticsConfig || {};
 
@@ -108,12 +224,21 @@
             }
         });
 
-        elements.searchInput?.addEventListener('input', renderFilteredStudents);
-        elements.levelFilter?.addEventListener('change', renderFilteredStudents);
+        elements.searchInput?.addEventListener('input', () => {
+            tablePaginationState.allStudents = 1;
+            renderFilteredStudents();
+        });
+
+        elements.levelFilter?.addEventListener('change', () => {
+            tablePaginationState.allStudents = 1;
+            renderFilteredStudents();
+        });
 
         elements.clearFiltersButton?.addEventListener('click', () => {
             if (elements.searchInput) elements.searchInput.value = '';
             if (elements.levelFilter) elements.levelFilter.value = 'all';
+
+            tablePaginationState.allStudents = 1;
             renderFilteredStudents();
         });
 
@@ -145,6 +270,9 @@
 
             state.lastPayload = payload;
             state.students = Array.isArray(payload.students) ? payload.students : [];
+            tablePaginationState.topRisk = 1;
+            tablePaginationState.allStudents = 1;
+            tablePaginationState.instructors = 1;
 
             renderSummary(payload.summary || {});
             renderGeneratedAt(payload.generated_at);
@@ -329,12 +457,26 @@
     function renderTopStudents(students) {
         if (!elements.topTable) return;
 
-        if (!students.length) {
+        const rows = Array.isArray(students) ? students : [];
+        const paginatedRows = getPaginatedRows(rows, tablePaginationState.topRisk);
+
+        if (!rows.length) {
             elements.topTable.innerHTML = tableMessage(7, 'No high-risk students detected.');
+
+            renderPaginationControls({
+                container: getOrCreatePaginationContainer('topRiskStudentsTable'),
+                rows,
+                currentPage: tablePaginationState.topRisk,
+                onPageChange: (page) => {
+                    tablePaginationState.topRisk = page;
+                    renderTopStudents(rows);
+                },
+            });
+
             return;
         }
 
-        elements.topTable.innerHTML = students.map((student) => `
+        elements.topTable.innerHTML = paginatedRows.map((student) => `
             <tr class="hover:bg-[#FFF6E0]/50">
                 <td class="px-4 py-3">
                     <div class="font-semibold text-[#272829]">${escapeHtml(student.student_name)}</div>
@@ -348,6 +490,16 @@
                 <td class="px-4 py-3 text-[#394a56]" title="${escapeAttribute(student.recommended_action || '')}">${escapeHtml(truncateText(student.recommended_action || 'Continue monitoring', 76))}</td>
             </tr>
         `).join('');
+
+        renderPaginationControls({
+            container: getOrCreatePaginationContainer('topRiskStudentsTable'),
+            rows,
+            currentPage: tablePaginationState.topRisk,
+            onPageChange: (page) => {
+                tablePaginationState.topRisk = page;
+                renderTopStudents(rows);
+            },
+        });
     }
 
     function renderFilteredStudents() {
@@ -370,12 +522,43 @@
             return matchesSearch && matchesLevel;
         });
 
+        const totalPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
+
+        if (tablePaginationState.allStudents > totalPages) {
+            tablePaginationState.allStudents = totalPages;
+        }
+
+        const paginatedRows = getPaginatedRows(filtered, tablePaginationState.allStudents);
+
         if (!filtered.length) {
             elements.allTable.innerHTML = tableMessage(7, 'No students match the current filters.');
+
+            renderPaginationControls({
+                container: getOrCreatePaginationContainer('allRiskStudentsTable'),
+                rows: filtered,
+                currentPage: tablePaginationState.allStudents,
+                onPageChange: (page) => {
+                    tablePaginationState.allStudents = page;
+                    renderFilteredStudents();
+                },
+            });
+
             return;
         }
 
-        elements.allTable.innerHTML = filtered.map((student) => renderStudentRows(student)).join('');
+        elements.allTable.innerHTML = paginatedRows
+            .map((student) => renderStudentRows(student))
+            .join('');
+
+        renderPaginationControls({
+            container: getOrCreatePaginationContainer('allRiskStudentsTable'),
+            rows: filtered,
+            currentPage: tablePaginationState.allStudents,
+            onPageChange: (page) => {
+                tablePaginationState.allStudents = page;
+                renderFilteredStudents();
+            },
+        });
     }
 
     function renderStudentRows(student) {
@@ -446,12 +629,9 @@
     function renderInstructorTable(instructorSummary) {
         if (!elements.instructorTable) return;
 
-        if (!Array.isArray(instructorSummary) || !instructorSummary.length) {
-            elements.instructorTable.innerHTML = tableMessage(5, 'No instructor risk data available.');
-            return;
-        }
+        const rows = Array.isArray(instructorSummary) ? instructorSummary : [];
 
-        const sorted = [...instructorSummary].sort((first, second) => {
+        const sortedRows = [...rows].sort((first, second) => {
             const highDifference = Number(second.high_risk || 0) - Number(first.high_risk || 0);
             if (highDifference !== 0) return highDifference;
 
@@ -461,7 +641,31 @@
             return Number(second.total_students || 0) - Number(first.total_students || 0);
         });
 
-        elements.instructorTable.innerHTML = sorted.map((item) => `
+        const totalPages = Math.max(1, Math.ceil(sortedRows.length / ROWS_PER_PAGE));
+
+        if (tablePaginationState.instructors > totalPages) {
+            tablePaginationState.instructors = totalPages;
+        }
+
+        const paginatedRows = getPaginatedRows(sortedRows, tablePaginationState.instructors);
+
+        if (!sortedRows.length) {
+            elements.instructorTable.innerHTML = tableMessage(5, 'No instructor risk data available.');
+
+            renderPaginationControls({
+                container: getOrCreatePaginationContainer('instructorRiskTable'),
+                rows: sortedRows,
+                currentPage: tablePaginationState.instructors,
+                onPageChange: (page) => {
+                    tablePaginationState.instructors = page;
+                    renderInstructorTable(rows);
+                },
+            });
+
+            return;
+        }
+
+        elements.instructorTable.innerHTML = paginatedRows.map((item) => `
             <tr class="hover:bg-[#FFF6E0]/50">
                 <td class="px-4 py-3 font-semibold text-[#272829]">${escapeHtml(item.instructor_name || 'Unassigned')}</td>
                 <td class="risk-mono px-4 py-3 text-[#394a56]">${formatInteger(item.total_students || 0)}</td>
@@ -470,6 +674,16 @@
                 <td class="risk-mono px-4 py-3 text-[#9f1d20]">${formatInteger(item.high_risk || 0)}</td>
             </tr>
         `).join('');
+
+        renderPaginationControls({
+            container: getOrCreatePaginationContainer('instructorRiskTable'),
+            rows: sortedRows,
+            currentPage: tablePaginationState.instructors,
+            onPageChange: (page) => {
+                tablePaginationState.instructors = page;
+                renderInstructorTable(rows);
+            },
+        });
     }
 
     function riskBadge(level) {

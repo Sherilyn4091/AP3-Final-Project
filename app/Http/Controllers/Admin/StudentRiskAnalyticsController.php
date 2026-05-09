@@ -106,7 +106,7 @@ class StudentRiskAnalyticsController extends Controller
         );
 
         $students = $this->sortedStudentsByRiskScore($result['students'] ?? []);
-        $fileName = 'student-risk-analytics-' . now()->format('Y-m-d_His') . '.csv';
+        $fileName = $this->studentRiskExportFilename('csv');
 
         return response()->streamDownload(function () use ($students) {
             $handle = fopen('php://output', 'w');
@@ -173,13 +173,15 @@ class StudentRiskAnalyticsController extends Controller
         );
 
         $result['students'] = $this->sortedStudentsByRiskScore($result['students'] ?? []);
+
         $result['top_high_risk_students'] = array_values(array_filter(
             $result['students'],
             fn (array $student): bool => ($student['risk_level'] ?? '') === 'High Risk'
         ));
+
         $result['top_high_risk_students'] = array_slice($result['top_high_risk_students'], 0, 10);
 
-        $fileName = 'student-risk-analytics-' . now()->format('Y-m-d_His') . '.pdf';
+        $fileName = $this->studentRiskExportFilename('pdf');
 
         $pdf = Pdf::loadView('admin.student-risk-analytics.pdf', [
             'result' => $result,
@@ -187,6 +189,19 @@ class StudentRiskAnalyticsController extends Controller
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download($fileName);
+    }
+
+    /**
+     * Build a clean export filename for Student Risk Analytics.
+     *
+     * Example:
+     * MUSIC_LAB-Student_Risk_Analytics-2026-05-09_15-25-10.pdf
+     */
+    private function studentRiskExportFilename(string $extension): string
+    {
+        $timestamp = now()->format('Y-m-d_H-i-s');
+
+        return "MUSIC_LAB-Student_Risk_Analytics-{$timestamp}.{$extension}";
     }
 
     /**
@@ -261,6 +276,7 @@ class StudentRiskAnalyticsController extends Controller
 
             $totalAttendance = (int) ($attendance->total_attendance ?? 0);
             $presentCount = (int) ($attendance->present_count ?? 0);
+
             $attendanceRate = $totalAttendance > 0
                 ? round(($presentCount / $totalAttendance) * 100, 2)
                 : 100.0;
