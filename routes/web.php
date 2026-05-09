@@ -155,20 +155,26 @@ Route::middleware('auth')->group(function () {
             return view('admin.lessons.index');
         })->name('lessons.index');
 
-        // Instruments Management
+        // ============================================================================
+        // INSTRUMENTS MANAGEMENT
+        // ============================================================================
+        // Important:
+        // - This route group is already inside the /admin prefix.
+        // - Do NOT write /admin/instruments/... inside this group.
+        // - Static/action routes should be placed before /{id} routes to avoid conflicts.
         Route::prefix('instruments')->name('instruments.')->group(function () {
             Route::get('/', [InstrumentController::class, 'index'])->name('index');
             Route::post('/', [InstrumentController::class, 'store'])->name('store');
+
+            // Action routes must come before /{id}
+            Route::post('/{id}/toggle-status', [InstrumentController::class, 'toggleStatus'])->name('toggle-status');
+            Route::get('/{id}/usage', [InstrumentController::class, 'getUsageDetails'])->name('usage');
+            Route::get('/{id}/students', [InstrumentController::class, 'getStudents'])->name('students');
+
+            // Dynamic CRUD routes
             Route::get('/{id}', [InstrumentController::class, 'show'])->name('show');
             Route::put('/{id}', [InstrumentController::class, 'update'])->name('update');
             Route::delete('/{id}', [InstrumentController::class, 'destroy'])->name('destroy');
-
-            Route::post('/{id}/toggle-status', [InstrumentController::class, 'toggleStatus'])->name('toggle-status');
-            Route::get('/{id}/usage', [InstrumentController::class, 'getUsageDetails'])->name('usage');
-
-            Route::get('/admin/instruments/{id}/students', [InstrumentController::class, 'getStudents']);
-
-            Route::get('/{id}/students', [InstrumentController::class, 'getStudents'])->name('students');
         });
 
         // Instructors Management
@@ -326,10 +332,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/settings', function () {
             return view('admin.settings.index');
         })->name('settings.index');
-
-        Route::post('/admin/users/{id}/activate', [UserController::class, 'activate'])->name('admin.users.activate');
-        Route::post('/admin/users/{id}/deactivate', [UserController::class, 'deactivate'])->name('admin.users.deactivate');
-
         
         Route::post('/change-password', function (Request $request) {
             try {
@@ -363,7 +365,7 @@ Route::middleware('auth')->group(function () {
                     'message' => 'Server error. Please try again.'
                 ], 500);
             }
-        })->name('admin.change-password');
+        })->name('change-password');
 
     }); // End of admin prefix group
 
