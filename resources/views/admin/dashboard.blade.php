@@ -1,4 +1,4 @@
-﻿{{-- resources/views/admin/dashboard.blade.php --}}
+{{-- resources/views/admin/dashboard.blade.php --}}
 {{-- 
     ============================================================================
     SUPER ADMIN DASHBOARD - Music Lab
@@ -14,7 +14,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Admin Dashboard - Music Lab</title>
-    @vite(['resources/css/style.css', 'resources/js/script.js', 'resources/js/admin.jsx'])
+    {{-- ============================================================================
+    DASHBOARD JAVASCRIPT CONFIGURATION
+    --------------------------------------------------------------------------
+    Purpose:
+    - Provides the Student Risk widget with the correct Laravel endpoint.
+    - Loads dashboard charts.
+    - Loads Student Risk Summary widget script.
+    ============================================================================ --}}
+
+    <script>
+        window.studentRiskWidgetConfig = {
+            dashboardDataUrl: @json(route('admin.student-risk-analytics.dashboard-data')),
+            refreshMs: 60000
+        };
+    </script>
+
+    @vite([
+        'resources/css/style.css',
+        'resources/js/script.js',
+        'resources/js/admin-pages/dashboard-charts.js',
+        'resources/js/admin-pages/student-risk-dashboard-widget.js',
+    ])
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body class="bg-light-gray">
 
@@ -44,117 +66,234 @@
     <div class="p-4 lg:p-8">
         
         {{-- ============================================================================
-            TOP ROW: USER STATISTICS CARDS - Adjusted for better alignment
+            ADMIN KPI SUMMARY CARDS
+            --------------------------------------------------------------------------
+            Purpose:
+            - Cleaner and more professional stat-card layout.
+            - Smaller/semi-large numbers to avoid oversized display.
+            - Uses Music Lab palette and standard fonts:
+                Sora = headings
+                Inter = labels
+                JetBrains Mono = numeric values
+            - Uses data-count-up attributes so dashboard-charts.js can animate values.
+            - Uses HTML entity &#8369; for peso sign to avoid random symbols/mojibake.
             ============================================================================ --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
-            
-            {{-- Total Users Card --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
-                <div class="flex items-center justify-between">
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 mb-6">
+
+            {{-- Total Users --}}
+            <div class="rounded-[22px] border border-[#D8DDD8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Total Users</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">{{ number_format($totalUsers) }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            Total Users
+                        </p>
+
+                        <p class="mt-3 text-2xl font-bold text-[#223030]"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                        data-count-up
+                        data-target="{{ $totalUsers }}"
+                        data-decimals="0">
+                            0
+                        </p>
                     </div>
-                    <div class="p-3 bg-forest-green bg-opacity-10 rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 text-forest-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2F4F4F]/10 text-[#2F4F4F]">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a4 4 0 00-5-3.87M9 20H4v-2a4 4 0 015-3.87m8-4.13a4 4 0 11-8 0 4 4 0 018 0z"/>
                         </svg>
                     </div>
                 </div>
             </div>
 
-            {{-- Active Students Card --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
-                <div class="flex items-center justify-between">
+            {{-- Active Students --}}
+            <div class="rounded-[22px] border border-[#D8DDD8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Active Students</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">{{ number_format($activeStudents) }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            Active Students
+                        </p>
+
+                        <p class="mt-3 text-2xl font-bold text-[#223030]"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                        data-count-up
+                        data-target="{{ $activeStudents }}"
+                        data-decimals="0">
+                            0
+                        </p>
                     </div>
-                    <div class="p-3 bg-golden-yellow bg-opacity-10 rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 text-golden-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5z"/>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#B4833D]/15 text-[#B4833D]">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 14l9-5-9-5-9 5 9 5z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 14l6.16-3.42a12.08 12.08 0 01.66 6.48A11.95 11.95 0 0012 20.05a11.95 11.95 0 00-6.82-2.99 12.08 12.08 0 01.66-6.48L12 14z"/>
                         </svg>
                     </div>
                 </div>
             </div>
 
-            {{-- Active Instructors Card --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
-                <div class="flex items-center justify-between">
+            {{-- Active Instructors --}}
+            <div class="rounded-[22px] border border-[#D8DDD8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Active Instructors</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">{{ number_format($activeInstructors) }}</p>
-                    </div>
-                    <div class="p-3 bg-warm-coral bg-opacity-10 rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 text-warm-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
-        </div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            Active Instructors
+                        </p>
 
-        {{-- ============================================================================
-            SECOND ROW: TODAY'S ACTIVITY & ALERTS - Adjusted for better alignment
-            ============================================================================ --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
-            
-            {{-- Today's Enrollments --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Today's Enrollments</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">{{ number_format($todaysEnrollments) }}</p>
+                        <p class="mt-3 text-2xl font-bold text-[#223030]"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                        data-count-up
+                        data-target="{{ $activeInstructors }}"
+                        data-decimals="0">
+                            0
+                        </p>
                     </div>
-                    <div class="p-3 bg-forest-green bg-opacity-10 rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 text-forest-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-                        </svg>
-                    </div>
-                </div>
-            </div>
 
-            {{-- Today's Revenue --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Today's Revenue</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">â‚±{{ number_format($todaysRevenue, 2) }}</p>
-                    </div>
-                    <div class="p-3 bg-golden-yellow bg-opacity-10 rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 text-golden-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#44576D]/12 text-[#44576D]">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
                     </div>
                 </div>
             </div>
 
             {{-- Pending Payments --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 border-warm-coral">
-                <div class="flex items-center justify-between">
+            <div class="rounded-[22px] border border-[#F2C8C8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Pending Payments</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">{{ number_format($pendingPayments) }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            Pending Payments
+                        </p>
+
+                        <p class="mt-3 text-2xl font-bold text-[#523D35]"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                        data-count-up
+                        data-target="{{ $pendingPayments }}"
+                        data-decimals="0">
+                            0
+                        </p>
                     </div>
-                    <div class="p-3 bg-warm-coral bg-opacity-10 rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 text-warm-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#DC2626]/10 text-[#DC2626]">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Today's Enrollments --}}
+            <div class="rounded-[22px] border border-[#D8DDD8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            Today's Enrollments
+                        </p>
+
+                        <p class="mt-3 text-2xl font-bold text-[#223030]"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                        data-count-up
+                        data-target="{{ $todaysEnrollments }}"
+                        data-decimals="0">
+                            0
+                        </p>
+                    </div>
+
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#2F4F4F]/10 text-[#2F4F4F]">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Today's Revenue --}}
+            <div class="rounded-[22px] border border-[#D8DDD8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            Today's Revenue
+                        </p>
+
+                        <p class="mt-3 text-2xl font-bold text-[#223030]"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                        data-count-up
+                        data-target="{{ $todaysRevenue }}"
+                        data-prefix="&#8369;"
+                        data-decimals="2">
+                            &#8369;0.00
+                        </p>
+                    </div>
+
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#B4833D]/15 text-[#B4833D]">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8c-1.66 0-3 .9-3 2s1.34 2 3 2 3 .9 3 2-1.34 2-3 2m0-8c1.11 0 2.08.4 2.6 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.4-2.6-1"/>
                         </svg>
                     </div>
                 </div>
             </div>
 
             {{-- Low Stock Alerts --}}
-            <div class="card p-4 lg:p-6 hover:shadow-xl transition-shadow duration-300 border-l-4 {{ $lowStockAlerts > 0 ? 'border-red-500' : 'border-secondary-blue' }}">
-                <div class="flex items-center justify-between">
+            <div class="rounded-[22px] border {{ $lowStockAlerts > 0 ? 'border-[#F2C8C8]' : 'border-[#D8DDD8]' }} bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
                     <div>
-                        <p class="text-sm lg:text-base font-semibold text-secondary-blue">Low Stock Alerts</p>
-                        <p class="text-2xl lg:text-3xl font-bold {{ $lowStockAlerts > 0 ? 'text-red-600' : 'text-primary-dark' }} mt-1">{{ number_format($lowStockAlerts) }}</p>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            Low Stock Alerts
+                        </p>
+
+                        <p class="mt-3 text-2xl font-bold {{ $lowStockAlerts > 0 ? 'text-[#DC2626]' : 'text-[#223030]' }}"
+                        style="font-family: 'JetBrains Mono', monospace;"
+                        data-count-up
+                        data-target="{{ $lowStockAlerts }}"
+                        data-decimals="0">
+                            0
+                        </p>
                     </div>
-                    <div class="p-3 {{ $lowStockAlerts > 0 ? 'bg-red-100' : 'bg-secondary-blue bg-opacity-10' }} rounded-lg">
-                        <svg class="w-6 h-6 lg:w-8 lg:h-8 {{ $lowStockAlerts > 0 ? 'text-red-600' : 'text-secondary-blue' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl {{ $lowStockAlerts > 0 ? 'bg-[#DC2626]/10 text-[#DC2626]' : 'bg-[#44576D]/10 text-[#44576D]' }}">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            {{-- System Status --}}
+            <div class="rounded-[22px] border border-[#D8DDD8] bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
+                <div class="flex items-center justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-[#768A96]"
+                        style="font-family: 'Inter', sans-serif;">
+                            System Status
+                        </p>
+
+                        <p class="mt-3 text-xl font-bold text-emerald-700"
+                        style="font-family: 'Sora', sans-serif;">
+                            Active
+                        </p>
+                    </div>
+
+                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-600/10 text-emerald-700">
+                        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                     </div>
                 </div>
@@ -165,7 +304,26 @@
             CHARTS SECTION - Live Data Visualizations (React/JS Mount Points)
             These empty divs are targets for JavaScript chart libraries (Chart.js, Recharts, etc.)
             ============================================================================ --}}
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4 mb-4 lg:mb-6">
+                {{-- Dashboard chart summary cards populated by dashboard-charts.js --}}
+        <div id="dashboardChartSummaryCards" class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div class="rounded-[20px] border border-[#D8DDD8] bg-white p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">30-Day Enrollments</p>
+                <p id="dashboardSummaryEnrollments" class="mt-2 text-xl font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">--</p>
+            </div>
+            <div class="rounded-[20px] border border-[#D8DDD8] bg-white p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">30-Day Revenue</p>
+                <p id="dashboardSummaryRevenue" class="mt-2 text-xl font-bold text-[#2F4F4F]" style="font-family: 'Sora', sans-serif;">--</p>
+            </div>
+            <div class="rounded-[20px] border border-[#D8DDD8] bg-white p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Popular Instrument</p>
+                <p id="dashboardSummaryInstrument" class="mt-2 truncate text-xl font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">--</p>
+            </div>
+            <div class="rounded-[20px] border border-[#D8DDD8] bg-white p-4 shadow-sm">
+                <p class="text-xs font-semibold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Top Instructor</p>
+                <p id="dashboardSummaryInstructor" class="mt-2 truncate text-xl font-bold text-[#223030]" style="font-family: 'Sora', sans-serif;">--</p>
+            </div>
+        </div>
+        <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-2 mb-4 lg:mb-6">
             
             {{-- Enrollment Trend Chart (Line Chart) --}}
             <div class="card p-4 lg:p-6">
@@ -175,7 +333,13 @@
                     </svg>
                     Enrollment Trend (Last 30 Days)
                 </h3>
-                <div id="enrollment-trend-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
+                <div data-dashboard-chart-wrap class="relative h-56 lg:h-80 rounded-[20px] border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <canvas id="dashboardEnrollmentTrendChart" class="h-full w-full"></canvas>
+                    <p id="dashboardEnrollmentTrendMessage"
+                       class="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-sm font-medium text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Loading chart...
+                    </p>
+                </div>
             </div>
 
             {{-- Revenue Chart (Bar Chart) --}}
@@ -186,7 +350,13 @@
                     </svg>
                     Weekly Revenue (Last 30 Days)
                 </h3>
-                <div id="revenue-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
+                <div data-dashboard-chart-wrap class="relative h-56 lg:h-80 rounded-[20px] border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <canvas id="dashboardRevenueChart" class="h-full w-full"></canvas>
+                    <p id="dashboardRevenueMessage"
+                       class="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-sm font-medium text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Loading chart...
+                    </p>
+                </div>
             </div>
 
             {{-- Instrument Popularity Chart (Pie Chart) --}}
@@ -198,7 +368,13 @@
                     </svg>
                     Instrument Popularity
                 </h3>
-                <div id="instrument-popularity-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
+                <div data-dashboard-chart-wrap class="relative h-56 lg:h-80 rounded-[20px] border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <canvas id="dashboardInstrumentChart" class="h-full w-full"></canvas>
+                    <p id="dashboardInstrumentMessage"
+                       class="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-sm font-medium text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Loading chart...
+                    </p>
+                </div>
             </div>
 
             {{-- Instructor Performance Chart (Bar Chart) --}}
@@ -209,7 +385,13 @@
                     </svg>
                     Top 10 Instructors (Students Taught)
                 </h3>
-                <div id="instructor-performance-chart" class="h-64 lg:h-80 bg-gray-50 rounded-lg"></div>
+                <div data-dashboard-chart-wrap class="relative h-56 lg:h-80 rounded-[20px] border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <canvas id="dashboardInstructorChart" class="h-full w-full"></canvas>
+                    <p id="dashboardInstructorMessage"
+                       class="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-sm font-medium text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Loading chart...
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -375,12 +557,14 @@
         </div>
 
     </div>
+    {{-- Python-powered Student Risk Summary --}}
+    @include('admin.partials.student-risk-dashboard-widget')
 
     {{-- ============================================================================
         FOOTER
         ============================================================================ --}}
     <footer class="bg-white border-t border-gray-200 py-4 text-center mt-8">
-        <p class="text-xs text-gray-500">Â© {{ date('Y') }} Music Lab. All rights reserved.</p>
+        <p class="text-xs text-gray-500">Ãƒâ€šÃ‚&copy; {{ date('Y') }} Music Lab. All rights reserved.</p>
     </footer>
 
 </main>
@@ -412,6 +596,3 @@
 
 </body>
 </html>
-    {{-- Python-powered Student Risk Summary --}}
-    @include('admin.partials.student-risk-dashboard-widget')
-

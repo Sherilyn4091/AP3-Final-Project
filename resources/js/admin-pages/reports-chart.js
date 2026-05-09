@@ -1,155 +1,297 @@
-// resources/js/admin-pages/reports-chart.js
+/*
+|--------------------------------------------------------------------------
+| resources/js/admin-pages/reports-chart.js
+|--------------------------------------------------------------------------
+|
+| Monthly Reports Charts
+|
+| Purpose:
+| - Uses Vite-installed Chart.js instead of CDN Chart.js.
+| - Reads report data injected from ReportsController through Blade.
+| - Keeps the Music Lab palette for line/bar charts.
+| - Uses brighter readable colors only for doughnut charts.
+| - Animates report KPI numbers and graphs smoothly.
+| - Renders charts only when visible so animations can be seen.
+| - Shows clean empty-state overlays instead of fake "No Data" chart labels.
+|
+*/
+
+import Chart from 'chart.js/auto';
+import {
+    PALETTE,
+    DOUGHNUT_COLORS,
+    cleanMojibakeText,
+    animateExistingCounters,
+    toNumber,
+} from './chart-utils';
 
 (function () {
-    // Make sure Chart.js is loaded
-    if (typeof Chart === "undefined") return;
+    'use strict';
 
-    // Read chart data injected by Blade
+    const chartInstances = {};
     const chartData = window.__monthlyReportChartData || {};
 
-    // If chart data is missing, show a safe placeholder (prevents crash)
-    function ensureData(key) {
-        if (
-            !chartData[key] ||
-            !Array.isArray(chartData[key].labels) ||
-            chartData[key].labels.length === 0 ||
-            !Array.isArray(chartData[key].values)
-        ) {
-            chartData[key] = { labels: ["No Data"], values: [0] };
+    document.addEventListener('DOMContentLoaded', function () {
+        cleanMojibakeText();
+        animateExistingCounters();
+        renderChartsWhenVisible();
+        bindResizeObserver();
+    });
+
+    function renderChartsWhenVisible() {
+        const chartSection = document.querySelector('.chart-wrap');
+
+        if (!chartSection) {
+            renderAllCharts();
+            return;
         }
+
+        let hasRendered = false;
+
+        const observer = new IntersectionObserver(function (entries) {
+            const isVisible = entries.some(entry => entry.isIntersecting);
+
+            if (!isVisible || hasRendered) {
+                return;
+            }
+
+            hasRendered = true;
+            renderAllCharts();
+            observer.disconnect();
+        }, {
+            threshold: 0.1,
+        });
+
+        observer.observe(chartSection);
     }
 
-    ensureData("revenueTrend");
-    ensureData("enrollmentTrend");
-    ensureData("revenueByMethod");
-    ensureData("packagePopularity");
+    function renderAllCharts() {
+        buildLineChart('revenueTrendChart', 'revenueTrendEmpty', chartData.revenueTrend, 'Revenue');
+        buildLineChart('enrollmentTrendChart', 'enrollmentTrendEmpty', chartData.enrollmentTrend, 'Enrollments');
+        buildDoughnutChart('revenueByMethodChart', 'revenueByMethodEmpty', chartData.revenueByMethod, 'Revenue by Payment Method');
+        buildBarChart('packagePopularityChart', 'packagePopularityEmpty', chartData.packagePopularity, 'Package Popularity');
+    }
 
-    // Hold chart instances so we can resize/rebuild cleanly
-    const charts = {};
+    function buildLineChart(canvasId, emptyId, data, label) {
+        const normalized = normalizeChartData(data, emptyId);
+
+        if (!normalized) {
+            return;
+        }
+
+        buildChart(canvasId, {
+            type: 'line',
+            labels: normalized.labels,
+            values: normalized.values,
+            label,
+            datasetOptions: {
+                backgroundColor: 'rgba(47, 79, 79, 0.15)',
+                borderColor: PALETTE.primary,
+                borderWidth: 2,
+                tension: 0.35,
+                pointRadius: normalized.labels.length <= 2 ? 5 : 2,
+                pointHoverRadius: 6,
+            },
+            options: {
+                ...baseOptions(),
+                scales: defaultScales(),
+            },
+        });
+    }
+
+    function buildBarChart(canvasId, emptyId, data, label) {
+        const normalized = normalizeChartData(data, emptyId);
+
+        if (!normalized) {
+            return;
+        }
+
+        buildChart(canvasId, {
+            type: 'bar',
+            labels: normalized.labels,
+            values: normalized.values,
+            label,
+            datasetOptions: {
+                backgroundColor: 'rgba(47, 79, 79, 0.68)',
+                borderColor: PALETTE.primary,
+                borderWidth: 1,
+                borderRadius: 8,
+            },
+            options: {
+                ...baseOptions(),
+                scales: defaultScales(),
+            },
+        });
+    }
+
+    function buildDoughnutChart(canvasId, emptyId, data, label) {
+        const normalized = normalizeChartData(data, emptyId);
+
+        if (!normalized) {
+            return;
+        }
+
+        buildChart(canvasId, {
+            type: 'doughnut',
+            labels: normalized.labels,
+            values: normalized.values,
+            label,
+            datasetOptions: {
+                backgroundColor: DOUGHNUT_COLORS,
+                borderColor: '#FFFFFF',
+                borderWidth: 2,
+                hoverOffset: 8,
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: {
+                    duration: 1800,
+                    easing: 'easeOutQuart',
+                    animateRotate: true,
+                    animateScale: true,
+                },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'bottom',
+                        labels: {
+                            color: PALETTE.slate,
+                            usePointStyle: false,
+                            boxWidth: 18,
+                            boxHeight: 10,
+                            padding: 14,
+                            font: {
+                                family: 'Inter',
+                                size: 12,
+                                weight: '500',
+                            },
+                        },
+                    },
+                    tooltip: tooltipOptions(),
+                },
+            },
+        });
+    }
+
+    function normalizeChartData(data, emptyId) {
+        const emptyEl = document.getElementById(emptyId);
+        const isEmpty = !data ||
+            !Array.isArray(data.labels) ||
+            !Array.isArray(data.values) ||
+            data.labels.length === 0 ||
+            !data.values.some(value => Number(value) > 0);
+
+        if (emptyEl) {
+            emptyEl.classList.toggle('hidden', !isEmpty);
+        }
+
+        if (isEmpty) {
+            return null;
+        }
+
+        return {
+            labels: data.labels,
+            values: data.values.map(value => Number(value) || 0),
+        };
+    }
+
+    function buildChart(canvasId, config) {
+        const canvas = document.getElementById(canvasId);
+
+        if (!canvas) {
+            return;
+        }
+
+        if (chartInstances[canvasId]) {
+            chartInstances[canvasId].destroy();
+        }
+
+        chartInstances[canvasId] = new Chart(canvas, {
+            type: config.type,
+            data: {
+                labels: config.labels,
+                datasets: [
+                    {
+                        label: config.label,
+                        data: config.values,
+                        ...config.datasetOptions,
+                    },
+                ],
+            },
+            options: config.options,
+        });
+    }
 
     function baseOptions() {
         return {
             responsive: true,
             maintainAspectRatio: false,
-            animation: false,
+            animation: {
+                duration: 1800,
+                easing: 'easeOutQuart',
+            },
             plugins: {
                 legend: { display: false },
-                tooltip: { enabled: true },
+                tooltip: tooltipOptions(),
             },
         };
     }
 
-    function buildLineChart(canvasId, labels, values) {
-        const el = document.getElementById(canvasId);
-        if (!el) return;
+    function tooltipOptions() {
+        return {
+            enabled: true,
+            backgroundColor: '#223030',
+            titleColor: '#FFFFFF',
+            bodyColor: '#FFFFFF',
+            titleFont: {
+                family: 'Inter',
+                size: 12,
+                weight: '600',
+            },
+            bodyFont: {
+                family: 'Inter',
+                size: 12,
+            },
+            padding: 10,
+        };
+    }
 
-        if (charts[canvasId]) charts[canvasId].destroy();
-
-        charts[canvasId] = new Chart(el, {
-            type: "line",
-            data: {
-                labels,
-                datasets: [
-                    {
-                        label: "Value",
-                        data: values,
-                        tension: 0.25,
-                        pointRadius: labels.length <= 2 ? 5 : 2,
+    function defaultScales() {
+        return {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    color: PALETTE.dim,
+                    font: {
+                        family: 'JetBrains Mono',
+                        size: 11,
                     },
-                ],
-            },
-            options: {
-                ...baseOptions(),
-                scales: {
-                    y: { beginAtZero: true },
-                    x: { ticks: { maxRotation: 45, minRotation: 0 } },
                 },
+                grid: { color: 'rgba(216, 221, 216, 0.8)' },
             },
-        });
-    }
-
-    function buildBarChart(canvasId, labels, values) {
-        const el = document.getElementById(canvasId);
-        if (!el) return;
-
-        if (charts[canvasId]) charts[canvasId].destroy();
-
-        charts[canvasId] = new Chart(el, {
-            type: "bar",
-            data: {
-                labels,
-                datasets: [{ label: "Value", data: values }],
-            },
-            options: {
-                ...baseOptions(),
-                scales: {
-                    y: { beginAtZero: true },
+            x: {
+                ticks: {
+                    maxRotation: 45,
+                    minRotation: 0,
+                    color: PALETTE.dim,
+                    font: {
+                        family: 'Inter',
+                        size: 11,
+                    },
                 },
+                grid: { color: 'rgba(216, 221, 216, 0.5)' },
             },
-        });
+        };
     }
 
-    function buildPieChart(canvasId, labels, values) {
-        const el = document.getElementById(canvasId);
-        if (!el) return;
-
-        if (charts[canvasId]) charts[canvasId].destroy();
-
-        charts[canvasId] = new Chart(el, {
-            type: "pie",
-            data: {
-                labels,
-                datasets: [{ data: values }],
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                animation: false,
-                plugins: {
-                    legend: { display: true, position: "top" },
-                    tooltip: { enabled: true },
-                },
-            },
-        });
+    function bindResizeObserver() {
+        const resizeObserver = new ResizeObserver(resizeAllCharts);
+        document.querySelectorAll('.chart-wrap').forEach(wrap => resizeObserver.observe(wrap));
+        window.addEventListener('resize', resizeAllCharts);
     }
 
-    function renderAllCharts() {
-        buildLineChart(
-            "revenueTrendChart",
-            chartData.revenueTrend.labels,
-            chartData.revenueTrend.values
-        );
-
-        buildLineChart(
-            "enrollmentTrendChart",
-            chartData.enrollmentTrend.labels,
-            chartData.enrollmentTrend.values
-        );
-
-        buildPieChart(
-            "revenueByMethodChart",
-            chartData.revenueByMethod.labels,
-            chartData.revenueByMethod.values
-        );
-
-        buildBarChart(
-            "packagePopularityChart",
-            chartData.packagePopularity.labels,
-            chartData.packagePopularity.values
-        );
+    function resizeAllCharts() {
+        Object.values(chartInstances).forEach(chart => chart && chart.resize());
     }
-
-    // Initial draw
-    renderAllCharts();
-
-    // Auto-resize when layout changes
-    const ro = new ResizeObserver(() => {
-        Object.values(charts).forEach((c) => c && c.resize());
-    });
-
-    document.querySelectorAll(".chart-wrap").forEach((wrap) => ro.observe(wrap));
-
-    window.addEventListener("resize", () => {
-        Object.values(charts).forEach((c) => c && c.resize());
-    });
 })();

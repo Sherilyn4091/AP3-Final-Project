@@ -291,6 +291,9 @@ Route::middleware('auth')->group(function () {
             // Export Monthly Report as PDF
             Route::get('/export-pdf', [ReportsController::class, 'exportPdf'])->name('export-pdf');
             
+            // Export Monthly Reports + Student Retention Risk Report as one CSV file
+            Route::get('/export-csv', [ReportsController::class, 'exportCsv'])->name('export-csv');
+            
             // Financial Report (YOUR EXISTING ROUTE)
             Route::get('/financial', function () {
                 return view('admin.reports.financial');
@@ -623,4 +626,3 @@ Route::get('/health', function () {
 });
 // Student Risk Analytics routes - Python Decision Tree Classification
 require __DIR__ . '/admin_student_risk_analytics.php';
-
