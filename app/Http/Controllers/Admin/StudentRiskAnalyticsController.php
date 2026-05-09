@@ -16,12 +16,18 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 | StudentRiskAnalyticsController
 |--------------------------------------------------------------------------
 |
-| New admin data mining module for Music Lab.
+| Admin data mining module for Music Lab.
 |
 | Technique: Classification
 | Algorithm: Decision Tree Classification
 | Purpose: Identify students at low, medium, or high risk of not continuing
 | lessons based on attendance, progress, enrollment, payment, and schedule data.
+|
+| Code-smell prevention:
+| - Controller handles HTTP and dataset preparation only.
+| - PythonAnalyticsService handles Python execution.
+| - Python files handle classification logic.
+| - Private helper methods keep queries focused and reusable.
 |
 */
 
@@ -34,6 +40,9 @@ class StudentRiskAnalyticsController extends Controller
 
     /**
      * Inject the Python analytics service.
+     *
+     * Normal property assignment is used instead of constructor promotion
+     * to avoid editor/parser compatibility issues.
      */
     public function __construct(PythonAnalyticsService $analyticsService)
     {
@@ -82,6 +91,9 @@ class StudentRiskAnalyticsController extends Controller
 
     /**
      * Export the current risk result as CSV.
+     *
+     * The rows are sorted by risk score descending so the most urgent students
+     * appear first in the exported file.
      */
     public function exportCsv(): StreamedResponse
     {
@@ -92,9 +104,15 @@ class StudentRiskAnalyticsController extends Controller
             'full'
         );
 
+        $students = $result['students'] ?? [];
+
+        usort($students, function (array $first, array $second): int {
+            return (float) ($second['risk_score'] ?? 0) <=> (float) ($first['risk_score'] ?? 0);
+        });
+
         $fileName = 'student-risk-analytics-' . now()->format('Y-m-d_His') . '.csv';
 
-        return response()->streamDownload(function () use ($result) {
+        return response()->streamDownload(function () use ($students) {
             $handle = fopen('php://output', 'w');
 
             fputcsv($handle, [
@@ -116,7 +134,7 @@ class StudentRiskAnalyticsController extends Controller
                 'Recommended Action',
             ]);
 
-            foreach ($result['students'] ?? [] as $student) {
+            foreach ($students as $student) {
                 fputcsv($handle, [
                     $student['student_id'] ?? '',
                     $student['student_name'] ?? '',
@@ -258,7 +276,7 @@ class StudentRiskAnalyticsController extends Controller
      */
     private function latestEnrollmentRows(): array
     {
-        return DB::table(DB::raw('(
+        return DB::table(DB::raw('( 
                 SELECT DISTINCT ON (e.student_id)
                     e.student_id,
                     e.enrollment_id,
@@ -319,14 +337,18 @@ class StudentRiskAnalyticsController extends Controller
 
     /**
      * Last lesson schedule metrics grouped by student.
+     *
+     * Future schedules are ignored so students with upcoming lessons do not get
+     * negative day counts. PostgreSQL date subtraction returns an integer number
+     * of days, so DATE_PART is intentionally not used here.
      */
     private function scheduleStatsByStudent(): array
     {
         return DB::table('schedule')
             ->select(
                 'student_id',
-                DB::raw('MAX(schedule_date) as last_lesson_date'),
-                DB::raw('COALESCE((CURRENT_DATE - MAX(schedule_date))::int, 0) as days_since_last_lesson')
+                DB::raw('MAX(schedule_date) FILTER (WHERE schedule_date <= CURRENT_DATE) as last_lesson_date'),
+                DB::raw('GREATEST(COALESCE((CURRENT_DATE - (MAX(schedule_date) FILTER (WHERE schedule_date <= CURRENT_DATE)))::int, 0), 0) as days_since_last_lesson')
             )
             ->whereNotNull('student_id')
             ->where('status', '!=', 'cancelled')
@@ -336,4 +358,3 @@ class StudentRiskAnalyticsController extends Controller
             ->all();
     }
 }
-

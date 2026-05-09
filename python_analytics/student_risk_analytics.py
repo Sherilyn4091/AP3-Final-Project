@@ -1,6 +1,4 @@
 #!/usr/bin/env python3
-# python_analytics/student_risk_analytics.py
-
 """
 Music Lab Student Risk Analytics
 --------------------------------
@@ -17,25 +15,6 @@ Why a rule-based decision tree?
   each student is classified through transparent decision nodes.
 - When enough historical labeled data exists, the decision rules can be replaced
   with a trained scikit-learn DecisionTreeClassifier without changing Laravel UI.
-
-Input format:
-{
-  "students": [
-    {
-      "student_id": 1,
-      "student_name": "Juan Dela Cruz",
-      "attendance_rate": 82.5,
-      "absence_count": 1,
-      "late_count": 0,
-      "average_progress_rating": 7.5,
-      "payment_status": "paid",
-      "enrollment_status": "active",
-      "remaining_sessions": 4,
-      "completed_sessions": 6,
-      "days_since_last_lesson": 3
-    }
-  ]
-}
 """
 
 from __future__ import annotations
@@ -52,12 +31,6 @@ LOW_RISK = "Low Risk"
 MEDIUM_RISK = "Medium Risk"
 HIGH_RISK = "High Risk"
 
-RISK_ORDER = {
-    LOW_RISK: 1,
-    MEDIUM_RISK: 2,
-    HIGH_RISK: 3,
-}
-
 PAYMENT_RISK_STATUSES = {
     "pending",
     "partial",
@@ -73,6 +46,14 @@ INACTIVE_ENROLLMENT_STATUSES = {
     "withdrawn",
     "inactive",
     "dropped",
+}
+
+NO_ENROLLMENT_STATUSES = {
+    "",
+    "none",
+    "no_enrollment",
+    "not_enrolled",
+    "unassigned",
 }
 
 
@@ -138,7 +119,7 @@ def classify_student(student: Dict[str, Any]) -> Dict[str, Any]:
     Output fields:
     - risk_level: Low Risk, Medium Risk, High Risk
     - risk_score: numeric 0-100 score for sorting
-    - reasons: specific risk causes
+    - risk_reasons: specific risk causes
     - recommended_action: admin-friendly intervention
     """
     features = extract_features(student)
@@ -186,7 +167,8 @@ def apply_decision_tree(features: Dict[str, Any]) -> Tuple[str, List[str]]:
     """
     Decision tree rules for retention risk classification.
 
-    The order matters. High-risk stopping conditions are checked first.
+    The order matters. Clear administrative states are checked first, then
+    stronger high-risk warning signs, then medium-risk monitoring signs.
     """
     attendance_rate = features["attendance_rate"]
     absence_count = features["absence_count"]
@@ -198,27 +180,32 @@ def apply_decision_tree(features: Dict[str, Any]) -> Tuple[str, List[str]]:
     days_since_last_lesson = features["days_since_last_lesson"]
     is_active = features["is_active"]
 
-    # Node 1: Already inactive or withdrawn students are automatically high risk.
+    # Node 1: No enrollment is a monitoring issue, not automatic high risk.
+    # This can happen for newly created student records that are not enrolled yet.
+    if enrollment_status in NO_ENROLLMENT_STATUSES:
+        return MEDIUM_RISK, ["Student has no active enrollment on record."]
+
+    # Node 2: Already inactive or withdrawn students are automatically high risk.
     if not is_active or enrollment_status in INACTIVE_ENROLLMENT_STATUSES:
         return HIGH_RISK, ["Student is inactive, withdrawn, cancelled, or dropped from enrollment."]
 
-    # Node 2: Very weak attendance is the strongest early warning sign.
+    # Node 3: Very weak attendance is the strongest early warning sign.
     if attendance_rate < 60:
         return HIGH_RISK, ["Attendance rate is below 60%, which indicates serious retention risk."]
 
-    # Node 3: Long gap without lesson while sessions remain means intervention is needed.
+    # Node 4: Long gap without lesson while sessions remain means intervention is needed.
     if days_since_last_lesson >= 21 and remaining_sessions > 0:
         return HIGH_RISK, ["Student has remaining sessions but no recent lesson for 21 days or more."]
 
-    # Node 4: Payment issue combined with weak attendance is high risk.
+    # Node 5: Payment issue combined with weak attendance is high risk.
     if payment_status in PAYMENT_RISK_STATUSES and attendance_rate < 75:
         return HIGH_RISK, ["Payment status needs attention and attendance is below 75%."]
 
-    # Node 5: Low progress and repeated absences suggest learning disengagement.
+    # Node 6: Low progress and repeated absences suggest learning disengagement.
     if progress_rating > 0 and progress_rating < 5.5 and absence_count >= 2:
         return HIGH_RISK, ["Progress rating is low and the student has repeated absences."]
 
-    # Node 6: Moderate concerns create medium risk.
+    # Node 7: Moderate concerns create medium risk.
     medium_reasons: List[str] = []
 
     if attendance_rate < 80:
@@ -257,6 +244,9 @@ def calculate_risk_score(features: Dict[str, Any], risk_level: str) -> float:
     if features["payment_status"] in PAYMENT_RISK_STATUSES:
         score += 14.0
 
+    if features["enrollment_status"] in NO_ENROLLMENT_STATUSES:
+        score += 12.0
+
     if features["enrollment_status"] in INACTIVE_ENROLLMENT_STATUSES or not features["is_active"]:
         score += 25.0
 
@@ -277,6 +267,9 @@ def calculate_risk_score(features: Dict[str, Any], risk_level: str) -> float:
 
 def build_recommended_actions(features: Dict[str, Any], risk_level: str) -> List[str]:
     """Create admin-friendly recommended actions based on risk factors."""
+    if features["enrollment_status"] in NO_ENROLLMENT_STATUSES:
+        return ["Verify the student enrollment record and assist with completing an enrollment package."]
+
     if risk_level == HIGH_RISK:
         if features["payment_status"] in PAYMENT_RISK_STATUSES:
             return ["Contact the student or guardian and verify payment or continuation plans."]
