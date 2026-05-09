@@ -1,4 +1,4 @@
-{{-- resources/views/layouts/admin-header.blade.php --}} 
+﻿{{-- resources/views/layouts/admin-header.blade.php --}} 
 {{--  
     ============================================================================ 
     ADMIN HEADER WITH SIDEBAR NAVIGATION
@@ -172,7 +172,18 @@
             </li>
              
         </ul> 
-    </nav> 
+    
+        {{-- Student Risk Analytics - Python Decision Tree Classification --}}
+        <div class="px-3 pb-3">
+            <a href="{{ route('admin.student-risk-analytics.index') }}"
+               class="flex items-center px-4 py-3 rounded-lg hover:bg-primary-darker transition-all duration-200 {{ request()->routeIs('admin.student-risk-analytics.*') ? 'bg-secondary-blue text-white' : '' }}">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-6a2 2 0 012-2h8M9 17H5a2 2 0 01-2-2V7a2 2 0 012-2h4m0 12l3 3m0 0l3-3m-3 3V9" />
+                </svg>
+                <span class="font-medium">Student Risk Analytics</span>
+            </a>
+        </div>
+</nav> 
      
     {{-- Logout Button (Fixed at Bottom) --}} 
     <div class="p-4 border-t border-secondary-blue bg-primary-dark"> 

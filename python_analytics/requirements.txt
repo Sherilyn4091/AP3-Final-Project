@@ -1,0 +1,4 @@
+# Music Lab Python Analytics
+# No external Python packages are required for the first implementation.
+# The Decision Tree Classification is implemented with Python standard library.
+# Optional future upgrade: scikit-learn, pandas, numpy when historical labels are available.

@@ -1,4 +1,4 @@
-{{-- resources/views/admin/reports/index.blade.php --}}
+﻿{{-- resources/views/admin/reports/index.blade.php --}}
 @extends('layouts.admin-default')
 
 @section('title', 'Monthly Report')
@@ -6,8 +6,8 @@
 @section('headername')
     <h1 class="text-2xl font-bold text-gray-800">Monthly Reports (Analytics)</h1>
     <p class="text-gray-600 mt-1 text-sm">
-        Paid Revenue: <span class="font-semibold">₱{{ number_format($stats['total_paid_revenue'] ?? 0, 2) }}</span> •
-        30 Days: <span class="text-emerald-700 font-semibold">₱{{ number_format($stats['revenue_30_days'] ?? 0, 2) }}</span> •
+        Paid Revenue: <span class="font-semibold">â‚±{{ number_format($stats['total_paid_revenue'] ?? 0, 2) }}</span> â€¢
+        30 Days: <span class="text-emerald-700 font-semibold">â‚±{{ number_format($stats['revenue_30_days'] ?? 0, 2) }}</span> â€¢
         Active Enrollments: <span class="text-indigo-700 font-semibold">{{ $stats['active_enrollments'] ?? 0 }}</span>
     </p>
 @endsection
@@ -31,14 +31,14 @@
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <p class="text-sm font-medium text-gray-500">Total Paid Revenue</p>
             <p class="text-2xl font-bold text-gray-900 mt-1">
-                ₱{{ number_format($stats['total_paid_revenue'] ?? 0, 2) }}
+                â‚±{{ number_format($stats['total_paid_revenue'] ?? 0, 2) }}
             </p>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-200">
             <p class="text-sm font-medium text-gray-500">Revenue (Last 30 Days)</p>
             <p class="text-2xl font-bold text-emerald-700 mt-1">
-                ₱{{ number_format($stats['revenue_30_days'] ?? 0, 2) }}
+                â‚±{{ number_format($stats['revenue_30_days'] ?? 0, 2) }}
             </p>
         </div>
 
@@ -103,5 +103,9 @@
 
 {{-- 3) Load your external JS (Vite) --}}
 @vite('resources/js/admin-pages/reports-chart.js')
+
+
+{{-- Python-powered Student Retention Risk Report --}}
+@include('admin.reports.partials.student-risk-report-section')
 
 @endsection

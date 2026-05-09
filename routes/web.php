@@ -621,3 +621,6 @@ Route::get('/', function () {
 Route::get('/health', function () {
     return response()->json(['status' => 'ok'], 200);
 });
+// Student Risk Analytics routes - Python Decision Tree Classification
+require __DIR__ . '/admin_student_risk_analytics.php';
+

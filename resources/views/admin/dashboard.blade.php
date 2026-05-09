@@ -1,4 +1,4 @@
-{{-- resources/views/admin/dashboard.blade.php --}}
+﻿{{-- resources/views/admin/dashboard.blade.php --}}
 {{-- 
     ============================================================================
     SUPER ADMIN DASHBOARD - Music Lab
@@ -120,7 +120,7 @@
                 <div class="flex items-center justify-between">
                     <div>
                         <p class="text-sm lg:text-base font-semibold text-secondary-blue">Today's Revenue</p>
-                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">₱{{ number_format($todaysRevenue, 2) }}</p>
+                        <p class="text-2xl lg:text-3xl font-bold text-primary-dark mt-1">â‚±{{ number_format($todaysRevenue, 2) }}</p>
                     </div>
                     <div class="p-3 bg-golden-yellow bg-opacity-10 rounded-lg">
                         <svg class="w-6 h-6 lg:w-8 lg:h-8 text-golden-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -380,7 +380,7 @@
         FOOTER
         ============================================================================ --}}
     <footer class="bg-white border-t border-gray-200 py-4 text-center mt-8">
-        <p class="text-xs text-gray-500">© {{ date('Y') }} Music Lab. All rights reserved.</p>
+        <p class="text-xs text-gray-500">Â© {{ date('Y') }} Music Lab. All rights reserved.</p>
     </footer>
 
 </main>
@@ -412,3 +412,6 @@
 
 </body>
 </html>
+    {{-- Python-powered Student Risk Summary --}}
+    @include('admin.partials.student-risk-dashboard-widget')
+

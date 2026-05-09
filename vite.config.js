@@ -1,4 +1,4 @@
-/*
+﻿/*
  * vite.config.js 
  * Vite configuration file
  * 
@@ -40,6 +40,8 @@ export default defineConfig({
                 'resources/js/admin-pages/schedule.js',
 
                 'resources/js/admin-pages/reports-chart.js',
+                'resources/js/admin-pages/student-risk-dashboard-widget.js',
+                'resources/js/admin-pages/student-risk-analytics.js',
 
                 'resources/js/student-instructor.js',
 
