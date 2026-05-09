@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Services\PythonAnalyticsService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -104,12 +105,7 @@ class StudentRiskAnalyticsController extends Controller
             'full'
         );
 
-        $students = $result['students'] ?? [];
-
-        usort($students, function (array $first, array $second): int {
-            return (float) ($second['risk_score'] ?? 0) <=> (float) ($first['risk_score'] ?? 0);
-        });
-
+        $students = $this->sortedStudentsByRiskScore($result['students'] ?? []);
         $fileName = 'student-risk-analytics-' . now()->format('Y-m-d_His') . '.csv';
 
         return response()->streamDownload(function () use ($students) {
@@ -123,7 +119,7 @@ class StudentRiskAnalyticsController extends Controller
                 'Risk Level',
                 'Risk Score',
                 'Attendance Rate',
-                'Absences',
+                'Absences / Non-Present',
                 'Late Count',
                 'Average Progress Rating',
                 'Enrollment Status',
@@ -145,11 +141,11 @@ class StudentRiskAnalyticsController extends Controller
                     $student['attendance_rate'] ?? '',
                     $student['absence_count'] ?? '',
                     $student['late_count'] ?? '',
-                    $student['average_progress_rating'] ?? '',
+                    $student['average_progress_rating'] ?? 'N/A',
                     $student['enrollment_status'] ?? '',
                     $student['payment_status'] ?? '',
                     $student['remaining_sessions'] ?? '',
-                    $student['days_since_last_lesson'] ?? '',
+                    max(0, (int) ($student['days_since_last_lesson'] ?? 0)),
                     $student['primary_reason'] ?? '',
                     $student['recommended_action'] ?? '',
                 ]);
@@ -159,6 +155,50 @@ class StudentRiskAnalyticsController extends Controller
         }, $fileName, [
             'Content-Type' => 'text/csv',
         ]);
+    }
+
+    /**
+     * Export the current risk result as PDF.
+     *
+     * DomPDF is used through the existing Laravel package. No file is stored;
+     * the PDF is streamed directly to the browser.
+     */
+    public function exportPdf()
+    {
+        $this->authorizeAdmin();
+
+        $result = $this->analyticsService->runStudentRiskAnalysis(
+            $this->buildStudentDataset(),
+            'full'
+        );
+
+        $result['students'] = $this->sortedStudentsByRiskScore($result['students'] ?? []);
+        $result['top_high_risk_students'] = array_values(array_filter(
+            $result['students'],
+            fn (array $student): bool => ($student['risk_level'] ?? '') === 'High Risk'
+        ));
+        $result['top_high_risk_students'] = array_slice($result['top_high_risk_students'], 0, 10);
+
+        $fileName = 'student-risk-analytics-' . now()->format('Y-m-d_His') . '.pdf';
+
+        $pdf = Pdf::loadView('admin.student-risk-analytics.pdf', [
+            'result' => $result,
+            'generatedAt' => now()->format('F d, Y h:i A'),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Sort students by risk score descending for CSV/PDF exports.
+     */
+    private function sortedStudentsByRiskScore(array $students): array
+    {
+        usort($students, function (array $first, array $second): int {
+            return (float) ($second['risk_score'] ?? 0) <=> (float) ($first['risk_score'] ?? 0);
+        });
+
+        return $students;
     }
 
     /**
@@ -242,9 +282,9 @@ class StudentRiskAnalyticsController extends Controller
                 'attendance_rate' => $attendanceRate,
                 'absence_count' => (int) ($attendance->absence_count ?? 0),
                 'late_count' => (int) ($attendance->late_count ?? 0),
-                'average_progress_rating' => round((float) ($progress->average_progress_rating ?? 8.0), 2),
+                'average_progress_rating' => $enrollment ? round((float) ($progress->average_progress_rating ?? 8.0), 2) : null,
                 'last_lesson_date' => $schedule->last_lesson_date ?? null,
-                'days_since_last_lesson' => (int) ($schedule->days_since_last_lesson ?? 0),
+                'days_since_last_lesson' => max(0, (int) ($schedule->days_since_last_lesson ?? 0)),
             ];
         })->values()->all();
     }
@@ -308,7 +348,7 @@ class StudentRiskAnalyticsController extends Controller
                 'student_id',
                 DB::raw('COUNT(*) as total_attendance'),
                 DB::raw("SUM(CASE WHEN attendance_status = 'present' THEN 1 ELSE 0 END) as present_count"),
-                DB::raw("SUM(CASE WHEN attendance_status = 'absent' THEN 1 ELSE 0 END) as absence_count"),
+                DB::raw("SUM(CASE WHEN attendance_status IN ('absent', 'late', 'half_day', 'on_leave') THEN 1 ELSE 0 END) as absence_count"),
                 DB::raw("SUM(CASE WHEN attendance_status = 'late' THEN 1 ELSE 0 END) as late_count")
             )
             ->whereNotNull('student_id')
@@ -347,10 +387,11 @@ class StudentRiskAnalyticsController extends Controller
         return DB::table('schedule')
             ->select(
                 'student_id',
-                DB::raw('MAX(schedule_date) FILTER (WHERE schedule_date <= CURRENT_DATE) as last_lesson_date'),
-                DB::raw('GREATEST(COALESCE((CURRENT_DATE - (MAX(schedule_date) FILTER (WHERE schedule_date <= CURRENT_DATE)))::int, 0), 0) as days_since_last_lesson')
+                DB::raw('MAX(schedule_date) as last_lesson_date'),
+                DB::raw('GREATEST(COALESCE((CURRENT_DATE - MAX(schedule_date))::int, 0), 0) as days_since_last_lesson')
             )
             ->whereNotNull('student_id')
+            ->where('schedule_date', '<=', now()->toDateString())
             ->where('status', '!=', 'cancelled')
             ->groupBy('student_id')
             ->get()

@@ -6,28 +6,28 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title') - Music Lab</title>
 
-    <!-- ONLY ONE VITE CALL – put everything you need here -->
+    <!-- ONLY ONE VITE CALL â€“ put everything you need here -->
     @vite([
         'resources/css/app.css',
-        'resources/js/app.js',           // ← should contain Alpine + other global JS
+        'resources/js/app.js',           // â† should contain Alpine + other global JS
         'resources/js/admin-pages.js',
-        'resources/js/admin-pages/reports-chart.js'    // ← your custom admin scripts
+        'resources/js/admin-pages/reports-chart.js'    // â† your custom admin scripts
     ])
 
-    <!-- Livewire styles – only once -->
+    <!-- Livewire styles â€“ only once -->
 </head>
 
-<body class="bg-gray-100 flex"> {{-- Gray background for the whole site --}}
+<body class="bg-gray-100"> {{-- Gray background for the whole site --}}
 
     {{-- 1. The Sidebar (admin-header.blade.php) --}}
     @include('layouts.admin-header')
 
     {{-- 2. The Main Content Area (Pushed right by ml-64) --}}
-    <div class="flex-1 lg:ml-64 min-h-screen flex flex-col">
+    <div class="min-h-screen w-full lg:pl-64 flex flex-col">
         
         {{-- Fixed/Shared Top Header --}}
-    <header class="sticky top-0 z-40 bg-white shadow-sm border-b border-gray-200 p-6 lg:p-8">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+    <header class="sticky top-0 z-40 w-full bg-white shadow-sm border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 @yield('headername')
             </div>
@@ -38,18 +38,14 @@
     </header>
 
         {{-- The Page Content --}}
-        <main class="flex-grow pb-12"> 
+        <main class="flex-1 w-full pb-8"> 
              @yield('maincontent')  
         </main>
 
-        <footer class="p-6 text-center text-xs text-gray-500 bg-white border-t">
-            © {{ date('Y') }} Music Lab. All rights reserved.
+        <footer class="w-full px-4 py-4 text-center text-xs text-gray-500 bg-white border-t">
+            Â© {{ date('Y') }} Music Lab. All rights reserved.
         </footer>
     </div>
-
-<!-- Important: Livewire scripts should be at the END of body -->
-    @livewireScripts
-
     <!-- Remove any extra @stack('scripts') if it includes app.js again -->
     @stack('scripts')
 

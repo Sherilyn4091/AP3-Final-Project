@@ -66,6 +66,7 @@
         notice: document.getElementById('riskStatusNotice'),
         refreshButton: document.getElementById('riskRefreshButton'),
         exportButton: document.getElementById('riskExportButton'),
+        exportPdfButton: document.getElementById('riskExportPdfButton'),
         countdown: document.getElementById('riskCountdownText'),
         total: document.getElementById('riskTotalStudents'),
         low: document.getElementById('riskLowCount'),
@@ -98,6 +99,12 @@
         elements.exportButton?.addEventListener('click', () => {
             if (config.exportCsvUrl) {
                 window.location.href = config.exportCsvUrl;
+            }
+        });
+
+        elements.exportPdfButton?.addEventListener('click', () => {
+            if (config.exportPdfUrl) {
+                window.location.href = config.exportPdfUrl;
             }
         });
 
@@ -335,7 +342,7 @@
                 </td>
                 <td class="px-4 py-3">${riskBadge(student.risk_level)}</td>
                 <td class="risk-mono px-4 py-3 text-[#394a56]">${formatPercent(student.attendance_rate)}</td>
-                <td class="risk-mono px-4 py-3 text-[#394a56]">${formatNumber(student.average_progress_rating)}/10</td>
+                <td class="risk-mono px-4 py-3 text-[#394a56]">${formatProgressRating(student.average_progress_rating)}</td>
                 <td class="px-4 py-3 text-[#394a56]">${escapeHtml(student.payment_status || 'N/A')}</td>
                 <td class="px-4 py-3 text-[#394a56]" title="${escapeAttribute(student.primary_reason || '')}">${escapeHtml(truncateText(student.primary_reason || 'No reason', 70))}</td>
                 <td class="px-4 py-3 text-[#394a56]" title="${escapeAttribute(student.recommended_action || '')}">${escapeHtml(truncateText(student.recommended_action || 'Continue monitoring', 76))}</td>
@@ -501,6 +508,14 @@
 
     function setText(element, value) {
         if (element) element.textContent = String(value);
+    }
+
+    function formatProgressRating(value) {
+        if (value === null || value === undefined || value === '') {
+            return 'N/A';
+        }
+
+        return `${formatNumber(value)}/10`;
     }
 
     function formatPercent(value) {

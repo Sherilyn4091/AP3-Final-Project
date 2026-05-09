@@ -14,7 +14,7 @@
 
 @section('header_actions')
     <div class="flex flex-col items-start gap-1 sm:items-end">
-        <div class="flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2 sm:justify-end">
             <button type="button"
                     id="riskRefreshButton"
                     class="inline-flex items-center rounded-2xl bg-[#2F4F4F] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#3C4B33] focus:outline-none focus:ring-2 focus:ring-[#959D90]">
@@ -25,6 +25,12 @@
                     id="riskExportButton"
                     class="inline-flex items-center rounded-2xl border border-[#D8D9DA] bg-white px-4 py-2 text-sm font-semibold text-[#394a56] shadow-sm transition hover:border-[#959D90] hover:bg-[#FFF6E0] focus:outline-none focus:ring-2 focus:ring-[#959D90]">
                 Export CSV
+            </button>
+
+            <button type="button"
+                    id="riskExportPdfButton"
+                    class="inline-flex items-center rounded-2xl border border-[#B4833D]/40 bg-[#B4833D] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#42300B] focus:outline-none focus:ring-2 focus:ring-[#959D90]">
+                Export PDF
             </button>
         </div>
 
@@ -115,28 +121,28 @@
     </div>
 
     {{-- Summary cards: compact and responsive --}}
-    <section class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="risk-card risk-card-top p-4" style="--accent-color: #394a56;">
             <p class="text-xs font-semibold uppercase tracking-wide text-[#61677A]">Analyzed Students</p>
-            <p id="riskTotalStudents" class="risk-mono mt-2 text-2xl font-bold text-[#272829]">--</p>
+            <p id="riskTotalStudents" class="risk-mono mt-2 text-xl font-bold sm:text-2xl text-[#272829]">--</p>
             <p class="mt-1 text-xs text-[#61677A]">Included in current risk scan</p>
         </div>
 
         <div class="risk-card risk-card-top p-4" style="--accent-color: #2F4F4F;">
             <p class="text-xs font-semibold uppercase tracking-wide text-[#2F4F4F]">Low Risk</p>
-            <p id="riskLowCount" class="risk-mono mt-2 text-2xl font-bold text-[#2F4F4F]">--</p>
+            <p id="riskLowCount" class="risk-mono mt-2 text-xl font-bold sm:text-2xl text-[#2F4F4F]">--</p>
             <p class="mt-1 text-xs text-[#61677A]">Stable attendance and progress</p>
         </div>
 
         <div class="risk-card risk-card-top p-4" style="--accent-color: #B4833D;">
             <p class="text-xs font-semibold uppercase tracking-wide text-[#B4833D]">Medium Risk</p>
-            <p id="riskMediumCount" class="risk-mono mt-2 text-2xl font-bold text-[#B4833D]">--</p>
+            <p id="riskMediumCount" class="risk-mono mt-2 text-xl font-bold sm:text-2xl text-[#B4833D]">--</p>
             <p class="mt-1 text-xs text-[#61677A]">Needs monitoring</p>
         </div>
 
         <div class="risk-card risk-card-top p-4" style="--accent-color: #9f1d20;">
             <p class="text-xs font-semibold uppercase tracking-wide text-[#9f1d20]">High Risk</p>
-            <p id="riskHighCount" class="risk-mono mt-2 text-2xl font-bold text-[#9f1d20]">--</p>
+            <p id="riskHighCount" class="risk-mono mt-2 text-xl font-bold sm:text-2xl text-[#9f1d20]">--</p>
             <p class="mt-1 text-xs text-[#61677A]">Needs early intervention</p>
         </div>
     </section>
@@ -202,7 +208,7 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[#D8D9DA] text-sm">
+            <table class="min-w-[900px] divide-y divide-[#D8D9DA] text-sm">
                 <thead class="bg-[#fcf3e3]">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#394a56]">Student</th>
@@ -231,7 +237,7 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[#D8D9DA] text-sm">
+            <table class="min-w-[850px] divide-y divide-[#D8D9DA] text-sm">
                 <thead class="bg-[#fcf3e3]">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#394a56]">Student</th>
@@ -260,7 +266,7 @@
         </div>
 
         <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-[#D8D9DA] text-sm">
+            <table class="min-w-[640px] divide-y divide-[#D8D9DA] text-sm">
                 <thead class="bg-[#fcf3e3]">
                     <tr>
                         <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-[#394a56]">Instructor Name</th>
@@ -286,6 +292,7 @@
     window.studentRiskAnalyticsConfig = {!! \Illuminate\Support\Js::from([
         'dataUrl' => route('admin.student-risk-analytics.data'),
         'exportCsvUrl' => route('admin.student-risk-analytics.export-csv'),
+        'exportPdfUrl' => route('admin.student-risk-analytics.export-pdf'),
         'refreshMs' => 60000,
     ]) !!};
 </script>

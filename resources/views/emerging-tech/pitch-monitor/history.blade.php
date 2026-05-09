@@ -282,7 +282,7 @@
                                 <p class="mt-1 text-sm text-[#768A96]" style="font-family: 'JetBrains Mono', monospace;">
                                     {{ $session->started_at->format('H:i:s') }}
                                     @if($session->ended_at)
-                                        — {{ $session->ended_at->format('H:i:s') }}
+                                        â€” {{ $session->ended_at->format('H:i:s') }}
                                     @endif
                                 </p>
                             </div>
@@ -392,7 +392,7 @@
                                             </td>
 
                                             <td class="px-2 py-3 text-[#223030]" style="font-family: 'JetBrains Mono', monospace;">
-                                                {{ $event->cents_deviation >= 0 ? '+' : '' }}{{ number_format($event->cents_deviation, 2) }} ¢
+                                                {{ $event->cents_deviation >= 0 ? '+' : '' }}{{ number_format($event->cents_deviation, 2) }} Â¢
                                             </td>
 
                                             <td class="px-2 py-3 text-[#223030]" style="font-family: 'JetBrains Mono', monospace;">

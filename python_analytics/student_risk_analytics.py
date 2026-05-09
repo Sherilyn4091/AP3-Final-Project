@@ -135,10 +135,14 @@ def classify_student(student: Dict[str, Any]) -> Dict[str, Any]:
     if not reasons:
         reasons.append("Student record shows stable attendance, progress, payment, and lesson activity.")
 
+    raw_progress_rating = student.get("average_progress_rating")
+    progress_output = None if raw_progress_rating in (None, "") else round(features["average_progress_rating"], 2)
+
     return {
         **student,
         "attendance_rate": round(features["attendance_rate"], 2),
-        "average_progress_rating": round(features["average_progress_rating"], 2),
+        "average_progress_rating": progress_output,
+        "days_since_last_lesson": features["days_since_last_lesson"],
         "risk_level": risk_level,
         "risk_score": round(risk_score, 2),
         "risk_reasons": reasons,
@@ -158,7 +162,7 @@ def extract_features(student: Dict[str, Any]) -> Dict[str, Any]:
         "enrollment_status": normalize_text(student.get("enrollment_status")),
         "remaining_sessions": safe_int(student.get("remaining_sessions"), 0),
         "completed_sessions": safe_int(student.get("completed_sessions"), 0),
-        "days_since_last_lesson": safe_int(student.get("days_since_last_lesson"), 0),
+        "days_since_last_lesson": max(0, safe_int(student.get("days_since_last_lesson"), 0)),
         "is_active": bool(student.get("is_active", True)),
     }
 
@@ -183,7 +187,7 @@ def apply_decision_tree(features: Dict[str, Any]) -> Tuple[str, List[str]]:
     # Node 1: No enrollment is a monitoring issue, not automatic high risk.
     # This can happen for newly created student records that are not enrolled yet.
     if enrollment_status in NO_ENROLLMENT_STATUSES:
-        return MEDIUM_RISK, ["Student has no active enrollment on record."]
+        return MEDIUM_RISK, ["Student has no active enrollment on record. Manual review recommended."]
 
     # Node 2: Already inactive or withdrawn students are automatically high risk.
     if not is_active or enrollment_status in INACTIVE_ENROLLMENT_STATUSES:
@@ -253,14 +257,14 @@ def calculate_risk_score(features: Dict[str, Any], risk_level: str) -> float:
     if features["remaining_sessions"] > 0:
         score += min(features["days_since_last_lesson"], 45) * 0.7
 
-    # Classification-level adjustment keeps scores aligned with final class.
+    # Classification-level adjustment keeps scores aligned with final class
+    # without flattening every student into the exact same score.
     if risk_level == HIGH_RISK:
-        score = max(score, 70.0)
+        score = 62.0 + min(38.0, score * 0.55)
     elif risk_level == MEDIUM_RISK:
-        score = max(score, 40.0)
-        score = min(score, 69.0)
+        score = clamp(35.0 + (score * 0.55), 35.0, 69.9)
     else:
-        score = min(score, 39.0)
+        score = min(score, 34.9)
 
     return clamp(score)
 

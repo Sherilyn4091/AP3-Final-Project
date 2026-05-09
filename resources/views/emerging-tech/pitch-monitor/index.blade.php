@@ -45,7 +45,7 @@
                             Switch Tool
                         </summary>
 
-                        <div class="absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-2xl border border-[#D8DDD8] bg-white shadow-lg">
+                        <div class="absolute right-0 z-20 mt-2 w-52 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-[#D8DDD8] bg-white shadow-lg">
                             <a href="{{ route('student.guitar.index') }}"
                                class="block px-4 py-3 text-sm text-[#223030] hover:bg-[#F4F5F2]"
                                style="font-family: 'Inter', sans-serif;">
@@ -95,7 +95,7 @@
                     <div id="centsDisplay"
                          class="mt-2 text-2xl font-bold text-[#223030]"
                          style="font-family: 'JetBrains Mono', monospace;">
-                        0.0 ¢
+                        0.0 Â¢
                     </div>
                 </div>
             </div>
@@ -307,8 +307,20 @@
 |
 */
 #pitchGraphScroller {
+    position: relative;
     overscroll-behavior-x: contain;
     scrollbar-width: thin;
+}
+
+#pitchGraphScroller::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 32px;
+    background: linear-gradient(to right, transparent, rgba(248, 247, 244, 0.9));
+    pointer-events: none;
 }
 
 #pitchGraphInner {

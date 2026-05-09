@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 |
 | Kept in a separate route file to avoid editing the existing large web.php
-| admin group too much. The controller still checks is_super_admin.
+| too much. The controller still checks is_super_admin.
 |
 */
 
@@ -25,5 +25,6 @@ Route::middleware(['auth'])
                 Route::get('/dashboard-data', [StudentRiskAnalyticsController::class, 'dashboardData'])->name('dashboard-data');
                 Route::get('/report-data', [StudentRiskAnalyticsController::class, 'reportData'])->name('report-data');
                 Route::get('/export-csv', [StudentRiskAnalyticsController::class, 'exportCsv'])->name('export-csv');
+                Route::get('/export-pdf', [StudentRiskAnalyticsController::class, 'exportPdf'])->name('export-pdf');
             });
     });
