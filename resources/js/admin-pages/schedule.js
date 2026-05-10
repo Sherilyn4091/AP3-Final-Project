@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
             week: 'Week',
             day: 'Day'
         },
-        slotMinTime: '10:00:00', // Studio opens at 10 AM
+        slotMinTime: '09:00:00', // Studio opens at 9 AM based on seeded schedule slots
         slotMaxTime: '19:00:00', // Studio closes at 7 PM
         allDaySlot: false,
         height: 'auto',
@@ -616,7 +616,7 @@ async function cancelSchedule(scheduleId) {
  * Delete schedule
  */
 async function deleteSchedule(scheduleId) {
-    if (!confirm('Permanently delete this schedule? This cannot be undone.')) return;
+    if (!confirm('Delete this schedule? This is only allowed if it has no attendance or progress records.')) return;
     
     try {
         const response = await fetch(`/admin/schedules/${scheduleId}`, {
@@ -641,10 +641,59 @@ async function deleteSchedule(scheduleId) {
 }
 
 /**
+ * Convert Date object to local YYYY-MM-DD.
+ * This avoids UTC date shifting that can happen with toISOString().
+ */
+function formatLocalDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+
+    return year + '-' + month + '-' + day;
+}
+
+/**
+ * Convert Date object to local HH:MM.
+ */
+function formatLocalTime(date) {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return hours + ':' + minutes;
+}
+
+/**
+ * Fetch the current schedule before drag/drop update.
+ * Backend update requires room_number, so the existing room is preserved.
+ */
+async function fetchScheduleDetails(scheduleId) {
+    const response = await fetch('/admin/schedules/' + scheduleId, {
+        headers: {
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': csrfToken
+        }
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to load schedule details.');
+    }
+
+    return data.schedule;
+}
+
+/**
  * Update schedule date/time (for drag & drop)
  */
 async function updateScheduleDateTime(scheduleId, newStart, newEnd) {
-    const response = await fetch(`/admin/schedules/${scheduleId}`, {
+    if (!newStart || !newEnd) {
+        throw new Error('Invalid schedule time selected.');
+    }
+
+    const schedule = await fetchScheduleDetails(scheduleId);
+
+    const response = await fetch('/admin/schedules/' + scheduleId, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
@@ -652,25 +701,34 @@ async function updateScheduleDateTime(scheduleId, newStart, newEnd) {
             'Accept': 'application/json'
         },
         body: JSON.stringify({
-            schedule_date: newStart.toISOString().split('T')[0],
-            start_time: newStart.toTimeString().slice(0, 5),
-            end_time: newEnd.toTimeString().slice(0, 5),
-            status: 'scheduled'
+            schedule_date: formatLocalDate(newStart),
+            start_time: formatLocalTime(newStart),
+            end_time: formatLocalTime(newEnd),
+            room_number: schedule.room_number,
+            lesson_topic: schedule.lesson_topic || null,
+            lesson_content: schedule.lesson_content || null,
+            notes: schedule.notes || null,
+            status: schedule.status || 'scheduled'
         })
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
         if (data.conflicts) {
             throw new Error('Conflict: ' + data.conflicts.join(', '));
         }
-        throw new Error(data.message || 'Update failed');
+
+        if (data.errors) {
+            const firstError = Object.values(data.errors).flat()[0];
+            throw new Error(firstError || data.message || 'Update failed.');
+        }
+
+        throw new Error(data.message || 'Update failed.');
     }
-    
+
     return data;
 }
-
 /**
  * ============================================================================
  * ROOM AVAILABILITY CHECKER

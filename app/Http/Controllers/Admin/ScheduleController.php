@@ -266,12 +266,14 @@ class ScheduleController extends Controller
             // Get enrollment details
             $enrollment = DB::table('enrollment')
                 ->where('enrollment_id', $request->enrollment_id)
+                ->where('status', 'active')
+                ->where('remaining_sessions', '>', 0)
                 ->first();
 
             if (!$enrollment) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Enrollment not found'
+                    'message' => 'Active enrollment with remaining sessions was not found.'
                 ], 404);
             }
 
@@ -468,6 +470,33 @@ class ScheduleController extends Controller
     public function destroy($id)
     {
         try {
+            // Prevent permanent deletion when the schedule already has lesson records.
+            $schedule = DB::table('schedule')
+                ->where('schedule_id', $id)
+                ->first();
+
+            if (!$schedule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Schedule not found.'
+                ], 404);
+            }
+
+            $attendanceCount = DB::table('attendance')
+                ->where('schedule_id', $id)
+                ->count();
+
+            $progressCount = DB::table('progress')
+                ->where('schedule_id', $id)
+                ->count();
+
+            if ($attendanceCount > 0 || $progressCount > 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'This schedule already has attendance or progress records. Please cancel it instead of deleting it.'
+                ], 409);
+            }
+
             $deleted = DB::table('schedule')
                 ->where('schedule_id', $id)
                 ->delete();
@@ -566,6 +595,18 @@ class ScheduleController extends Controller
         }
 
         try {
+            // Make sure the target schedule exists before returning success.
+            $schedule = DB::table('schedule')
+                ->where('schedule_id', $id)
+                ->first();
+
+            if (!$schedule) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Schedule not found.'
+                ], 404);
+            }
+
             $updateData = [
                 'status' => $request->status,
                 'updated_at' => now()

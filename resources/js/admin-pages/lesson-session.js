@@ -4,26 +4,121 @@
  * resources/js/admin-pages/lesson-session.js
  * ============================================================================
  * Handles:
- * - Modal rendering for create/edit forms (HTML generated in JS)
- * - AJAX form submissions (create/update)
- * - Toggle active/inactive status
- * - Delete with usage check (prevents deletion if used in enrollments)
+ * - Modal rendering for create/edit forms
+ * - AJAX create/update/delete/toggle requests
+ * - Safe enrollment usage modal rendering
  * - Toast notifications
- * - Form validation
+ * - Small UI helpers for package duration and validation
+ *
+ * Safety improvements:
+ * - Escapes dynamic text before placing it in HTML templates
+ * - Uses centralized API helpers to read JSON errors cleanly
+ * - Keeps used package core fields read-only in the edit modal
  * ============================================================================
  */
 
-// Get CSRF token from meta tag
-const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+// ============================================================================
+// SMALL UTILITIES
+// ============================================================================
 
 /**
- * ============================================================================
- * MODAL FUNCTIONS
- * ============================================================================
+ * Escape dynamic values before rendering them inside HTML strings.
+ * This avoids stored HTML/script injection from database-driven values.
  */
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, function (char) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;',
+        }[char];
+    });
+}
 
 /**
- * Open modal for adding a new lesson package
+ * Convert possibly string-based numbers from JSON/FormData to safe numbers.
+ */
+function toNumber(value, fallback = 0) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+}
+
+/**
+ * Build standard headers for Laravel JSON requests.
+ */
+function getJsonHeaders() {
+    return {
+        'X-CSRF-TOKEN': csrfToken,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    };
+}
+
+/**
+ * Fetch JSON and throw a readable message if the response is not successful.
+ */
+async function fetchJson(url, options = {}) {
+    const response = await fetch(url, options);
+    const text = await response.text();
+    let data = {};
+
+    try {
+        data = text ? JSON.parse(text) : {};
+    } catch (error) {
+        data = { message: text || 'Invalid server response.' };
+    }
+
+    if (!response.ok) {
+        const message = data.errors
+            ? Object.values(data.errors).flat().join('\n')
+            : (data.message || 'Request failed.');
+
+        throw new Error(message);
+    }
+
+    return data;
+}
+
+/**
+ * Format currency values consistently for display.
+ */
+function formatCurrency(value) {
+    return '₱' + toNumber(value).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+}
+
+/**
+ * Format date values safely.
+ */
+function formatDate(value) {
+    if (!value) return 'N/A';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+        return escapeHtml(value);
+    }
+
+    return date.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: '2-digit',
+    });
+}
+
+// ============================================================================
+// MODAL FUNCTIONS
+// ============================================================================
+
+/**
+ * Open modal for adding a new lesson package.
  */
 function openAddModal() {
     const modalHTML = generateModalHTML('create', null);
@@ -31,171 +126,122 @@ function openAddModal() {
 }
 
 /**
- * Open modal for editing an existing lesson package
- * Fetches package data via AJAX
+ * Open modal for editing an existing lesson package.
  */
-function editSession(sessionId) {
-    fetch(`/admin/lesson-sessions/${sessionId}/edit`, {
-        method: 'GET',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Accept': 'application/json'
+async function editSession(sessionId) {
+    try {
+        const data = await fetchJson(`/admin/lesson-sessions/${encodeURIComponent(sessionId)}/edit`, {
+            method: 'GET',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to load package data.');
         }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            const modalHTML = generateModalHTML('edit', data.session);
-            showModal(modalHTML);
-        } else {
-            showToast(data.message || 'Failed to load package data', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while loading package data', 'error');
-    });
+
+        showModal(generateModalHTML('edit', data.session));
+    } catch (error) {
+        console.error('Load package error:', error);
+        showToast(error.message || 'An error occurred while loading package data.', 'error');
+    }
 }
 
 /**
- * Generate modal HTML for create or edit mode
- * @param {string} mode - 'create' or 'edit'
- * @param {object|null} session - Session data (null for create mode)
- * @returns {string} HTML string
+ * Generate modal HTML for create or edit mode.
  */
 function generateModalHTML(mode, session) {
     const isEdit = mode === 'edit';
+    const usageCount = isEdit ? toNumber(session.usage_count) : 0;
+    const isLocked = isEdit && usageCount > 0;
+
+    const sessionId = isEdit ? toNumber(session.session_id) : null;
+    const sessionCount = isEdit ? toNumber(session.session_count) : '';
+    const sessionName = isEdit ? escapeHtml(session.session_name) : '';
+    const durationMinutes = isEdit ? toNumber(session.duration_minutes, 60) : 60;
+    const price = isEdit ? toNumber(session.price).toFixed(2) : '';
+    const description = isEdit ? escapeHtml(session.description || '') : '';
+
     const title = isEdit ? 'Edit lesson package' : 'Add new lesson package';
     const submitText = isEdit ? 'Update package' : 'Create package';
-    
-    // Extract session data if in edit mode
-    const sessionCount = isEdit ? session.session_count : '';
-    const sessionName = isEdit ? session.session_name : '';
-    const durationMinutes = isEdit ? session.duration_minutes : 60;
-    const price = isEdit ? session.price : '';
-    const description = isEdit ? (session.description || '') : '';
-    const usageCount = isEdit ? session.usage_count : 0;
-    const sessionId = isEdit ? session.session_id : null;
 
     return `
-        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <!-- Modal Header -->
-            <div class="bg-gradient-to-r from-secondary-blue to-forest-green px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-                <h2 class="text-2xl font-bold text-white">${title}</h2>
-                <button onclick="closeModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="sticky top-0 z-10 flex items-center justify-between bg-gradient-to-r from-secondary-blue to-forest-green px-4 py-3">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white">${title}</h2>
+                    <p class="mt-1 text-sm text-white text-opacity-90">
+                        ${isLocked ? 'Core values are locked because this package already has enrollments.' : 'Fill in package details used during student enrollment.'}
+                    </p>
+                </div>
+                <button type="button" onclick="closeModal()" class="rounded-full p-2 text-white transition-all hover:bg-white hover:bg-opacity-20" aria-label="Close modal">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
             </div>
 
-            <!-- Modal Body -->
-            <form id="session-form" class="p-6 space-y-6" onsubmit="handleSubmit(event, '${mode}', ${sessionId})">
+            <form id="session-form" class="max-h-[78vh] space-y-6 overflow-y-auto p-4" onsubmit="handleSubmit(event, '${mode}', ${sessionId})">
                 ${isEdit ? `<input type="hidden" name="session_id" value="${sessionId}">` : ''}
 
-                <!-- Session Count Dropdown with Custom Option -->
+                ${isLocked ? generateLockedPackageFields(sessionCount, durationMinutes, price) : generateEditablePackageFields(sessionCount, durationMinutes, price)}
+
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2 label-required">Session count</label>
-                    <select id="session-count-select" name="session_count_dropdown" 
-                            onchange="handleSessionCountChange(this.value, ${sessionCount})"
-                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-                        <option value="">Select session count</option>
-                        <option value="5" ${sessionCount == 5 ? 'selected' : ''}>5 sessions</option>
-                        <option value="10" ${sessionCount == 10 ? 'selected' : ''}>10 sessions</option>
-                        <option value="20" ${sessionCount == 20 ? 'selected' : ''}>20 sessions</option>
-                        <option value="custom" ${(sessionCount && ![5, 10, 20].includes(parseInt(sessionCount))) ? 'selected' : ''}>Other (custom)</option>
-                    </select>
-                    
-                    <!-- Hidden input for actual session_count value -->
-                    <input type="hidden" id="session-count-value" name="session_count" value="${sessionCount}" required>
-                    
-                    <!-- Custom input (shown when "Other" is selected) -->
-                    <div id="custom-session-input" class="mt-3 ${(sessionCount && ![5, 10, 20].includes(parseInt(sessionCount))) ? '' : 'hidden'}">
-                        <input type="number" id="custom-session-count" 
-                            value="${(sessionCount && ![5, 10, 20].includes(parseInt(sessionCount))) ? sessionCount : ''}" 
-                            min="1" max="100" step="1"
-                            oninput="updateCustomSessionCount(this.value)"
-                            placeholder="Enter custom session count (1-100)"
-                            class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-                    </div>
-                    
-                    <p class="text-xs text-gray-500 mt-1">Choose preset or enter custom session count</p>
+                    <label class="label-required mb-2 block text-sm font-bold text-gray-700">Package name</label>
+                    <input type="text"
+                           name="session_name"
+                           value="${sessionName}"
+                           maxlength="200"
+                           placeholder="Example: 5 Sessions Package"
+                           class="w-full rounded-xl border-2 border-gray-300 px-4 py-3 transition-all focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                    <p class="mt-1 text-xs text-gray-500">Leave blank to auto-generate based on session count.</p>
                 </div>
 
-                <!-- Session Name (Auto-generated but editable) -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Package name</label>
-                    <input type="text" name="session_name" value="${sessionName}" 
-                           placeholder="e.g., Beginner 5 sessions (leave blank to auto-generate)"
-                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-                    <p class="text-xs text-gray-500 mt-1">Optional — auto-generates if left blank (e.g., "5 session package")</p>
-                </div>
-
-                <!-- Duration per Session -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2 label-required">Duration per session (minutes)</label>
-                    <input type="number" name="duration_minutes" value="${durationMinutes}" 
-                        min="15" max="300" step="5" required
-                        oninput="updateTotalHours(this.value, document.querySelector('[name=session_count]').value)"
-                        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-                    <p class="text-xs text-gray-500 mt-1" id="duration-help">Default is 60 minutes (1 hour per session)</p>
-                </div>
-
-                <!-- Total Hours Display -->
-                <div class="bg-secondary-blue bg-opacity-10 border-l-4 border-secondary-blue px-4 py-3 rounded">
-                    <div class="flex items-center justify-between">
+                <div class="rounded-xl border-l-4 border-secondary-blue bg-secondary-blue bg-opacity-10 px-4 py-4">
+                    <div class="flex items-center justify-between gap-4">
                         <div>
-                            <p class="text-sm font-semibold text-gray-900">Total package duration</p>
-                            <p class="text-xs text-gray-900 mt-1">Session count × Duration per session</p>
+                            <p class="text-sm font-bold text-gray-900">Total package duration</p>
+                            <p class="mt-1 text-xs text-gray-700">Session count × duration per session</p>
                         </div>
                         <div class="text-right">
-                            <p class="text-2xl font-bold text-gray-900" id="total-hours-display">
-                                ${isEdit ? calculateTotalHours(sessionCount, durationMinutes) : '—'}
+                            <p id="total-hours-display" class="text-2xl font-extrabold text-gray-900">
+                                ${calculateTotalHours(sessionCount, durationMinutes)}
                             </p>
-                            <p class="text-xs text-gray-900">hours</p>
+                            <p class="text-xs font-semibold text-gray-700">hours</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Price -->
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2 label-required">Package price (₱)</label>
-                    <input type="number" name="price" value="${price}" 
-                           min="0" max="999999.99" step="0.01" required
-                           placeholder="e.g., 5000.00"
-                           class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-                    <p class="text-xs text-gray-500 mt-1">Total price for all sessions in this package</p>
+                    <label class="mb-2 block text-sm font-bold text-gray-700">Description</label>
+                    <textarea name="description"
+                              rows="4"
+                              maxlength="2000"
+                              placeholder="Optional notes, inclusions, or package description."
+                              class="w-full resize-none rounded-xl border-2 border-gray-300 px-4 py-3 transition-all focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">${description}</textarea>
                 </div>
 
-                <!-- Description (Optional) -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Description</label>
-                    <textarea name="description" rows="3" 
-                              placeholder="Optional notes (e.g., 'Includes free starter book')"
-                              class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all resize-none">${description}</textarea>
-                </div>
-
-                <!-- Usage Warning (Edit Mode Only) -->
-                ${isEdit && usageCount > 0 ? `
-                <div class="bg-golden-yellow bg-opacity-20 border-l-4 border-golden-yellow px-4 py-3 rounded">
-                    <div class="flex items-start">
-                        <svg class="w-5 h-5 text-golden-yellow mr-3 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-                        </svg>
-                        <div>
-                            <p class="text-sm font-semibold text-gray-700">This package is used in ${usageCount} enrollment${usageCount > 1 ? 's' : ''}</p>
-                            <p class="text-xs text-gray-600 mt-1">Changes will affect existing enrollments. Be careful when updating price or session count.</p>
+                ${isLocked ? `
+                    <div class="rounded-xl border-l-4 border-golden-yellow bg-golden-yellow bg-opacity-20 px-4 py-4">
+                        <div class="flex items-start gap-3">
+                            <svg class="mt-0.5 h-5 w-5 flex-shrink-0 text-golden-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <div>
+                                <p class="text-sm font-bold text-gray-800">This package is used in ${usageCount} enrollment${usageCount === 1 ? '' : 's'}.</p>
+                                <p class="mt-1 text-xs text-gray-700">For data safety, session count, duration, and price are read-only. You can still update the name and description.</p>
+                            </div>
                         </div>
                     </div>
-                </div>
                 ` : ''}
 
-                <!-- Modal Actions -->
-                <div class="flex gap-3 pt-4 border-t border-gray-200">
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all">
+                <div class="flex flex-col gap-3 border-t border-gray-200 pt-5 sm:flex-row">
+                    <button type="button" onclick="closeModal()" class="flex-1 rounded-xl bg-gray-200 px-4 py-3 font-bold text-gray-700 transition-all hover:bg-gray-300">
                         Cancel
                     </button>
-                    <button type="submit" class="flex-1 bg-forest-green text-white px-6 py-3 rounded-lg font-semibold hover:bg-forest-green-dark transition-all">
+                    <button type="submit" class="flex-1 rounded-xl bg-forest-green px-4 py-3 font-bold text-white transition-all hover:bg-forest-green-dark">
                         ${submitText}
                     </button>
                 </div>
@@ -205,42 +251,104 @@ function generateModalHTML(mode, session) {
 }
 
 /**
- * Calculate total hours from session count and duration
- * @param {number} sessionCount - Number of sessions
- * @param {number} durationMinutes - Duration per session in minutes
- * @returns {string} Formatted total hours
+ * Render editable fields for new or unused packages.
  */
-function calculateTotalHours(sessionCount, durationMinutes) {
-    if (!sessionCount || !durationMinutes) return '—';
-    const totalMinutes = sessionCount * durationMinutes;
-    const totalHours = (totalMinutes / 60).toFixed(1);
-    return totalHours;
+function generateEditablePackageFields(sessionCount, durationMinutes, price) {
+    const isPreset = [5, 10, 20].includes(toNumber(sessionCount));
+    const selectedCustom = sessionCount && !isPreset;
+
+    return `
+        <div>
+            <label class="label-required mb-2 block text-sm font-bold text-gray-700">Session count</label>
+            <select id="session-count-select"
+                    name="session_count_dropdown"
+                    onchange="handleSessionCountChange(this.value, ${toNumber(sessionCount) || 0})"
+                    class="w-full rounded-xl border-2 border-gray-300 px-4 py-3 transition-all focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                <option value="">Select session count</option>
+                <option value="5" ${toNumber(sessionCount) === 5 ? 'selected' : ''}>5 sessions</option>
+                <option value="10" ${toNumber(sessionCount) === 10 ? 'selected' : ''}>10 sessions</option>
+                <option value="20" ${toNumber(sessionCount) === 20 ? 'selected' : ''}>20 sessions</option>
+                <option value="custom" ${selectedCustom ? 'selected' : ''}>Other custom package</option>
+            </select>
+
+            <input type="hidden" id="session-count-value" name="session_count" value="${escapeHtml(sessionCount)}" required>
+
+            <div id="custom-session-input" class="mt-3 ${selectedCustom ? '' : 'hidden'}">
+                <input type="number"
+                       id="custom-session-count"
+                       value="${selectedCustom ? escapeHtml(sessionCount) : ''}"
+                       min="1"
+                       max="100"
+                       step="1"
+                       oninput="updateCustomSessionCount(this.value)"
+                       placeholder="Enter custom session count from 1 to 100"
+                       class="w-full rounded-xl border-2 border-gray-300 px-4 py-3 transition-all focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+            </div>
+            <p class="mt-1 text-xs text-gray-500">Choose 5, 10, 20, or create a custom package.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+                <label class="label-required mb-2 block text-sm font-bold text-gray-700">Duration per session</label>
+                <input type="number"
+                       name="duration_minutes"
+                       value="${escapeHtml(durationMinutes)}"
+                       min="15"
+                       max="300"
+                       step="5"
+                       required
+                       oninput="updateTotalHours(this.value, document.querySelector('[name=session_count]').value)"
+                       class="w-full rounded-xl border-2 border-gray-300 px-4 py-3 transition-all focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                <p id="duration-help" class="mt-1 text-xs text-gray-500">Default is 60 minutes per session.</p>
+            </div>
+
+            <div>
+                <label class="label-required mb-2 block text-sm font-bold text-gray-700">Package price</label>
+                <input type="number"
+                       name="price"
+                       value="${escapeHtml(price)}"
+                       min="0"
+                       max="999999.99"
+                       step="0.01"
+                       required
+                       placeholder="Example: 3500.00"
+                       class="w-full rounded-xl border-2 border-gray-300 px-4 py-3 transition-all focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                <p class="mt-1 text-xs text-gray-500">Total price for all sessions.</p>
+            </div>
+        </div>
+    `;
 }
 
 /**
- * Update total hours display when inputs change
- * Called via oninput on duration and session count fields
+ * Render read-only package fields for packages already used by enrollments.
  */
-function updateTotalHours(duration, sessionCount) {
-    const display = document.getElementById('total-hours-display');
-    if (display) {
-        const total = calculateTotalHours(sessionCount, duration);
-        display.textContent = total;
-        
-        // Update help text
-        const helpText = document.getElementById('duration-help');
-        if (helpText && sessionCount && duration) {
-            const hoursPerSession = (duration / 60).toFixed(1);
-            helpText.textContent = `${hoursPerSession} ${hoursPerSession == 1 ? 'hour' : 'hours'} per session × ${sessionCount} sessions = ${total} total hours`;
-        }
-    }
+function generateLockedPackageFields(sessionCount, durationMinutes, price) {
+    return `
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div>
+                <label class="mb-2 block text-sm font-bold text-gray-700">Session count</label>
+                <input type="number" name="session_count" value="${escapeHtml(sessionCount)}" readonly class="w-full rounded-xl border-2 border-gray-200 bg-gray-100 px-4 py-3 text-gray-700">
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-bold text-gray-700">Duration per session</label>
+                <input type="number" name="duration_minutes" value="${escapeHtml(durationMinutes)}" readonly class="w-full rounded-xl border-2 border-gray-200 bg-gray-100 px-4 py-3 text-gray-700">
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-bold text-gray-700">Package price</label>
+                <input type="number" name="price" value="${escapeHtml(price)}" readonly class="w-full rounded-xl border-2 border-gray-200 bg-gray-100 px-4 py-3 text-gray-700">
+            </div>
+        </div>
+    `;
 }
 
 /**
- * Display modal with given HTML content
+ * Display modal with generated HTML.
  */
 function showModal(html) {
     const modal = document.getElementById('session-modal');
+
+    if (!modal) return;
+
     modal.innerHTML = html;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -248,257 +356,81 @@ function showModal(html) {
 }
 
 /**
- * Close and clear modal
+ * Close and clear the modal.
  */
 function closeModal() {
     const modal = document.getElementById('session-modal');
+
+    if (!modal) return;
+
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     modal.innerHTML = '';
     document.body.style.overflow = 'auto';
 }
 
-/**
- * ============================================================================
- * FORM SUBMISSION
- * ============================================================================
- */
+// ============================================================================
+// PACKAGE DURATION HELPERS
+// ============================================================================
 
 /**
- * Handle form submission for create/edit
- * @param {Event} event - Form submit event
- * @param {string} mode - 'create' or 'edit'
- * @param {number|null} sessionId - Session ID (null for create)
+ * Calculate total hours from session count and duration.
  */
-function handleSubmit(event, mode, sessionId) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const formData = new FormData(form);
-    
-    // Determine URL and method
-    const url = mode === 'create' 
-        ? '/admin/lesson-sessions' 
-        : `/admin/lesson-sessions/${sessionId}`;
-    
-    const method = mode === 'create' ? 'POST' : 'PUT';
-    
-    // Convert FormData to JSON
-    const data = {};
-    formData.forEach((value, key) => {
-        data[key] = value;
-    });
-    
-    // Send AJAX request
-    fetch(url, {
-        method: 'POST', // Always POST (Laravel handles PUT via _method)
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-HTTP-Method-Override': method
-        },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message, 'success');
-            closeModal();
-            // Reload page to reflect changes
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            // Handle validation errors
-            if (data.errors) {
-                const errorMessages = Object.values(data.errors).flat().join('<br>');
-                showToast(errorMessages, 'error');
-            } else {
-                showToast(data.message || 'An error occurred', 'error');
-            }
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while saving', 'error');
-    });
+function calculateTotalHours(sessionCount, durationMinutes) {
+    const count = toNumber(sessionCount);
+    const duration = toNumber(durationMinutes);
+
+    if (count <= 0 || duration <= 0) return '—';
+
+    return ((count * duration) / 60).toFixed(1);
 }
 
 /**
- * ============================================================================
- * TOGGLE STATUS
- * ============================================================================
+ * Update total hours display when duration or session count changes.
  */
+function updateTotalHours(duration, sessionCount) {
+    const display = document.getElementById('total-hours-display');
+    const helpText = document.getElementById('duration-help');
+    const total = calculateTotalHours(sessionCount, duration);
 
-/**
- * Toggle active/inactive status of a lesson package
- * @param {number} sessionId - Session ID to toggle
- */
-function toggleSession(sessionId) {
-    if (!confirm('Are you sure you want to change the status of this package?')) {
-        return;
+    if (display) {
+        display.textContent = total;
     }
-    
-    fetch(`/admin/lesson-sessions/${sessionId}/toggle-status`, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message, 'success');
-            // Reload page to reflect changes
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            showToast(data.message || 'Failed to update status', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while updating status', 'error');
-    });
-}
 
-/**
- * ============================================================================
- * DELETE PACKAGE
- * ============================================================================
- */
-
-/**
- * Delete a lesson package (checks for usage in enrollments first)
- * @param {number} sessionId - Session ID to delete
- */
-function deleteSession(sessionId) {
-    if (!confirm('Are you sure you want to delete this package? This action cannot be undone.')) {
-        return;
+    if (helpText && sessionCount && duration) {
+        const hoursPerSession = (toNumber(duration) / 60).toFixed(1);
+        helpText.textContent = `${hoursPerSession} ${hoursPerSession === '1.0' ? 'hour' : 'hours'} per session × ${sessionCount} sessions = ${total} total hours`;
     }
-    
-    fetch(`/admin/lesson-sessions/${sessionId}`, {
-        method: 'DELETE',
-        headers: {
-            'X-CSRF-TOKEN': csrfToken,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showToast(data.message, 'success');
-            // Reload page to reflect changes
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        } else {
-            // Show usage error (cannot delete if used in enrollments)
-            showToast(data.message || 'Failed to delete package', 'error');
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('An error occurred while deleting', 'error');
-    });
 }
 
 /**
- * ============================================================================
- * TOAST NOTIFICATIONS
- * ============================================================================
- */
-
-/**
- * Display toast notification
- * @param {string} message - Message to display
- * @param {string} type - 'success' or 'error'
- */
-function showToast(message, type = 'success') {
-    const container = document.getElementById('toast-container');
-    
-    const toast = document.createElement('div');
-    toast.className = `px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-0 ${
-        type === 'success' 
-            ? 'bg-forest-green text-white' 
-            : 'bg-red-600 text-white'
-    }`;
-    
-    toast.innerHTML = `
-        <div class="flex items-center gap-3">
-            <svg class="w-6 h-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                ${type === 'success' 
-                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
-                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
-                }
-            </svg>
-            <p class="font-semibold">${message}</p>
-        </div>
-    `;
-    
-    container.appendChild(toast);
-    
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        toast.style.transform = 'translateX(400px)';
-        toast.style.opacity = '0';
-        setTimeout(() => {
-            container.removeChild(toast);
-        }, 300);
-    }, 5000);
-}
-
-/**
- * ============================================================================
- * CLOSE MODAL ON OUTSIDE CLICK
- * ============================================================================
- */
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('session-modal');
-    if (modal) {
-        modal.addEventListener('click', function(e) {
-            if (e.target === modal) {
-                closeModal();
-            }
-        });
-    }
-});
-
-/**
- * Handle session count dropdown change
- * Shows/hides custom input based on selection
+ * Handle session count dropdown change.
  */
 function handleSessionCountChange(value, currentSessionCount) {
     const customInput = document.getElementById('custom-session-input');
     const customField = document.getElementById('custom-session-count');
     const hiddenInput = document.getElementById('session-count-value');
     const durationField = document.querySelector('[name=duration_minutes]');
-    
+
+    if (!customInput || !customField || !hiddenInput) return;
+
     if (value === 'custom') {
-        // Show custom input
         customInput.classList.remove('hidden');
         customField.required = true;
         customField.focus();
-        
-        // If there's a current custom value, use it
-        if (currentSessionCount && ![5, 10, 20].includes(parseInt(currentSessionCount))) {
+
+        if (currentSessionCount && ![5, 10, 20].includes(toNumber(currentSessionCount))) {
             customField.value = currentSessionCount;
             hiddenInput.value = currentSessionCount;
         } else {
             hiddenInput.value = '';
         }
     } else {
-        // Hide custom input and use selected preset
         customInput.classList.add('hidden');
         customField.required = false;
+        customField.value = '';
         hiddenInput.value = value;
-        
-        // Update total hours display
+
         if (durationField && value) {
             updateTotalHours(durationField.value, value);
         }
@@ -506,117 +438,318 @@ function handleSessionCountChange(value, currentSessionCount) {
 }
 
 /**
- * Update hidden session_count value when custom input changes
+ * Update hidden session_count when custom input changes.
  */
 function updateCustomSessionCount(value) {
     const hiddenInput = document.getElementById('session-count-value');
     const durationField = document.querySelector('[name=duration_minutes]');
-    
+
+    if (!hiddenInput) return;
+
     hiddenInput.value = value;
-    
-    // Update total hours display
+
     if (durationField && value) {
         updateTotalHours(durationField.value, value);
     }
 }
 
+// ============================================================================
+// FORM SUBMISSION
+// ============================================================================
+
 /**
- * View enrollments using a specific lesson package
- * @param {number} sessionId - Session ID
- * @param {string} sessionName - Session package name
+ * Handle form submission for create/edit.
  */
-function viewSessionEnrollments(sessionId, sessionName) {
-    fetch(`/admin/lesson-sessions/${sessionId}/enrollments`, {
-        headers: { 'Accept': 'application/json' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (!data.success) {
-            throw new Error(data.message);
+async function handleSubmit(event, mode, sessionId) {
+    event.preventDefault();
+
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+
+    const url = mode === 'create'
+        ? '/admin/lesson-sessions'
+        : `/admin/lesson-sessions/${encodeURIComponent(sessionId)}`;
+
+    const methodOverride = mode === 'create' ? 'POST' : 'PUT';
+
+    try {
+        const response = await fetchJson(url, {
+            method: 'POST',
+            headers: {
+                ...getJsonHeaders(),
+                'X-HTTP-Method-Override': methodOverride,
+            },
+            body: JSON.stringify(data),
+        });
+
+        if (!response.success) {
+            throw new Error(response.message || 'Unable to save lesson package.');
         }
-        
-        const modalHTML = `
-            <div class="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div class="flex items-center justify-between px-6 py-4 bg-secondary-blue">
-                    <h2 class="text-2xl font-bold text-white">Enrollments using ${sessionName}</h2>
-                    <button onclick="closeModal()" class="text-black hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                    </button>
-                </div>
-                
-                ${data.enrollments.length === 0 ? `
-                    <div class="text-center py-12 px-6">
-                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <p class="text-gray-600 font-semibold">No enrollments found</p>
-                    </div>
-                ` : `
-                    <div class="overflow-y-auto max-h-[70vh] px-6 py-4">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Enrollment ID</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Student</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Instructor</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
-                                    <th class="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Enrolled</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-100">
-                                ${data.enrollments.map(e => `
-                                    <tr class="hover:bg-blue-50 transition-colors">
-                                        <td class="px-4 py-3 text-sm font-medium text-gray-900">${e.enrollment_id}</td>
-                                        <td class="px-4 py-3">
-                                            <div class="text-sm font-medium text-gray-900">${e.student_name}</div>
-                                            <div class="text-xs text-gray-500">${e.user_email}</div>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600">${e.instructor_name ? e.instructor_name : 'Not assigned'}</td>
-                                        <td class="px-4 py-3">
-                                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${
-                                                e.status === 'active' ? 'bg-forest-green text-white' : 
-                                                e.status === 'completed' ? 'bg-secondary-blue text-white' : 'bg-gray-400 text-white'
-                                            }">${e.status}</span>
-                                        </td>
-                                        <td class="px-4 py-3 text-sm text-gray-600">${new Date(e.enrollment_date).toLocaleDateString()}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `}
-                
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
-                    <button onclick="closeModal()" class="w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-all">
-                        Close
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        showModal(modalHTML);
-        
-        })
-        .catch(error => {
-        showToast(error.message, 'error');
-    });
+
+        showToast(response.message || 'Lesson package saved successfully.', 'success');
+        closeModal();
+
+        setTimeout(() => window.location.reload(), 800);
+    } catch (error) {
+        console.error('Save package error:', error);
+        showToast(error.message || 'An error occurred while saving.', 'error');
+    }
+}
+
+// ============================================================================
+// STATUS AND DELETE ACTIONS
+// ============================================================================
+
+/**
+ * Toggle active/inactive status of a lesson package.
+ */
+async function toggleSession(sessionId) {
+    if (!confirm('Are you sure you want to change the status of this lesson package?')) {
+        return;
+    }
+
+    try {
+        const data = await fetchJson(`/admin/lesson-sessions/${encodeURIComponent(sessionId)}/toggle-status`, {
+            method: 'POST',
+            headers: getJsonHeaders(),
+            body: JSON.stringify({}),
+        });
+
+        showToast(data.message || 'Status updated successfully.', 'success');
+        setTimeout(() => window.location.reload(), 800);
+    } catch (error) {
+        console.error('Toggle package error:', error);
+        showToast(error.message || 'An error occurred while updating status.', 'error');
+    }
 }
 
 /**
- * ============================================================================
- * EXPOSE FUNCTIONS TO WINDOW OBJECT (for inline onclick handlers)
- * ============================================================================
+ * Delete a lesson package.
  */
+async function deleteSession(sessionId) {
+    if (!confirm('Are you sure you want to delete this package? This action cannot be undone.')) {
+        return;
+    }
+
+    try {
+        const data = await fetchJson(`/admin/lesson-sessions/${encodeURIComponent(sessionId)}`, {
+            method: 'DELETE',
+            headers: getJsonHeaders(),
+        });
+
+        showToast(data.message || 'Lesson package deleted successfully.', 'success');
+        setTimeout(() => window.location.reload(), 800);
+    } catch (error) {
+        console.error('Delete package error:', error);
+        showToast(error.message || 'An error occurred while deleting.', 'error');
+    }
+}
+
+// ============================================================================
+// ENROLLMENT USAGE MODAL
+// ============================================================================
+
+/**
+ * Return a safe status badge class.
+ */
+function getStatusClass(status) {
+    const normalized = String(status || '').toLowerCase();
+
+    if (normalized === 'active') return 'bg-forest-green text-white';
+    if (normalized === 'completed') return 'bg-secondary-blue text-white';
+    if (normalized === 'cancelled' || normalized === 'withdrawn') return 'bg-warm-coral text-white';
+    if (normalized === 'withdrawal_requested') return 'bg-golden-yellow text-primary-dark';
+
+    return 'bg-gray-400 text-white';
+}
+
+/**
+ * View enrollments using a specific lesson package.
+ */
+async function viewSessionEnrollments(sessionId) {
+    try {
+        const data = await fetchJson(`/admin/lesson-sessions/${encodeURIComponent(sessionId)}/enrollments`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            },
+        });
+
+        if (!data.success) {
+            throw new Error(data.message || 'Unable to load enrollments.');
+        }
+
+        showModal(generateEnrollmentsModal(data));
+    } catch (error) {
+        console.error('Enrollment usage error:', error);
+        showToast(error.message || 'An error occurred while loading enrollments.', 'error');
+    }
+}
+
+/**
+ * Generate enrollment usage modal HTML.
+ */
+function generateEnrollmentsModal(data) {
+    const enrollments = Array.isArray(data.enrollments) ? data.enrollments : [];
+    const sessionName = escapeHtml(data.session_name || 'Selected package');
+
+    return `
+        <div class="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div class="flex items-center justify-between bg-secondary-blue px-4 py-3">
+                <div>
+                    <h2 class="text-xl font-extrabold text-white">Enrollments using ${sessionName}</h2>
+                    <p class="mt-1 text-sm text-white text-opacity-90">Review connected students, instructors, instruments, and enrollment dates.</p>
+                </div>
+                <button type="button" onclick="closeModal()" class="rounded-full p-2 text-white transition-all hover:bg-white hover:bg-opacity-20" aria-label="Close modal">
+                    <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            ${enrollments.length === 0 ? `
+                <div class="px-4 py-3 text-center">
+                    <svg class="mx-auto mb-4 h-10 w-10 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-base font-bold text-gray-700">No enrollments found</p>
+                    <p class="mt-2 text-sm text-gray-500">This package is not connected to any enrollment yet.</p>
+                </div>
+            ` : `
+                <div class="max-h-[70vh] overflow-auto px-4 py-4">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="sticky top-0 bg-gray-50">
+                            <tr>
+                                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-700">Enrollment ID</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-700">Student</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-700">Instrument</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-700">Instructor</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-700">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-gray-700">Enrolled</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 bg-white">
+                            ${enrollments.map((enrollment) => generateEnrollmentRow(enrollment)).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `}
+
+            <div class="border-t border-gray-200 bg-gray-50 px-4 py-4">
+                <button type="button" onclick="closeModal()" class="w-full rounded-xl bg-gray-200 px-4 py-3 font-bold text-gray-700 transition-all hover:bg-gray-300">
+                    Close
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Generate one enrollment table row.
+ */
+function generateEnrollmentRow(enrollment) {
+    const status = String(enrollment.status || 'unknown');
+
+    return `
+        <tr class="transition-colors hover:bg-blue-50">
+            <td class="px-4 py-3 text-sm font-bold text-gray-900">${escapeHtml(enrollment.enrollment_id)}</td>
+            <td class="px-4 py-3">
+                <p class="text-sm font-bold text-gray-900">${escapeHtml(enrollment.student_name || 'Unnamed student')}</p>
+                <p class="mt-1 text-xs text-gray-500">${escapeHtml(enrollment.user_email || 'No email')}</p>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-700">${escapeHtml(enrollment.instrument_name || 'Not selected')}</td>
+            <td class="px-4 py-3 text-sm text-gray-700">${escapeHtml(enrollment.instructor_name || 'Not assigned')}</td>
+            <td class="px-4 py-3">
+                <span class="rounded-full px-3 py-1 text-xs font-bold ${getStatusClass(status)}">${escapeHtml(status.replaceAll('_', ' '))}</span>
+            </td>
+            <td class="px-4 py-3 text-sm text-gray-600">${formatDate(enrollment.enrollment_date)}</td>
+        </tr>
+    `;
+}
+
+// ============================================================================
+// TOAST NOTIFICATIONS
+// ============================================================================
+
+/**
+ * Display toast notification.
+ */
+function showToast(message, type = 'success') {
+    const container = document.getElementById('toast-container');
+
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = `max-w-md rounded-xl px-5 py-4 shadow-lg transition-all duration-300 ${
+        type === 'success' ? 'bg-forest-green text-white' : 'bg-red-600 text-white'
+    }`;
+
+    toast.innerHTML = `
+        <div class="flex items-start gap-3">
+            <svg class="mt-0.5 h-6 w-6 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                ${type === 'success'
+                    ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                    : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>'
+                }
+            </svg>
+            <p class="toast-message whitespace-pre-line text-sm font-bold"></p>
+        </div>
+    `;
+
+    const messageElement = toast.querySelector('.toast-message');
+    if (messageElement) {
+        messageElement.textContent = String(message || 'Done.');
+    }
+
+    container.appendChild(toast);
+
+    setTimeout(() => {
+        toast.style.transform = 'translateX(420px)';
+        toast.style.opacity = '0';
+
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 300);
+    }, 5000);
+}
+
+// ============================================================================
+// EVENT LISTENERS
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('session-modal');
+
+    if (modal) {
+        modal.addEventListener('click', function (event) {
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+    }
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+    });
+});
+
+// ============================================================================
+// EXPOSE FUNCTIONS TO WINDOW OBJECT FOR INLINE BLADE HANDLERS
+// ============================================================================
+
 window.openAddModal = openAddModal;
 window.editSession = editSession;
 window.toggleSession = toggleSession;
 window.deleteSession = deleteSession;
 window.closeModal = closeModal;
 window.handleSubmit = handleSubmit;
-window.updateTotalHours = updateTotalHours; 
-window.calculateTotalHours = calculateTotalHours;  
+window.updateTotalHours = updateTotalHours;
+window.calculateTotalHours = calculateTotalHours;
 window.handleSessionCountChange = handleSessionCountChange;
 window.updateCustomSessionCount = updateCustomSessionCount;
 window.viewSessionEnrollments = viewSessionEnrollments;

@@ -45,56 +45,36 @@
     <div class="p-4 lg:p-6">
 
         {{-- Statistics Cards --}}
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div class="card p-6 border-l-4 border-secondary-blue">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 font-semibold">Total specializations</p>
-                        <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['total'] }}</p>
-                    </div>
-                    <div class="bg-secondary-blue bg-opacity-20 p-3 rounded-full">
-                        <svg class="w-8 h-8 text-secondary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path></svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card p-6 border-l-4 border-forest-green">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 font-semibold">Active</p>
-                        <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['active'] }}</p>
-                    </div>
-                    <div class="bg-forest-green bg-opacity-20 p-3 rounded-full">
-                        <svg class="w-8 h-8 text-forest-green" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card p-6 border-l-4 border-warm-coral">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 font-semibold">Inactive</p>
-                        <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['inactive'] }}</p>
-                    </div>
-                    <div class="bg-warm-coral bg-opacity-20 p-3 rounded-full">
-                        <svg class="w-8 h-8 text-warm-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path></svg>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card p-6 border-l-4 border-golden-yellow">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600 font-semibold">Most popular</p>
-                        <p class="text-lg font-bold text-primary-dark mt-1">{{ $stats['most_used_name'] }}</p>
-                        <p class="text-xs text-gray-500">{{ $stats['most_used_count'] }} instructors</p>
-                    </div>
-                    <div class="bg-golden-yellow bg-opacity-20 p-3 rounded-full">
-                        <svg class="w-8 h-8 text-golden-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path></svg>
-                    </div>
-                </div>
-            </div>
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+    <div class="card p-5 border-l-4 border-secondary-blue">
+        <div>
+            <p class="text-sm text-gray-600 font-semibold">Total specializations</p>
+            <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['total'] }}</p>
         </div>
+    </div>
+    
+    <div class="card p-5 border-l-4 border-forest-green">
+        <div>
+            <p class="text-sm text-gray-600 font-semibold">Active</p>
+            <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['active'] }}</p>
+        </div>
+    </div>
+    
+    <div class="card p-5 border-l-4 border-warm-coral">
+        <div>
+            <p class="text-sm text-gray-600 font-semibold">Inactive</p>
+            <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['inactive'] }}</p>
+        </div>
+    </div>
+    
+    <div class="card p-5 border-l-4 border-golden-yellow">
+        <div>
+            <p class="text-sm text-gray-600 font-semibold">Most popular</p>
+            <p class="text-xl font-bold text-primary-dark mt-1">{{ $stats['most_used_name'] }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ $stats['most_used_count'] }} instructors</p>
+        </div>
+    </div>
+</div>
 
         {{-- Filters --}}
         <div class="card p-6 mb-6">
@@ -154,16 +134,18 @@
                         @forelse($specializations as $spec)
                         <tr class="hover:bg-accent-yellow-light transition-colors">
                             <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-secondary-blue to-forest-green rounded-full flex items-center justify-center text-white font-bold">
-                                        {{ substr($spec->specialization_name, 0, 1) }}
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-bold text-gray-900">{{ $spec->specialization_name }}</div>
-                                        <div class="text-xs text-gray-500">ID: {{ $spec->specialization_id }}</div>
-                                    </div>
-                                </div>
-                            </td>
+    <div class="flex items-center gap-4">
+        {{-- Row number for easier counting instead of letter initials --}}
+        <div class="w-8 text-center text-sm font-bold text-gray-500">
+            {{ ($specializations->currentPage() - 1) * $specializations->perPage() + $loop->iteration }}
+        </div>
+
+        <div>
+            <div class="text-sm font-bold text-gray-900">{{ $spec->specialization_name }}</div>
+            <div class="text-xs text-gray-500">ID: {{ $spec->specialization_id }}</div>
+        </div>
+    </div>
+</td>
                             
                             <td class="px-6 py-4">
                                 <div class="text-sm text-gray-900">{{ Str::limit($spec->description ?? 'No description', 50) }}</div>

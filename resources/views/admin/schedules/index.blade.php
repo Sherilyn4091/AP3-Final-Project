@@ -184,5 +184,5 @@
 <!-- FullCalendar JS -->
 <script src='https://unpkg.com/fullcalendar@6.1.15/index.global.min.js'></script>
 
-</body>
+<style id=schedule-modal-screen-fix-v2>#add-schedule-modal,#event-detail-modal,#room-availability-modal{align-items:flex-start!important;justify-content:center!important;overflow-y:auto!important;padding:16px!important;}#add-schedule-modal>div,#event-detail-modal>div,#room-availability-modal>div{max-height:calc(100vh - 32px)!important;overflow-y:auto!important;margin:0 auto!important;}#availability-results{max-height:45vh!important;overflow-y:auto!important;}@media(max-width:640px){#add-schedule-modal,#event-detail-modal,#room-availability-modal{padding:8px!important;}#add-schedule-modal>div,#event-detail-modal>div,#room-availability-modal>div{max-height:calc(100vh - 16px)!important;width:100%!important;}}</style></body>
 </html>

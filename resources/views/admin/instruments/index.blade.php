@@ -1,23 +1,21 @@
 {{-- 
     ============================================================================
-    INSTRUMENT MANAGEMENT PAGE
+    ADMIN INSTRUMENTS MANAGEMENT PAGE
     resources/views/admin/instruments/index.blade.php
     ============================================================================
-    Features:
-    - List all instruments with active student counts
-    - Add new instruments via modal
-    - Edit existing instruments (except system instruments)
-    - Deactivate/Activate instruments (with usage checks)
-    - Search by name, filter by category and status
-    - Responsive design for mobile/tablet
-    - Statistics dashboard
-    - View enrolled students modal
+
+    Purpose:
+    - Manage Music Lab instruments offered for lessons.
+    - Keep UI consistent with the improved Admin module style.
+    - Display useful relationship-aware statistics.
+    - Protect system instruments and instruments connected to active records.
+    - Keep large elements semi-large, clean, and responsive.
     ============================================================================
 --}}
 
 @extends('layouts.admin')
 
-@section('title', 'Instrument management')
+@section('title', 'Instrument Management')
 
 @section('content')
 @vite([
@@ -27,271 +25,601 @@
     'resources/js/admin-pages/instrument.js'
 ])
 
-{{-- Page Header --}}
-<header class="bg-white shadow-sm p-6 border-b-4 border-secondary-blue -mt-6 -mx-6 mb-6">
-    <div class="flex items-center justify-between flex-wrap gap-4">
-        <div>
-            <h1 class="text-3xl font-bold text-primary-dark">Instrument management</h1>
-            <p class="text-secondary-blue mt-1">Manage musical instruments offered for lessons</p>
-        </div>
-        <button onclick="openAddInstrumentModal()" class="bg-forest-green text-white px-6 py-3 rounded-lg font-semibold hover:bg-forest-green-dark transition-all shadow-lg">
-            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Add instrument
-        </button>
-    </div>
-</header>
+<div class="-m-6 min-h-screen bg-[#F8F7F4] px-4 py-6 sm:px-6 lg:px-8">
 
-{{-- Statistics Cards --}}
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-secondary-blue">
-        <div class="flex items-center justify-between">
+    {{-- ============================================================= --}}
+    {{-- PAGE HEADER --}}
+    {{-- ============================================================= --}}
+    <header class="mb-6 rounded-[28px] border border-[#D8DDD8] bg-white px-5 py-5 shadow-sm sm:px-6 lg:px-7">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-                <p class="text-sm text-gray-600 font-semibold">Total instruments</p>
-                <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['total'] }}</p>
-            </div>
-            <div class="bg-secondary-blue bg-opacity-20 p-3 rounded-full">
-                <svg class="w-8 h-8 text-secondary-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                </svg>
-            </div>
-        </div>
-    </div>
-    
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-forest-green">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-600 font-semibold">Active</p>
-                <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['active'] }}</p>
-            </div>
-            <div class="bg-forest-green bg-opacity-20 p-3 rounded-full">
-                <svg class="w-8 h-8 text-forest-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-            </div>
-        </div>
-    </div>
-    
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-warm-coral">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-600 font-semibold">Inactive</p>
-                <p class="text-3xl font-bold text-primary-dark mt-1">{{ $stats['inactive'] }}</p>
-            </div>
-            <div class="bg-warm-coral bg-opacity-20 p-3 rounded-full">
-                <svg class="w-8 h-8 text-warm-coral" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>
-                </svg>
-            </div>
-        </div>
-    </div>
-    
-    <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-golden-yellow">
-        <div class="flex items-center justify-between">
-            <div>
-                <p class="text-sm text-gray-600 font-semibold">Most popular</p>
-                <p class="text-lg font-bold text-primary-dark mt-1">{{ $stats['most_used_name'] }}</p>
-                <p class="text-xs text-gray-500">{{ $stats['most_used_count'] }} {{ $stats['most_used_count'] == 1 ? 'student' : 'students' }}</p>
-            </div>
-            <div class="bg-golden-yellow bg-opacity-20 p-3 rounded-full">
-                <svg class="w-8 h-8 text-golden-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
-                </svg>
-            </div>
-        </div>
-    </div>
-</div>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Admin Module
+                </p>
 
-{{-- Filters --}}
-<div class="bg-white rounded-xl shadow-lg p-6 mb-6">
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div class="lg:col-span-2">
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Search</label>
-            <input type="text" id="search-name" placeholder="Search by instrument name..." 
-                   class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-        </div>
+                <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-[#223030] sm:text-3xl" style="font-family: 'Sora', sans-serif;">
+                    Instrument Management
+                </h1>
 
-        <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-            <select id="filter-category" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-                <option value="all">All categories</option>
-                @foreach($categories as $cat)
-                    <option value="{{ $cat }}">{{ $cat }}</option>
-                @endforeach
-            </select>
-        </div>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-[#44576D]" style="font-family: 'Inter', sans-serif;">
+                    Manage lesson instruments, monitor student and enrollment connections, and protect records before deactivation.
+                </p>
+            </div>
 
-        <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-2">Status</label>
-            <select id="filter-status" class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue transition-all">
-                <option value="all">All statuses</option>
-                <option value="all" selected>All statuses</option>
-                <option value="inactive">Inactive only</option>
-            </select>
-        </div>
-
-        <div class="flex items-end gap-2">
-            <button onclick="applyInstrumentFilters()" 
-                    class="flex-1 bg-secondary-blue hover:bg-secondary-blue-dark text-white px-5 py-2 rounded-lg font-semibold transition-all shadow-sm">
-                Apply
-            </button>
-            <button onclick="clearInstrumentFilters()" 
-                    class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded-lg font-semibold transition-all">
-                Clear
+            <button type="button"
+                    onclick="openAddInstrumentModal()"
+                    class="inline-flex items-center justify-center rounded-2xl bg-[#223030] px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#29353C] focus:outline-none focus:ring-4 focus:ring-[#D8DDD8]"
+                    style="font-family: 'Inter', sans-serif;">
+                <span class="mr-2 text-lg leading-none">+</span>
+                Add Instrument
             </button>
         </div>
-    </div>
-</div>
+    </header>
 
-{{-- Instruments Table --}}
-<div class="bg-white rounded-xl shadow-lg overflow-hidden">
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-primary-dark">
-                <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Instrument</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Category</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider hidden md:table-cell">Description</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-accent-yellow uppercase tracking-wider">Students (view)</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-accent-yellow uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-4 text-center text-xs font-bold text-accent-yellow uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-100">
-                @forelse($instruments as $index => $instrument)
-                <tr class="instrument-row hover:bg-accent-yellow-light transition-colors duration-150"
-                    data-instrument-id="{{ $instrument->instrument_id }}"
-                    data-name="{{ strtolower($instrument->instrument_name) }}"
-                    data-category="{{ $instrument->category }}"
-                    data-status="{{ $instrument->is_active ? 'active' : 'inactive' }}">
+    {{-- ============================================================= --}}
+    {{-- STATS CARDS --}}
+    {{-- ============================================================= --}}
+    <section class="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
 
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-secondary-blue to-forest-green rounded-full flex items-center justify-center text-white font-bold">
-                                {{ substr($instrument->instrument_name, 0, 1) }}
-                            </div>
-                            <div class="ml-4">
-                                <div class="text-sm font-bold text-gray-900">{{ $instrument->instrument_name }}</div>
-                                @if($instrument->is_system)
-                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary-blue/10 text-secondary-blue">
-                                    System
-                                </span>
-                                @endif
-                            </div>
-                        </div>
-                    </td>
+        <article class="admin-instrument-card rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Total</p>
+            <div class="mt-3 flex items-end justify-between gap-3">
+                <p class="js-count-up text-3xl font-extrabold text-[#223030]" data-count="{{ $stats['total'] }}" style="font-family: 'Sora', sans-serif;">0</p>
+                <span class="rounded-full bg-[#EEF2F4] px-3 py-1 text-xs font-bold text-[#44576D]">Records</span>
+            </div>
+        </article>
 
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                            {{ $instrument->category }}
-                        </span>
-                    </td>
+        <article class="admin-instrument-card rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Active</p>
+            <div class="mt-3 flex items-end justify-between gap-3">
+                <p class="js-count-up text-3xl font-extrabold text-[#223030]" data-count="{{ $stats['active'] }}" style="font-family: 'Sora', sans-serif;">0</p>
+                <span class="rounded-full bg-[#F1F3EF] px-3 py-1 text-xs font-bold text-[#223030]">Available</span>
+            </div>
+        </article>
 
-                    <td class="px-6 py-4 text-sm text-gray-600 hidden md:table-cell">
-                        {{ $instrument->description ? Str::limit($instrument->description, 50) : 'No description' }}
-                    </td>
+        <article class="admin-instrument-card rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Inactive</p>
+            <div class="mt-3 flex items-end justify-between gap-3">
+                <p class="js-count-up text-3xl font-extrabold text-[#223030]" data-count="{{ $stats['inactive'] }}" style="font-family: 'Sora', sans-serif;">0</p>
+                <span class="rounded-full bg-[#F6EFEC] px-3 py-1 text-xs font-bold text-[#523D35]">Hidden</span>
+            </div>
+        </article>
 
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                        @if($instrument->students_count > 0)
-                            <button onclick="viewInstrumentStudents({{ $instrument->instrument_id }}, '{{ addslashes($instrument->instrument_name) }}')"
-                                    class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-secondary-blue text-white hover:bg-secondary-blue-dark transition-all">
-                                {{ $instrument->students_count }} {{ $instrument->students_count == 1 ? 'student' : 'students' }}
-                            </button>
-                        @else
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gray-200 text-gray-700">
-                                No students
+        <article class="admin-instrument-card rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Linked Students</p>
+            <div class="mt-3 flex items-end justify-between gap-3">
+                <p class="js-count-up text-3xl font-extrabold text-[#223030]" data-count="{{ $stats['active_linked_students'] }}" style="font-family: 'Sora', sans-serif;">0</p>
+                <span class="rounded-full bg-[#EEF2F4] px-3 py-1 text-xs font-bold text-[#44576D]">Active</span>
+            </div>
+        </article>
+
+        <article class="admin-instrument-card rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Active Enrollments</p>
+            <div class="mt-3 flex items-end justify-between gap-3">
+                <p class="js-count-up text-3xl font-extrabold text-[#223030]" data-count="{{ $stats['active_linked_enrollments'] }}" style="font-family: 'Sora', sans-serif;">0</p>
+                <span class="rounded-full bg-[#F1F3EF] px-3 py-1 text-xs font-bold text-[#223030]">Lessons</span>
+            </div>
+        </article>
+
+        <article class="admin-instrument-card rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+            <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Top Instrument</p>
+            <div class="mt-3">
+                <p class="truncate text-lg font-extrabold text-[#223030]" title="{{ $stats['most_used_name'] }}" style="font-family: 'Sora', sans-serif;">
+                    {{ $stats['most_used_name'] }}
+                </p>
+                <p class="mt-1 text-xs font-semibold text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    {{ $stats['most_used_count'] }} active student(s)
+                </p>
+            </div>
+        </article>
+    </section>
+
+    {{-- ============================================================= --}}
+    {{-- CATEGORY SUMMARY --}}
+    {{-- ============================================================= --}}
+    @if($categoryStats->count())
+        <section class="mb-6 rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+            <div class="mb-4 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h2 class="text-base font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">Category Overview</h2>
+                    <p class="text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">Quick summary of instruments grouped by category.</p>
+                </div>
+                <span class="rounded-full bg-[#EEF2F4] px-3 py-1 text-xs font-bold text-[#44576D]" style="font-family: 'Inter', sans-serif;">
+                    {{ $stats['category_count'] }} categor{{ $stats['category_count'] === 1 ? 'y' : 'ies' }}
+                </span>
+            </div>
+
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach($categoryStats as $categoryStat)
+                    @php
+                        $percent = $stats['total'] > 0 ? min(100, round(((int) $categoryStat->total / $stats['total']) * 100)) : 0;
+                    @endphp
+
+                    <div class="rounded-2xl border border-[#EEF1EC] bg-[#FCFCFA] p-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <p class="truncate text-sm font-bold text-[#223030]" style="font-family: 'Inter', sans-serif;">
+                                {{ $categoryStat->category_name }}
+                            </p>
+                            <span class="text-sm font-bold text-[#44576D]" style="font-family: 'JetBrains Mono', monospace;">
+                                {{ $categoryStat->total }}
                             </span>
-                        @endif
-                    </td>
-
-                    <td class="px-6 py-4 whitespace-nowrap text-center">
-                        <span class="status-badge inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold {{ $instrument->is_active ? 'bg-forest-green text-white' : 'bg-gray-400 text-white' }}">
-                            {{ $instrument->is_active ? 'Active' : 'Inactive' }}
-                        </span>
-                    </td>
-
-                    <td class="px-6 py-4 whitespace-nowrap text-center text-sm">
-                        <div class="flex items-center justify-center gap-2">
-                            {{-- Edit Button --}}
-                            <button onclick="editInstrument({{ $instrument->instrument_id }})"
-                                    class="relative group p-2 rounded-lg text-secondary-blue hover:bg-secondary-blue hover:text-white transition-all duration-200 shadow-sm hover:shadow"
-                                    title="Edit instrument">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                                <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                    Edit
-                                </span>
-                            </button>
-
-                            {{-- Toggle Status Button --}}
-                            @if($instrument->is_active)
-                                @if(!$instrument->is_system)
-                                    <button onclick="deactivateInstrument({{ $instrument->instrument_id }})"
-                                            class="action-toggle-btn relative group p-2 rounded-lg text-warm-coral hover:bg-warm-coral hover:text-white transition-all duration-200 shadow-sm hover:shadow"
-                                            title="Deactivate">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636" />
-                                        </svg>
-                                        <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                            Deactivate
-                                        </span>
-                                    </button>
-                                @else
-                                    <span class="text-xs font-medium text-gray-500 bg-gray-100 px-2.5 py-1 rounded">Protected</span>
-                                @endif
-                            @else
-                                <button onclick="activateInstrument({{ $instrument->instrument_id }})"
-                                        class="action-toggle-btn relative group p-2 rounded-lg text-forest-green hover:bg-forest-green hover:text-white transition-all duration-200 shadow-sm hover:shadow"
-                                        title="Activate">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                                        Activate
-                                    </span>
-                                </button>
-                            @endif
                         </div>
-                    </td>
-                </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="px-6 py-12 text-center text-gray-500">
-                            <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"></path>
-                            </svg>
-                            <p class="text-lg font-semibold mb-2">No instruments found</p>
-                            <p class="text-sm">Try adjusting your filters or add a new instrument</p>
-                        </td>
+
+                        <div class="mt-3 h-2 overflow-hidden rounded-full bg-[#EEF1EC]">
+                            <div class="h-full rounded-full bg-[#768A96]" style="width: {{ $percent }}%;"></div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
+    {{-- ============================================================= --}}
+    {{-- FILTERS --}}
+    {{-- ============================================================= --}}
+    <section class="mb-6 rounded-[24px] border border-[#D8DDD8] bg-white p-5 shadow-sm">
+        <form method="GET" action="{{ route('admin.instruments.index') }}" class="grid grid-cols-1 gap-4 lg:grid-cols-12">
+
+            <div class="lg:col-span-4">
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Search
+                </label>
+                <input type="text"
+                       name="search"
+                       value="{{ $filters['search'] }}"
+                       placeholder="Search name, category, or description..."
+                       class="w-full rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]"
+                       style="font-family: 'Inter', sans-serif;">
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Category
+                </label>
+                <select name="category"
+                        class="w-full rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]">
+                    <option value="all">All categories</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category }}" @selected($filters['category'] === $category)>
+                            {{ $category }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Status
+                </label>
+                <select name="status"
+                        class="w-full rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]">
+                    <option value="all" @selected($filters['status'] === 'all')>All statuses</option>
+                    <option value="active" @selected($filters['status'] === 'active')>Active</option>
+                    <option value="inactive" @selected($filters['status'] === 'inactive')>Inactive</option>
+                </select>
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Type
+                </label>
+                <select name="type"
+                        class="w-full rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]">
+                    <option value="all" @selected($filters['type'] === 'all')>All types</option>
+                    <option value="system" @selected($filters['type'] === 'system')>System</option>
+                    <option value="custom" @selected($filters['type'] === 'custom')>Custom</option>
+                </select>
+            </div>
+
+            <div class="lg:col-span-2">
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Sort
+                </label>
+                <select name="sort"
+                        class="w-full rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]">
+                    <option value="name_asc" @selected($filters['sort'] === 'name_asc')>Name A-Z</option>
+                    <option value="name_desc" @selected($filters['sort'] === 'name_desc')>Name Z-A</option>
+                    <option value="category_asc" @selected($filters['sort'] === 'category_asc')>Category</option>
+                    <option value="students_desc" @selected($filters['sort'] === 'students_desc')>Most students</option>
+                    <option value="enrollments_desc" @selected($filters['sort'] === 'enrollments_desc')>Most enrollments</option>
+                    <option value="newest" @selected($filters['sort'] === 'newest')>Newest</option>
+                </select>
+            </div>
+
+            <div class="flex flex-col gap-2 sm:flex-row lg:col-span-12 lg:justify-end">
+                <a href="{{ route('admin.instruments.index') }}"
+                   class="inline-flex items-center justify-center rounded-2xl border border-[#D8DDD8] bg-white px-5 py-3 text-sm font-bold text-[#223030] transition hover:bg-[#F4F5F2]"
+                   style="font-family: 'Inter', sans-serif;">
+                    Reset
+                </a>
+
+                <button type="submit"
+                        class="inline-flex items-center justify-center rounded-2xl bg-[#44576D] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#29353C]"
+                        style="font-family: 'Inter', sans-serif;">
+                    Apply Filters
+                </button>
+            </div>
+        </form>
+    </section>
+
+    {{-- ============================================================= --}}
+    {{-- TABLE --}}
+    {{-- ============================================================= --}}
+    <section class="overflow-hidden rounded-[26px] border border-[#D8DDD8] bg-white shadow-sm">
+        <div class="border-b border-[#D8DDD8] bg-[#FCFCFA] px-5 py-4">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-lg font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">
+                        Instrument Records
+                    </h2>
+                    <p class="text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Showing {{ $instruments->count() }} of {{ $instruments->total() }} record(s).
+                    </p>
+                </div>
+
+                <span class="rounded-full bg-[#EEF2F4] px-3 py-1 text-xs font-bold text-[#44576D]" style="font-family: 'Inter', sans-serif;">
+                    Page {{ $instruments->currentPage() }} of {{ $instruments->lastPage() }}
+                </span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="min-w-[1050px] w-full text-left">
+                <thead class="bg-white">
+                    <tr class="border-b border-[#EEF1EC]">
+                        <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Instrument</th>
+                        <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Category</th>
+                        <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Usage</th>
+                        <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Type</th>
+                        <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Status</th>
+                        <th class="px-5 py-4 text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Updated</th>
+                        <th class="px-5 py-4 text-right text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">Actions</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+
+                <tbody class="divide-y divide-[#EEF1EC]">
+                    @forelse($instruments as $instrument)
+                        <tr class="transition hover:bg-[#FCFCFA]">
+                            <td class="px-5 py-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#EEF2F4] text-sm font-extrabold text-[#44576D]" style="font-family: 'Sora', sans-serif;">
+                                        {{ strtoupper(substr($instrument->instrument_name, 0, 1)) }}
+                                    </div>
+
+                                    <div>
+                                        <p class="font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">
+                                            {{ $instrument->instrument_name }}
+                                        </p>
+
+                                        <p class="mt-1 line-clamp-2 max-w-md text-sm leading-5 text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                                            {{ $instrument->description ?: 'No description added.' }}
+                                        </p>
+
+                                        <p class="mt-1 text-xs text-[#959D90]" style="font-family: 'JetBrains Mono', monospace;">
+                                            ID: {{ $instrument->instrument_id }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="px-5 py-4">
+                                <span class="rounded-full bg-[#EEF2F4] px-3 py-1 text-xs font-bold text-[#44576D]" style="font-family: 'Inter', sans-serif;">
+                                    {{ $instrument->category ?: 'Uncategorized' }}
+                                </span>
+                            </td>
+
+                            <td class="px-5 py-4">
+                                <div class="space-y-1">
+                                    <p class="text-sm font-bold text-[#223030]" style="font-family: 'Inter', sans-serif;">
+                                        {{ (int) $instrument->active_students_count }} active student(s)
+                                    </p>
+                                    <p class="text-xs text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                                        {{ (int) $instrument->active_enrollments_count }} active enrollment(s)
+                                    </p>
+                                </div>
+                            </td>
+
+                            <td class="px-5 py-4">
+                                @if($instrument->is_system)
+                                    <span class="rounded-full bg-[#F1F3EF] px-3 py-1 text-xs font-bold text-[#223030]" style="font-family: 'Inter', sans-serif;">
+                                        System
+                                    </span>
+                                @else
+                                    <span class="rounded-full bg-[#EEF2F4] px-3 py-1 text-xs font-bold text-[#44576D]" style="font-family: 'Inter', sans-serif;">
+                                        Custom
+                                    </span>
+                                @endif
+                            </td>
+
+                            <td class="px-5 py-4">
+                                @if($instrument->is_active)
+                                    <span class="rounded-full bg-[#F1F3EF] px-3 py-1 text-xs font-bold text-[#223030]" style="font-family: 'Inter', sans-serif;">
+                                        Active
+                                    </span>
+                                @else
+                                    <span class="rounded-full bg-[#F6EFEC] px-3 py-1 text-xs font-bold text-[#523D35]" style="font-family: 'Inter', sans-serif;">
+                                        Inactive
+                                    </span>
+                                @endif
+                            </td>
+
+                            <td class="px-5 py-4 text-sm text-[#768A96]" style="font-family: 'JetBrains Mono', monospace;">
+                                {{ $instrument->updated_at ? \Carbon\Carbon::parse($instrument->updated_at)->format('M d, Y') : 'N/A' }}
+                            </td>
+
+                            <td class="px-5 py-4">
+                                <div class="flex flex-wrap justify-end gap-2">
+                                    <button type="button"
+                                            onclick="viewInstrument({{ $instrument->instrument_id }})"
+                                            class="rounded-xl border border-[#D8DDD8] bg-white px-3 py-2 text-xs font-bold text-[#223030] transition hover:bg-[#F4F5F2]">
+                                        View
+                                    </button>
+
+                                    <button type="button"
+                                            onclick="editInstrument({{ $instrument->instrument_id }})"
+                                            class="rounded-xl border border-[#D8DDD8] bg-white px-3 py-2 text-xs font-bold text-[#44576D] transition hover:bg-[#F4F5F2]">
+                                        Edit
+                                    </button>
+
+                                    @if(!$instrument->is_system)
+                                        <button type="button"
+                                                onclick="toggleInstrumentStatus({{ $instrument->instrument_id }}, {{ $instrument->is_active ? 'true' : 'false' }})"
+                                                class="rounded-xl border border-[#D8DDD8] bg-white px-3 py-2 text-xs font-bold text-[#523D35] transition hover:bg-[#F6EFEC]">
+                                            {{ $instrument->is_active ? 'Deactivate' : 'Activate' }}
+                                        </button>
+                                    @else
+                                        <span class="rounded-xl bg-[#F4F5F2] px-3 py-2 text-xs font-bold text-[#959D90]">
+                                            Protected
+                                        </span>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-5 py-14 text-center">
+                                <p class="text-xl font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">
+                                    No instruments found
+                                </p>
+                                <p class="mt-2 text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                                    Try adjusting your filters or add a new custom instrument.
+                                </p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($instruments->hasPages())
+            <div class="border-t border-[#EEF1EC] px-5 py-4">
+                {{ $instruments->links() }}
+            </div>
+        @endif
+    </section>
+</div>
+
+{{-- ============================================================= --}}
+{{-- ADD / EDIT MODAL --}}
+{{-- ============================================================= --}}
+<div id="instrumentModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4 py-6">
+    <div class="max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[28px] bg-white shadow-xl">
+        <div class="border-b border-[#D8DDD8] bg-[#FCFCFA] px-6 py-5">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 id="instrumentModalTitle" class="text-xl font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">
+                        Add Instrument
+                    </h2>
+                    <p id="instrumentModalSubtitle" class="mt-1 text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Create a new custom instrument record.
+                    </p>
+                </div>
+
+                <button type="button"
+                        onclick="closeInstrumentModal()"
+                        class="rounded-2xl border border-[#D8DDD8] bg-white px-3 py-2 text-sm font-bold text-[#223030] hover:bg-[#F4F5F2]">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <form id="instrumentForm" class="space-y-5 px-6 py-6">
+            @csrf
+
+            <input type="hidden" id="instrumentId" name="instrument_id">
+
+            <div id="systemNotice" class="hidden rounded-2xl border border-[#D8DDD8] bg-[#F6EFEC] px-4 py-3 text-sm font-semibold text-[#523D35]" style="font-family: 'Inter', sans-serif;">
+                This is a protected system instrument. Only the description can be updated.
+            </div>
+
+            <div>
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Instrument Name
+                </label>
+                <input type="text"
+                       id="instrumentName"
+                       name="instrument_name"
+                       maxlength="100"
+                       required
+                       class="w-full rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]"
+                       placeholder="Example: Piano">
+                <p class="mt-1 hidden text-xs font-semibold text-[#523D35]" data-error-for="instrument_name"></p>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Category
+                </label>
+                <select id="instrumentCategory"
+                        name="category"
+                        required
+                        class="w-full rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]">
+                    <option value="">Select category</option>
+                    @foreach($categories as $category)
+                        <option value="{{ $category }}">{{ $category }}</option>
+                    @endforeach
+                </select>
+                <p class="mt-1 hidden text-xs font-semibold text-[#523D35]" data-error-for="category"></p>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-xs font-bold uppercase tracking-wide text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Description
+                </label>
+                <textarea id="instrumentDescription"
+                          name="description"
+                          rows="4"
+                          maxlength="500"
+                          class="w-full resize-none rounded-2xl border border-[#D8DDD8] bg-white px-4 py-3 text-sm text-[#223030] outline-none transition focus:border-[#768A96] focus:ring-4 focus:ring-[#EEF2F4]"
+                          placeholder="Short description for this lesson instrument..."></textarea>
+                <p class="mt-1 hidden text-xs font-semibold text-[#523D35]" data-error-for="description"></p>
+            </div>
+
+            <div class="flex flex-col-reverse gap-3 border-t border-[#EEF1EC] pt-5 sm:flex-row sm:justify-end">
+                <button type="button"
+                        onclick="closeInstrumentModal()"
+                        class="rounded-2xl border border-[#D8DDD8] bg-white px-5 py-3 text-sm font-bold text-[#223030] transition hover:bg-[#F4F5F2]">
+                    Cancel
+                </button>
+
+                <button type="submit"
+                        id="instrumentSubmitButton"
+                        class="rounded-2xl bg-[#223030] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#29353C] disabled:opacity-60">
+                    Save Instrument
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
-{{-- Hidden data for JS --}}
-<div id="instrument-data" 
-     data-categories='@json($categories)'
-     style="display: none;"></div>
+{{-- ============================================================= --}}
+{{-- VIEW / USAGE MODAL --}}
+{{-- ============================================================= --}}
+<div id="instrumentViewModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4 py-6">
+    <div class="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[28px] bg-white shadow-xl">
+        <div class="border-b border-[#D8DDD8] bg-[#FCFCFA] px-6 py-5">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 id="viewInstrumentName" class="text-xl font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">
+                        Instrument Details
+                    </h2>
+                    <p id="viewInstrumentMeta" class="mt-1 text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                        Loading details...
+                    </p>
+                </div>
 
-{{-- Modal Container --}}
-<div id="instrument-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <!-- Modal content will be dynamically inserted here by JS -->
+                <button type="button"
+                        onclick="closeInstrumentViewModal()"
+                        class="rounded-2xl border border-[#D8DDD8] bg-white px-3 py-2 text-sm font-bold text-[#223030] hover:bg-[#F4F5F2]">
+                    Close
+                </button>
+            </div>
+        </div>
+
+        <div class="space-y-5 px-6 py-6">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+                <div class="rounded-2xl border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]">Active Students</p>
+                    <p id="viewActiveStudents" class="mt-2 text-2xl font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">0</p>
+                </div>
+
+                <div class="rounded-2xl border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]">Total Students</p>
+                    <p id="viewTotalStudents" class="mt-2 text-2xl font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">0</p>
+                </div>
+
+                <div class="rounded-2xl border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]">Active Enrollments</p>
+                    <p id="viewActiveEnrollments" class="mt-2 text-2xl font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">0</p>
+                </div>
+
+                <div class="rounded-2xl border border-[#D8DDD8] bg-[#FCFCFA] p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-[#768A96]">Total Enrollments</p>
+                    <p id="viewTotalEnrollments" class="mt-2 text-2xl font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">0</p>
+                </div>
+            </div>
+
+            <div class="rounded-2xl border border-[#D8DDD8] bg-white p-5">
+                <h3 class="text-base font-extrabold text-[#223030]" style="font-family: 'Sora', sans-serif;">Connected Students</h3>
+                <p class="mt-1 text-sm text-[#768A96]" style="font-family: 'Inter', sans-serif;">
+                    Students are listed if connected through their student profile or enrollment record.
+                </p>
+
+                <div id="connectedStudentsContainer" class="mt-4 overflow-x-auto">
+                    <p class="text-sm text-[#768A96]">Loading students...</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-{{-- Toast Container --}}
-<div id="toast-container" class="fixed bottom-6 right-6 z-50 space-y-3"></div>
+{{-- ============================================================= --}}
+{{-- TOAST --}}
+{{-- ============================================================= --}}
+<div id="instrumentToast" class="fixed bottom-5 right-5 z-[60] hidden max-w-sm rounded-2xl border border-[#D8DDD8] bg-white px-5 py-4 text-sm font-semibold text-[#223030] shadow-xl" style="font-family: 'Inter', sans-serif;"></div>
 
 @endsection
 
-@section('scripts')
+@push('styles')
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@500;600;700;800&display=swap');
+
+    .admin-instrument-card {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+        animation: adminInstrumentCardIn 520ms ease forwards;
+    }
+
+    .admin-instrument-card:nth-child(1) { animation-delay: 40ms; }
+    .admin-instrument-card:nth-child(2) { animation-delay: 90ms; }
+    .admin-instrument-card:nth-child(3) { animation-delay: 140ms; }
+    .admin-instrument-card:nth-child(4) { animation-delay: 190ms; }
+    .admin-instrument-card:nth-child(5) { animation-delay: 240ms; }
+    .admin-instrument-card:nth-child(6) { animation-delay: 290ms; }
+
+    @keyframes adminInstrumentCardIn {
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .admin-instrument-card {
+            animation: none;
+            opacity: 1;
+            transform: none;
+        }
+    }
+</style>
+@endpush
+
+@push('scripts')
 <script>
-    // Initialize filters on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        applyInstrumentFilters(); // Apply default filter (active only)
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Instrument JavaScript Config
+    |--------------------------------------------------------------------------
+    |
+    | Route URLs are generated in Blade so the JS file can stay clean and reusable.
+    |
+    */
+    window.adminInstrumentConfig = {
+        csrfToken: @json(csrf_token()),
+        storeUrl: @json(route('admin.instruments.store')),
+        showUrlTemplate: @json(url('/admin/instruments/__ID__')),
+        updateUrlTemplate: @json(url('/admin/instruments/__ID__')),
+        destroyUrlTemplate: @json(url('/admin/instruments/__ID__')),
+        toggleUrlTemplate: @json(url('/admin/instruments/__ID__/toggle-status')),
+        studentsUrlTemplate: @json(url('/admin/instruments/__ID__/students')),
+        usageUrlTemplate: @json(url('/admin/instruments/__ID__/usage')),
+    };
 </script>
-@endsection
+@endpush
