@@ -6,10 +6,7 @@
  * This script handles all interactive functionality for the user management page,  
  * including:  
  * - Inline editing of user data.  
- * - Professional modals for actions like password resets and deletions.  
- * - Custom-colored toast notifications for user feedback.  
  * - Bulk actions (activation, deactivation, deletion).  
- * - Robust error handling for users with incomplete data.  
  * ============================================================================  
  */  
 

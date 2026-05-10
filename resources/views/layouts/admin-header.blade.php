@@ -4,8 +4,6 @@
     ADMIN HEADER WITH SIDEBAR NAVIGATION
     - Logo clicks to dashboard 
     - All Quick Actions included in sidebar 
-    - Scrollable dropdowns (max 300px) 
-    - Organized navigation hierarchy 
     ============================================================================ 
 --}} 
  

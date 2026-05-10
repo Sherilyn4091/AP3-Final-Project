@@ -9,10 +9,6 @@
 | - Uses Vite-installed Chart.js instead of CDN Chart.js.
 | - Reads report data injected from ReportsController through Blade.
 | - Keeps the Music Lab palette for line/bar charts.
-| - Uses brighter readable colors only for doughnut charts.
-| - Animates report KPI numbers and graphs smoothly.
-| - Renders charts only when visible so animations can be seen.
-| - Shows clean empty-state overlays instead of fake "No Data" chart labels.
 |
 */
 

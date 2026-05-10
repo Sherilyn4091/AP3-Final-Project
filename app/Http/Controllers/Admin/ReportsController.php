@@ -25,11 +25,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 | - One reports page = one combined PDF export.
 | - One reports page = one combined CSV export.
 |
-| Code-smell prevention:
-| - Shared report data is generated once through buildMonthlyReportData().
-| - Risk analytics is isolated in buildRiskAnalyticsResult().
-| - CSV writers are split into small focused helpers.
-|
 */
 
 class ReportsController extends Controller

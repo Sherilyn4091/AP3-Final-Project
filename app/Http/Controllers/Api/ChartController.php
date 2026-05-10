@@ -11,13 +11,6 @@ use Illuminate\Support\Facades\Log;
 | ChartController
 |--------------------------------------------------------------------------
 |
-| Provides JSON chart data for the Admin Dashboard.
-|
-| Important:
-| - Uses PostgreSQL-safe queries.
-| - Uses Sunday as the start of the week because the client requested it.
-| - Raw SQL fragments are hardcoded and not user-controlled.
-|
 */
 
 class ChartController extends Controller
