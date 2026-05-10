@@ -7,53 +7,79 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
 class PaymentMethodController extends Controller
 {
     // ============================================================================
-    // INDEX - List all payment methods with stats & filters
+    // INDEX - List payment methods with usage counts, filters, sorting, and stats
     // ============================================================================
     public function index(Request $request)
     {
+        $allowedSorts = ['method_name', 'created_at', 'usage'];
+        $allowedOrders = ['asc', 'desc'];
+
+        $sortBy = $request->input('sort_by', 'method_name');
+        $sortOrder = strtolower($request->input('sort_order', 'asc'));
+
+        if (!in_array($sortBy, $allowedSorts, true)) {
+            $sortBy = 'method_name';
+        }
+
+        if (!in_array($sortOrder, $allowedOrders, true)) {
+            $sortOrder = 'asc';
+        }
+
         $query = DB::table('payment_methods as pm')
             ->select(
                 'pm.*',
-                DB::raw('(SELECT COUNT(*) FROM payment WHERE payment_method_id = pm.method_id) as usage_count')
+                DB::raw('(SELECT COUNT(*) FROM payment WHERE payment.payment_method_id = pm.method_id) as usage_count')
             );
 
-        // Search filter - Fixed parentheses issue
+        // Search by method name or description.
         if ($request->filled('search')) {
-            $query->where('pm.method_name', 'ILIKE', "%{$request->search}%");
+            $search = trim($request->input('search'));
+
+            $query->where(function ($q) use ($search) {
+                $q->where('pm.method_name', 'ILIKE', "%{$search}%");
+
+                if (Schema::hasColumn('payment_methods', 'description')) {
+                    $q->orWhere('pm.description', 'ILIKE', "%{$search}%");
+                }
+            });
         }
 
-        // Active/Inactive filter
+        // Filter by active/inactive status.
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('pm.is_active', $request->status === 'active');
         }
 
-        // Sorting
-        $sortBy = $request->input('sort_by', 'method_name');
-        $sortOrder = $request->input('sort_order', 'asc');
-
+        // Safe sorting.
         if ($sortBy === 'usage') {
             $query->orderByRaw('usage_count ' . $sortOrder);
+        } elseif ($sortBy === 'created_at') {
+            $query->orderBy('pm.created_at', $sortOrder);
         } else {
             $query->orderBy('pm.method_name', $sortOrder);
         }
 
-        $methods = $query->paginate(15);
+        $methods = $query->paginate(15)->withQueryString();
 
-        // Statistics
         $stats = [
             'total' => DB::table('payment_methods')->count(),
-            'active' => DB::table('payment_methods')->whereRaw('is_active = TRUE')->count(),
-            'inactive' => DB::table('payment_methods')->whereRaw('is_active = FALSE')->count(),
+            'active' => DB::table('payment_methods')->where('is_active', true)->count(),
+            'inactive' => DB::table('payment_methods')->where('is_active', false)->count(),
             'most_used' => DB::table('payment_methods')
-                ->select('method_name', DB::raw('COUNT(payment.payment_id) as count'))
+                ->select(
+                    'payment_methods.method_id',
+                    'payment_methods.method_name',
+                    DB::raw('COUNT(payment.payment_id) as count')
+                )
                 ->leftJoin('payment', 'payment_methods.method_id', '=', 'payment.payment_method_id')
-                ->groupBy('payment_methods.method_name')
+                ->groupBy('payment_methods.method_id', 'payment_methods.method_name')
                 ->orderByDesc('count')
+                ->orderBy('payment_methods.method_name')
                 ->first(),
         ];
 
@@ -61,94 +87,148 @@ class PaymentMethodController extends Controller
     }
 
     // ============================================================================
-    // STORE NEW METHOD - Returns JSON for modal
+    // STORE - Create payment method from modal form
     // ============================================================================
     public function store(Request $request)
     {
-        // Validation - removed description field
         $validator = Validator::make($request->all(), [
-            'method_name' => 'required|string|max:50|unique:payment_methods,method_name',
+            'method_name' => 'required|string|max:50',
+            'description' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        // Trim whitespace from method_name
-        $methodName = trim($request->method_name);
+        $methodName = $this->cleanMethodName($request->input('method_name'));
+        $description = $this->cleanDescription($request->input('description'));
 
-        DB::table('payment_methods')->insert([
+        if ($this->methodNameExists($methodName)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'method_name' => ['This payment method already exists.'],
+                ],
+            ], 422);
+        }
+
+        $data = [
             'method_name' => $methodName,
             'is_active' => true,
             'created_at' => now(),
             'updated_at' => now(),
-        ]);
+        ];
+
+        if (Schema::hasColumn('payment_methods', 'description')) {
+            $data['description'] = $description;
+        }
+
+        DB::table('payment_methods')->insert($data);
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment method created successfully'
+            'message' => 'Payment method created successfully.',
         ]);
     }
 
     // ============================================================================
-    // EDIT - Get method data for modal (Returns JSON)
+    // EDIT - Return payment method data for modal
     // ============================================================================
     public function edit($id)
     {
         $method = DB::table('payment_methods')->where('method_id', $id)->first();
-        
+
         if (!$method) {
-            return response()->json(['error' => 'Method not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method not found.',
+            ], 404);
         }
 
-        return response()->json(['method' => $method]);
+        return response()->json([
+            'success' => true,
+            'method' => $method,
+        ]);
     }
 
     // ============================================================================
-    // UPDATE METHOD - Returns JSON for modal
+    // UPDATE - Update payment method from modal form
     // ============================================================================
     public function update(Request $request, $id)
     {
-        // Validation - fixed to use correct column name and removed description
+        $method = DB::table('payment_methods')->where('method_id', $id)->first();
+
+        if (!$method) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method not found.',
+            ], 404);
+        }
+
         $validator = Validator::make($request->all(), [
-            'method_name' => 'required|string|max:50|unique:payment_methods,method_name,' . $id . ',method_id',
+            'method_name' => 'required|string|max:50',
+            'description' => 'nullable|string|max:500',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors()
+                'errors' => $validator->errors(),
             ], 422);
         }
 
-        // Trim whitespace from method_name
-        $methodName = trim($request->method_name);
+        $methodName = $this->cleanMethodName($request->input('method_name'));
+        $description = $this->cleanDescription($request->input('description'));
 
-        DB::table('payment_methods')->where('method_id', $id)->update([
+        if ($this->methodNameExists($methodName, $id)) {
+            return response()->json([
+                'success' => false,
+                'errors' => [
+                    'method_name' => ['This payment method already exists.'],
+                ],
+            ], 422);
+        }
+
+        $data = [
             'method_name' => $methodName,
             'updated_at' => now(),
-        ]);
+        ];
+
+        if (Schema::hasColumn('payment_methods', 'description')) {
+            $data['description'] = $description;
+        }
+
+        DB::table('payment_methods')->where('method_id', $id)->update($data);
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment method updated successfully'
+            'message' => 'Payment method updated successfully.',
         ]);
     }
 
     // ============================================================================
-    // DELETE METHOD - Returns JSON (with usage check)
+    // DESTROY - Delete only if not used by payments
     // ============================================================================
     public function destroy($id)
     {
+        $method = DB::table('payment_methods')->where('method_id', $id)->first();
+
+        if (!$method) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method not found.',
+            ], 404);
+        }
+
         $usage = DB::table('payment')->where('payment_method_id', $id)->count();
 
         if ($usage > 0) {
             return response()->json([
                 'success' => false,
-                'message' => "Cannot delete — this method is used in {$usage} payment(s)."
+                'message' => "Cannot delete â€” this method is used in {$usage} payment(s).",
             ], 400);
         }
 
@@ -156,36 +236,73 @@ class PaymentMethodController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Payment method deleted successfully'
+            'message' => 'Payment method deleted successfully.',
         ]);
     }
 
     // ============================================================================
-    // TOGGLE ACTIVE STATUS - Fixed bug (was updating method_name instead of is_active)
+    // TOGGLE STATUS - Activate/deactivate payment method
     // ============================================================================
     public function toggleStatus($id)
     {
         $method = DB::table('payment_methods')->where('method_id', $id)->first();
-        
+
         if (!$method) {
-            return response()->json(['error' => 'Method not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Payment method not found.',
+            ], 404);
         }
 
-        // Fixed: Toggle is_active instead of updating method_name
         DB::table('payment_methods')->where('method_id', $id)->update([
-            'is_active' => !$method->is_active,
+            'is_active' => !((bool) $method->is_active),
             'updated_at' => now(),
         ]);
 
-        return response()->json(['success' => true]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment method status updated successfully.',
+        ]);
     }
 
     // ============================================================================
-    // GET USAGE COUNT (for delete prevention)
+    // USAGE - Return usage count for safety checks
     // ============================================================================
     public function getUsage($id)
     {
         $count = DB::table('payment')->where('payment_method_id', $id)->count();
-        return response()->json(['usage_count' => $count]);
+
+        return response()->json([
+            'success' => true,
+            'usage_count' => $count,
+        ]);
+    }
+
+    // ============================================================================
+    // HELPERS
+    // ============================================================================
+
+    private function cleanMethodName(?string $value): string
+    {
+        return preg_replace('/\s+/', ' ', trim((string) $value));
+    }
+
+    private function cleanDescription(?string $value): ?string
+    {
+        $cleaned = trim((string) $value);
+
+        return $cleaned === '' ? null : $cleaned;
+    }
+
+    private function methodNameExists(string $methodName, ?int $ignoreId = null): bool
+    {
+        $query = DB::table('payment_methods')
+            ->whereRaw('LOWER(method_name) = ?', [strtolower($methodName)]);
+
+        if ($ignoreId) {
+            $query->where('method_id', '<>', $ignoreId);
+        }
+
+        return $query->exists();
     }
 }

@@ -1,254 +1,277 @@
-{{--/**
- * Payment Methods Index View
- * resources/views/admin/payment-methods/index.blade.php
+﻿{{-- 
+    resources/views/admin/payment-methods/index.blade.php
 
-
- * This Blade template provides the administrative interface for managing
- * payment methods in the system. It displays a list of all available payment
- * methods and allows administrators to perform CRUD operations including
- * creating, reading, updating, and deleting payment method records.
- *
- */ --}}
+    Admin Payment Methods Module
+    - Compact responsive UI
+    - No large decorative circles
+    - No table initials; row numbers are used instead
+    - CRUD handled through modal forms and payment-method.js
+--}}
 
 @extends('layouts.admin')
 
 @section('title', 'Payment Methods')
 
 @section('content')
-
 @vite(['resources/css/style.css'])
-<div class="min-h-screen bg-gray-100">
-    <!-- Page Header -->
-    <div class="bg-white shadow-sm p-6 border-b-4 border-secondary-blue mb-6">
-        <div class="flex items-center justify-between">
+
+@php
+    $currentSort = request('sort_by', 'method_name');
+    $currentOrder = request('sort_order', 'asc');
+@endphp
+
+<div class="min-h-screen bg-gray-100 px-3 py-4 sm:px-5 lg:px-6">
+    {{-- PAGE HEADER --}}
+    <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-5">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-                <h1 class="text-3xl font-bold text-gray-900">Payment method management</h1>
-                <p class="text-sm text-gray-600 mt-1">Manage accepted payment methods</p>
+                <h1 class="text-2xl font-bold text-gray-900 sm:text-3xl">Payment method management</h1>
+                <p class="mt-1 text-sm text-gray-600">Manage accepted payment options used in payment records.</p>
             </div>
-            <button onclick="openCreateModal()"
-                    class="bg-forest-green text-white px-6 py-2.5 rounded-lg hover:bg-forest-green-dark transition flex items-center gap-2 shadow-md">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
-                </svg>
+
+            <button type="button"
+                    onclick="openCreateModal()"
+                    class="inline-flex items-center justify-center rounded-lg bg-forest-green px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-green-dark">
                 Add payment method
             </button>
         </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <!-- Total Methods Card -->
-        <div onclick="filterByStatus('all')" 
-             class="bg-white p-6 rounded-xl shadow-md border-2 border-transparent hover:border-secondary-blue cursor-pointer transition-all hover:shadow-lg">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600 font-medium">Total methods</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['total'] }}</p>
-                </div>
-                <div class="w-16 h-16 bg-secondary-blue rounded-full flex items-center justify-center">
-                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
-                    </svg>
-                </div>
-            </div>
-        </div>
+    {{-- STATISTICS CARDS --}}
+    <div class="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <button type="button"
+                onclick="filterByStatus('all')"
+                class="rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-secondary-blue hover:shadow-md">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Total methods</p>
+            <p class="admin-stat-number mt-2 text-2xl font-bold text-gray-900" data-count="{{ $stats['total'] }}">{{ $stats['total'] }}</p>
+            <p class="mt-1 text-xs text-gray-500">All recorded methods</p>
+        </button>
 
-        <!-- Active Card -->
-        <div onclick="filterByStatus('active')" 
-             class="bg-white p-6 rounded-xl shadow-md border-2 border-transparent hover:border-forest-green cursor-pointer transition-all hover:shadow-lg">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600 font-medium">Active</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['active'] }}</p>
-                </div>
-                <div class="w-16 h-16 bg-forest-green rounded-full"></div>
-            </div>
-        </div>
+        <button type="button"
+                onclick="filterByStatus('active')"
+                class="rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-forest-green hover:shadow-md">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Active</p>
+            <p class="admin-stat-number mt-2 text-2xl font-bold text-gray-900" data-count="{{ $stats['active'] }}">{{ $stats['active'] }}</p>
+            <p class="mt-1 text-xs text-gray-500">Available for use</p>
+        </button>
 
-        <!-- Inactive Card -->
-        <div onclick="filterByStatus('inactive')" 
-             class="bg-white p-6 rounded-xl shadow-md border-2 border-transparent hover:border-warm-coral cursor-pointer transition-all hover:shadow-lg">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600 font-medium">Inactive</p>
-                    <p class="text-3xl font-bold text-gray-900 mt-2">{{ $stats['inactive'] }}</p>
-                </div>
-                <div class="w-16 h-16 bg-warm-coral rounded-full"></div>
-            </div>
-        </div>
+        <button type="button"
+                onclick="filterByStatus('inactive')"
+                class="rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition hover:border-warm-coral hover:shadow-md">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Inactive</p>
+            <p class="admin-stat-number mt-2 text-2xl font-bold text-gray-900" data-count="{{ $stats['inactive'] }}">{{ $stats['inactive'] }}</p>
+            <p class="mt-1 text-xs text-gray-500">Hidden or disabled</p>
+        </button>
 
-        <!-- Most Used Card -->
-        <div class="bg-white p-6 rounded-xl shadow-md border-2 border-transparent hover:border-golden-yellow cursor-pointer transition-all hover:shadow-lg">
-            <div class="flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-600 font-medium">Most popular</p>
-                    <p class="text-xl font-bold text-gray-900 mt-2">
-                        {{ $stats['most_used'] ? $stats['most_used']->method_name : 'N/A' }}
-                    </p>
-                    <p class="text-xs text-gray-500 mt-1">{{ $stats['most_used']->count ?? 0 }} payments</p>
-                </div>
-                <div class="w-16 h-16 bg-golden-yellow rounded-full"></div>
-            </div>
+        <div class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Most popular</p>
+            <p class="mt-2 truncate text-lg font-bold text-gray-900">
+                {{ $stats['most_used'] ? $stats['most_used']->method_name : 'N/A' }}
+            </p>
+            <p class="mt-1 text-xs text-gray-500">
+                {{ $stats['most_used']->count ?? 0 }} payment{{ (($stats['most_used']->count ?? 0) == 1) ? '' : 's' }}
+            </p>
         </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="bg-white p-6 rounded-xl shadow-md mb-6">
-        <form method="GET" id="filterForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    {{-- FILTERS --}}
+    <div class="mb-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <form method="GET" id="filterForm" class="grid grid-cols-1 gap-3 md:grid-cols-4">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Search</label>
-                <input type="text" name="search" value="{{ request('search') }}"
-                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue"
-                       placeholder="Search by name...">
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Search</label>
+                <input type="text"
+                       name="search"
+                       value="{{ request('search') }}"
+                       class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue"
+                       placeholder="Search name or description">
             </div>
+
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Status</label>
-                <select name="status" id="statusFilter" 
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue">
-                    <option value="all">All statuses</option>
-                    <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
-                    <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Status</label>
+                <select name="status"
+                        id="statusFilter"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                    <option value="all" {{ request('status', 'all') === 'all' ? 'selected' : '' }}>All statuses</option>
+                    <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                 </select>
             </div>
+
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Sort by</label>
-                <select name="sort_by" 
-                        class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue">
-                    <option value="method_name">Name (A-Z)</option>
-                    <option value="created_at" {{ request('sort_by') == 'created_at' ? 'selected' : '' }}>Created date</option>
-                    <option value="usage" {{ request('sort_by') == 'usage' ? 'selected' : '' }}>Usage</option>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Sort by</label>
+                <select name="sort_by"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                    <option value="method_name" {{ $currentSort === 'method_name' ? 'selected' : '' }}>Name</option>
+                    <option value="created_at" {{ $currentSort === 'created_at' ? 'selected' : '' }}>Created date</option>
+                    <option value="usage" {{ $currentSort === 'usage' ? 'selected' : '' }}>Usage</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-600">Order</label>
+                <select name="sort_order"
+                        class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
+                    <option value="asc" {{ $currentOrder === 'asc' ? 'selected' : '' }}>Ascending</option>
+                    <option value="desc" {{ $currentOrder === 'desc' ? 'selected' : '' }}>Descending</option>
                 </select>
             </div>
         </form>
-        <div class="flex gap-3 mt-4">
-            <button type="submit" form="filterForm" 
-                    class="bg-secondary-blue text-white px-6 py-2 rounded-lg hover:bg-secondary-blue-dark transition shadow-md">
+
+        <div class="mt-3 flex flex-wrap gap-2">
+            <button type="submit"
+                    form="filterForm"
+                    class="rounded-lg bg-secondary-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-blue-dark">
                 Apply
             </button>
-            <a href="{{ route('admin.payment-methods.index') }}" 
-               class="bg-gray-200 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-300 transition">
+
+            <a href="{{ route('admin.payment-methods.index') }}"
+               class="rounded-lg bg-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-300">
                 Clear
             </a>
         </div>
     </div>
 
-    <!-- Table -->
-    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-        <table class="min-w-full">
-            <thead class="bg-primary-dark">
-                <tr>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Name</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Usage</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Status</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Created</th>
-                    <th class="px-6 py-4 text-left text-xs font-bold text-accent-yellow uppercase tracking-wider">Actions</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-                @forelse($methods as $method)
-                    <tr class="hover:bg-gray-50 transition">
-                        <td class="px-6 py-4">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 bg-secondary-blue rounded-full flex items-center justify-center text-white font-bold">
-                                    {{ strtoupper(substr($method->method_name, 0, 1)) }}
-                                </div>
-                                <div>
-                                    <p class="font-semibold text-gray-900">{{ $method->method_name }}</p>
-                                    <p class="text-xs text-gray-500">ID: {{ $method->method_id }}</p>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                {{ $method->usage_count > 0 ? 'bg-secondary-blue text-white' : 'bg-gray-200 text-gray-600' }}">
-                                {{ $method->usage_count }} payment{{ $method->usage_count == 1 ? '' : 's' }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4">
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                {{ $method->is_active ? 'bg-forest-green text-white' : 'bg-gray-400 text-white' }}">
-                                {{ $method->is_active ? 'Active' : 'Inactive' }}
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm text-gray-600">
-                            {{ \Carbon\Carbon::parse($method->created_at)->format('M d, Y') }}
-                        </td>
-                        <td class="px-6 py-4">
-                            <div class="flex gap-2">
-                                <button onclick="openEditModal({{ $method->method_id }})" 
-                                        class="text-secondary-blue hover:text-secondary-blue-dark p-2 rounded-lg hover:bg-gray-100 transition"
-                                        title="Edit">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                    </svg>
-                                </button>
-                                <button onclick="togglePaymentMethodStatus({{ $method->method_id }})" 
-                                        class="text-golden-yellow hover:text-golden-yellow-dark p-2 rounded-lg hover:bg-gray-100 transition"
-                                        title="{{ $method->is_active ? 'Deactivate' : 'Activate' }}">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
-                                    </svg>
-                                </button>
-                                <button onclick="deleteMethod({{ $method->method_id }}, {{ $method->usage_count }})" 
-                                        class="text-warm-coral hover:text-warm-coral-dark p-2 rounded-lg hover:bg-gray-100 transition"
-                                        title="Delete">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
+    {{-- PAYMENT METHODS TABLE --}}
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="min-w-[860px] w-full text-sm">
+                <thead class="bg-primary-dark">
                     <tr>
-                        <td colspan="5" class="px-6 py-12 text-center">
-                            <svg class="mx-auto h-12 w-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
-                            </svg>
-                            <p class="text-gray-500">No payment methods found</p>
-                        </td>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-accent-yellow">#</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-accent-yellow">Method</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-accent-yellow">Description</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-accent-yellow">Usage</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-accent-yellow">Status</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-accent-yellow">Created</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-accent-yellow">Actions</th>
                     </tr>
-                @endforelse
-            </tbody>
-        </table>
+                </thead>
+
+                <tbody class="divide-y divide-gray-200">
+                    @forelse($methods as $method)
+                        <tr class="transition hover:bg-gray-50">
+                            <td class="px-4 py-3 font-semibold text-gray-700">
+                                {{ $methods->firstItem() + $loop->index }}
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <p class="font-semibold text-gray-900">{{ $method->method_name }}</p>
+                                <p class="text-xs text-gray-500">ID: {{ $method->method_id }}</p>
+                            </td>
+
+                            <td class="max-w-xs px-4 py-3 text-gray-600">
+                                <span class="line-clamp-2">
+                                    {{ $method->description ?: 'No description provided.' }}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold
+                                    {{ $method->usage_count > 0 ? 'bg-secondary-blue text-white' : 'bg-gray-200 text-gray-600' }}">
+                                    {{ $method->usage_count }} payment{{ $method->usage_count == 1 ? '' : 's' }}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-semibold
+                                    {{ $method->is_active ? 'bg-forest-green text-white' : 'bg-gray-400 text-white' }}">
+                                    {{ $method->is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
+
+                            <td class="px-4 py-3 text-gray-600">
+                                {{ $method->created_at ? \Carbon\Carbon::parse($method->created_at)->format('M d, Y') : 'N/A' }}
+                            </td>
+
+                            <td class="px-4 py-3">
+                                <div class="flex flex-wrap gap-2">
+                                    <button type="button"
+                                            onclick="openEditModal({{ $method->method_id }})"
+                                            class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-secondary-blue transition hover:bg-gray-200">
+                                        Edit
+                                    </button>
+
+                                    <button type="button"
+                                            onclick="togglePaymentMethodStatus({{ $method->method_id }})"
+                                            class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-golden-yellow-dark transition hover:bg-gray-200">
+                                        {{ $method->is_active ? 'Deactivate' : 'Activate' }}
+                                    </button>
+
+                                    <button type="button"
+                                            onclick="deleteMethod({{ $method->method_id }}, {{ $method->usage_count }})"
+                                            class="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-warm-coral transition hover:bg-gray-200">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" class="px-4 py-10 text-center">
+                                <p class="text-sm font-semibold text-gray-700">No payment methods found.</p>
+                                <p class="mt-1 text-xs text-gray-500">Try clearing the filters or adding a new payment method.</p>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
         @if($methods->hasPages())
-            <div class="px-6 py-4 border-t border-gray-200">
+            <div class="border-t border-gray-200 px-4 py-3">
                 {{ $methods->links() }}
             </div>
         @endif
     </div>
 </div>
 
-<!-- CREATE MODAL -->
-<div id="createModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div class="flex justify-between items-center p-6 border-b">
-            <h3 class="text-xl font-bold text-gray-900">Create payment method</h3>
-            <button onclick="closeCreateModal()" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+{{-- CREATE MODAL --}}
+<div id="createModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    <div class="w-full max-w-lg rounded-xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b p-4">
+            <h3 class="text-lg font-bold text-gray-900">Create payment method</h3>
+            <button type="button"
+                    onclick="closeCreateModal()"
+                    class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700">
+                Close
             </button>
         </div>
+
         <form id="createForm" onsubmit="submitCreate(event)">
             @csrf
-            <div class="p-6">
+
+            <div class="space-y-4 p-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Method name <span class="text-red-500">*</span></label>
-                    <input type="text" name="method_name" required
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue"
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Method name <span class="text-red-500">*</span></label>
+                    <input type="text"
+                           name="method_name"
+                           required
+                           maxlength="50"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue"
                            placeholder="e.g., Cash, GCash, Bank transfer">
-                    <p class="text-sm text-red-600 mt-2 hidden" id="create-error"></p>
                 </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Description</label>
+                    <textarea name="description"
+                              rows="3"
+                              maxlength="500"
+                              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue"
+                              placeholder="Optional notes about this payment method"></textarea>
+                </div>
+
+                <p class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" id="create-error"></p>
             </div>
-            <div class="flex justify-end gap-3 p-6 border-t bg-gray-50">
-                <button type="button" onclick="closeCreateModal()" 
-                        class="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+
+            <div class="flex flex-wrap justify-end gap-2 border-t bg-gray-50 p-4">
+                <button type="button"
+                        onclick="closeCreateModal()"
+                        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold transition hover:bg-gray-100">
                     Cancel
                 </button>
-                <button type="submit" 
-                        class="px-6 py-2.5 bg-forest-green text-white rounded-lg hover:bg-forest-green-dark transition font-medium shadow-md">
+
+                <button type="submit"
+                        class="rounded-lg bg-forest-green px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-forest-green-dark">
                     Create
                 </button>
             </div>
@@ -256,36 +279,56 @@
     </div>
 </div>
 
-<!-- EDIT MODAL -->
-<div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div class="flex justify-between items-center p-6 border-b">
-            <h3 class="text-xl font-bold text-gray-900">Edit payment method</h3>
-            <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700 p-2 rounded-lg hover:bg-gray-100 transition">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
+{{-- EDIT MODAL --}}
+<div id="editModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+    <div class="w-full max-w-lg rounded-xl bg-white shadow-2xl">
+        <div class="flex items-center justify-between border-b p-4">
+            <h3 class="text-lg font-bold text-gray-900">Edit payment method</h3>
+            <button type="button"
+                    onclick="closeEditModal()"
+                    class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700">
+                Close
             </button>
         </div>
+
         <form id="editForm" onsubmit="submitEdit(event)">
             @csrf
             @method('PUT')
+
             <input type="hidden" id="edit-method-id" name="method_id">
-            <div class="p-6">
+
+            <div class="space-y-4 p-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Method name <span class="text-red-500">*</span></label>
-                    <input type="text" id="edit-method-name" name="method_name" required
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-blue focus:border-secondary-blue">
-                    <p class="text-sm text-red-600 mt-2 hidden" id="edit-error"></p>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Method name <span class="text-red-500">*</span></label>
+                    <input type="text"
+                           id="edit-method-name"
+                           name="method_name"
+                           required
+                           maxlength="50"
+                           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
                 </div>
+
+                <div>
+                    <label class="mb-1 block text-sm font-medium text-gray-700">Description</label>
+                    <textarea id="edit-description"
+                              name="description"
+                              rows="3"
+                              maxlength="500"
+                              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue"></textarea>
+                </div>
+
+                <p class="hidden rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600" id="edit-error"></p>
             </div>
-            <div class="flex justify-end gap-3 p-6 border-t bg-gray-50">
-                <button type="button" onclick="closeEditModal()" 
-                        class="px-6 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-100 transition font-medium">
+
+            <div class="flex flex-wrap justify-end gap-2 border-t bg-gray-50 p-4">
+                <button type="button"
+                        onclick="closeEditModal()"
+                        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold transition hover:bg-gray-100">
                     Cancel
                 </button>
-                <button type="submit" 
-                        class="px-6 py-2.5 bg-secondary-blue text-white rounded-lg hover:bg-secondary-blue-dark transition font-medium shadow-md">
+
+                <button type="submit"
+                        class="rounded-lg bg-secondary-blue px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-secondary-blue-dark">
                     Update
                 </button>
             </div>

@@ -8,12 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class PaymentMethod extends Model
 {
-    /**
-     * IMPORTANT:
-     * the migration creates payment_methods, not payment_method.
-     */
     protected $table = 'payment_methods';
     protected $primaryKey = 'method_id';
+    public $incrementing = true;
+    protected $keyType = 'int';
 
     protected $fillable = [
         'method_name',
@@ -25,7 +23,7 @@ class PaymentMethod extends Model
         'is_active' => 'boolean',
     ];
 
-    // Relationships
+    // Relationship: one payment method can be used by many payment records.
     public function payments()
     {
         return $this->hasMany(Payment::class, 'payment_method_id', 'method_id');

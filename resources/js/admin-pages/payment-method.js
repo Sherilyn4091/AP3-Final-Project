@@ -1,203 +1,273 @@
-/*
+﻿/*
  * ============================================================================
  * PAYMENT METHODS PAGE JAVASCRIPT
  * resources/js/admin-pages/payment-method.js
  * ============================================================================
- * Handles all interactions for payment methods management page:
- * - Create modal (open/close/submit)
- * - Edit modal (open/close/submit/fetch data)
- * - Delete with confirmation and usage check
+ * Handles:
+ * - Create modal
+ * - Edit modal
+ * - Delete with usage protection
  * - Toggle active/inactive status
  * - Toast notifications
- * - Form validation and error handling
+ * - Safer fetch JSON parsing and validation display
  * ============================================================================
  */
 
 document.addEventListener('DOMContentLoaded', function () {
+    'use strict';
+
+    // ============================================================================
+    // SMALL HELPERS
+    // ============================================================================
+
+    function csrfToken() {
+        return document.querySelector('meta[name="csrf-token"]')?.content || '';
+    }
+
+    function setElementText(id, value) {
+        const element = document.getElementById(id);
+        if (element) {
+            element.textContent = value;
+        }
+    }
+
+    function showError(elementId, message) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        element.textContent = message;
+        element.classList.remove('hidden');
+    }
+
+    function hideError(elementId) {
+        const element = document.getElementById(elementId);
+        if (!element) return;
+
+        element.textContent = '';
+        element.classList.add('hidden');
+    }
+
+    function validationMessage(errors, fallback) {
+        if (!errors) return fallback;
+
+        return Object.values(errors).flat().join(', ') || fallback;
+    }
+
+    async function parseJsonResponse(response) {
+        const text = await response.text();
+
+        try {
+            return text ? JSON.parse(text) : {};
+        } catch (error) {
+            return {
+                success: false,
+                message: text || 'Invalid server response.',
+            };
+        }
+    }
+
+    async function requestJson(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            headers: {
+                'X-CSRF-TOKEN': csrfToken(),
+                'Accept': 'application/json',
+                ...(options.headers || {}),
+            },
+        });
+
+        const data = await parseJsonResponse(response);
+
+        if (!response.ok) {
+            data.success = false;
+            data.status = response.status;
+        }
+
+        return data;
+    }
+
+    function setFormBusy(form, isBusy) {
+        if (!form) return;
+
+        form.querySelectorAll('button, input, textarea, select').forEach((element) => {
+            element.disabled = isBusy;
+        });
+    }
 
     // ============================================================================
     // FILTER BY STATUS FROM STATISTICS CARDS
     // ============================================================================
 
-    /**
-     * Filters the table by status when clicking statistics cards
-     * @param {string} status - 'all', 'active', or 'inactive'
-     */
-    window.filterByStatus = function(status) {
+    window.filterByStatus = function (status) {
         const statusSelect = document.getElementById('statusFilter');
-        if (statusSelect) {
+        const filterForm = document.getElementById('filterForm');
+
+        if (statusSelect && filterForm) {
             statusSelect.value = status;
-            document.getElementById('filterForm').submit();
+            filterForm.submit();
         }
     };
-    
+
     // ============================================================================
-    // CREATE MODAL FUNCTIONS
+    // CREATE MODAL
     // ============================================================================
-    
-    /**
-     * Opens the create payment method modal
-     */
+
     window.openCreateModal = function () {
-        document.getElementById('createModal').classList.remove('hidden');
-        document.getElementById('createForm').reset();
-        document.getElementById('create-error').classList.add('hidden');
-    };
+        const modal = document.getElementById('createModal');
+        const form = document.getElementById('createForm');
 
-    /**
-     * Closes the create payment method modal
-     */
-    window.closeCreateModal = function () {
-        document.getElementById('createModal').classList.add('hidden');
-        document.getElementById('createForm').reset();
-        document.getElementById('create-error').classList.add('hidden');
-    };
+        if (!modal || !form) return;
 
-    /**
-     * Handles the submission of the create form
-     * @param {Event} event - The form submission event
-     */
-    window.submitCreate = function (event) {
-        event.preventDefault();
-        
-        const form = event.target;
-        const formData = new FormData(form);
-        const errorElement = document.getElementById('create-error');
-
-        fetch('/admin/payment-methods', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showToast(data.message, 'success');
-                closeCreateModal();
-                // Reload page to show new method
-                setTimeout(() => location.reload(), 800);
-            } else if (data.errors) {
-                // Display validation errors
-                const errorMsg = Object.values(data.errors).flat().join(', ');
-                errorElement.textContent = errorMsg;
-                errorElement.classList.remove('hidden');
-            }
-        })
-        .catch(error => {
-            showToast('An error occurred while creating the payment method', 'error');
-            console.error('Create error:', error);
-        });
-    };
-
-    // ============================================================================
-    // EDIT MODAL FUNCTIONS
-    // ============================================================================
-    
-    /**
-     * Opens the edit modal and fetches the payment method data
-     * @param {number} id - The payment method ID
-     */
-    window.openEditModal = function (id) {
-        const modal = document.getElementById('editModal');
-        const errorElement = document.getElementById('edit-error');
-        
         modal.classList.remove('hidden');
-        errorElement.classList.add('hidden');
-
-        // Fetch payment method data
-        fetch(`/admin/payment-methods/${id}/edit`, {
-            method: 'GET',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch payment method data');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.method) {
-                // Populate form with existing data
-                document.getElementById('edit-method-id').value = data.method.method_id;
-                document.getElementById('edit-method-name').value = data.method.method_name;
-            }
-        })
-        .catch(error => {
-            showToast('Failed to load payment method data', 'error');
-            closeEditModal();
-            console.error('Fetch error:', error);
-        });
+        form.reset();
+        hideError('create-error');
     };
 
-    /**
-     * Closes the edit payment method modal
-     */
-    window.closeEditModal = function () {
-        document.getElementById('editModal').classList.add('hidden');
-        document.getElementById('editForm').reset();
-        document.getElementById('edit-error').classList.add('hidden');
+    window.closeCreateModal = function () {
+        const modal = document.getElementById('createModal');
+        const form = document.getElementById('createForm');
+
+        if (!modal || !form) return;
+
+        modal.classList.add('hidden');
+        form.reset();
+        hideError('create-error');
     };
 
-    /**
-     * Handles the submission of the edit form
-     * @param {Event} event - The form submission event
-     */
-    window.submitEdit = function (event) {
+    window.submitCreate = async function (event) {
         event.preventDefault();
-        
-        const form = event.target;
-        const methodId = document.getElementById('edit-method-id').value;
-        const formData = new FormData(form);
-        const errorElement = document.getElementById('edit-error');
 
-        fetch(`/admin/payment-methods/${methodId}`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'X-HTTP-Method-Override': 'PUT'
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
+        const form = event.target;
+        const formData = new FormData(form);
+
+        hideError('create-error');
+        setFormBusy(form, true);
+
+        try {
+            const data = await requestJson('/admin/payment-methods', {
+                method: 'POST',
+                body: formData,
+            });
+
             if (data.success) {
-                showToast(data.message, 'success');
-                closeEditModal();
-                // Reload page to show updated method
-                setTimeout(() => location.reload(), 800);
-            } else if (data.errors) {
-                // Display validation errors
-                const errorMsg = Object.values(data.errors).flat().join(', ');
-                errorElement.textContent = errorMsg;
-                errorElement.classList.remove('hidden');
+                showToast(data.message || 'Payment method created successfully.', 'success');
+                closeCreateModal();
+                setTimeout(() => location.reload(), 700);
+                return;
             }
-        })
-        .catch(error => {
-            showToast('An error occurred while updating the payment method', 'error');
-            console.error('Update error:', error);
-        });
+
+            showError(
+                'create-error',
+                validationMessage(data.errors, data.message || 'Failed to create payment method.')
+            );
+        } catch (error) {
+            console.error('Create payment method error:', error);
+            showError('create-error', 'An error occurred while creating the payment method.');
+            showToast('An error occurred while creating the payment method.', 'error');
+        } finally {
+            setFormBusy(form, false);
+        }
     };
 
     // ============================================================================
-    // DELETE FUNCTION
+    // EDIT MODAL
     // ============================================================================
-    
-    /**
-     * Deletes a payment method after confirmation and usage check
-     * @param {number} id - The payment method ID
-     * @param {number} usageCount - Number of times this method is used
-     */
-    window.deleteMethod = function (id, usageCount) {
-        // Prevent deletion if method is in use
-        if (usageCount > 0) {
-            showToast(`Cannot delete — this method is used in ${usageCount} payment(s)`, 'error');
+
+    window.openEditModal = async function (id) {
+        const modal = document.getElementById('editModal');
+        const form = document.getElementById('editForm');
+
+        if (!modal || !form) return;
+
+        form.reset();
+        hideError('edit-error');
+        modal.classList.remove('hidden');
+
+        try {
+            const data = await requestJson(`/admin/payment-methods/${id}/edit`, {
+                method: 'GET',
+            });
+
+            if (!data.success || !data.method) {
+                throw new Error(data.message || 'Failed to fetch payment method data.');
+            }
+
+            document.getElementById('edit-method-id').value = data.method.method_id;
+            document.getElementById('edit-method-name').value = data.method.method_name || '';
+
+            const descriptionInput = document.getElementById('edit-description');
+            if (descriptionInput) {
+                descriptionInput.value = data.method.description || '';
+            }
+        } catch (error) {
+            console.error('Fetch payment method error:', error);
+            closeEditModal();
+            showToast('Failed to load payment method data.', 'error');
+        }
+    };
+
+    window.closeEditModal = function () {
+        const modal = document.getElementById('editModal');
+        const form = document.getElementById('editForm');
+
+        if (!modal || !form) return;
+
+        modal.classList.add('hidden');
+        form.reset();
+        hideError('edit-error');
+    };
+
+    window.submitEdit = async function (event) {
+        event.preventDefault();
+
+        const form = event.target;
+        const methodId = document.getElementById('edit-method-id')?.value;
+        const formData = new FormData(form);
+
+        if (!methodId) {
+            showError('edit-error', 'Missing payment method ID.');
+            return;
+        }
+
+        hideError('edit-error');
+        setFormBusy(form, true);
+
+        try {
+            const data = await requestJson(`/admin/payment-methods/${methodId}`, {
+                method: 'POST',
+                headers: {
+                    'X-HTTP-Method-Override': 'PUT',
+                },
+                body: formData,
+            });
+
+            if (data.success) {
+                showToast(data.message || 'Payment method updated successfully.', 'success');
+                closeEditModal();
+                setTimeout(() => location.reload(), 700);
+                return;
+            }
+
+            showError(
+                'edit-error',
+                validationMessage(data.errors, data.message || 'Failed to update payment method.')
+            );
+        } catch (error) {
+            console.error('Update payment method error:', error);
+            showError('edit-error', 'An error occurred while updating the payment method.');
+            showToast('An error occurred while updating the payment method.', 'error');
+        } finally {
+            setFormBusy(form, false);
+        }
+    };
+
+    // ============================================================================
+    // DELETE
+    // ============================================================================
+
+    window.deleteMethod = async function (id, usageCount) {
+        if (Number(usageCount) > 0) {
+            showToast(`Cannot delete â€” this method is used in ${usageCount} payment(s).`, 'error');
             return;
         }
 
@@ -205,104 +275,94 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        fetch(`/admin/payment-methods/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
+        try {
+            const data = await requestJson(`/admin/payment-methods/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
             if (data.success) {
-                showToast(data.message, 'success');
-                // Reload page to reflect changes
-                setTimeout(() => location.reload(), 800);
-            } else {
-                showToast(data.message || 'Failed to delete payment method', 'error');
+                showToast(data.message || 'Payment method deleted successfully.', 'success');
+                setTimeout(() => location.reload(), 700);
+                return;
             }
-        })
-        .catch(error => {
-            showToast('An error occurred while deleting the payment method', 'error');
-            console.error('Delete error:', error);
-        });
+
+            showToast(data.message || 'Failed to delete payment method.', 'error');
+        } catch (error) {
+            console.error('Delete payment method error:', error);
+            showToast('An error occurred while deleting the payment method.', 'error');
+        }
     };
 
     // ============================================================================
-    // TOGGLE STATUS FUNCTION
+    // TOGGLE STATUS
     // ============================================================================
-    
-    /**
-     * Toggles the active/inactive status of a payment method
-     * @param {number} id - The payment method ID
-     */
-    window.togglePaymentMethodStatus = function (id) {
+
+    window.togglePaymentMethodStatus = async function (id) {
         if (!confirm('Are you sure you want to change the status of this payment method?')) {
             return;
         }
 
-        fetch(`/admin/payment-methods/${id}/toggle-status`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to toggle status');
-            }
-            return response.json();
-        })
-        .then(data => {
+        try {
+            const data = await requestJson(`/admin/payment-methods/${id}/toggle-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
             if (data.success) {
-                showToast('Status updated successfully', 'success');
-                // Reload page to reflect changes
-                setTimeout(() => location.reload(), 800);
-            } else {
-                showToast(data.message || 'Failed to update status', 'error');
+                showToast(data.message || 'Status updated successfully.', 'success');
+                setTimeout(() => location.reload(), 700);
+                return;
             }
-        })
-        .catch(error => {
-            showToast('An error occurred while updating the status', 'error');
-            console.error('Toggle status error:', error);
-        });
+
+            showToast(data.message || 'Failed to update status.', 'error');
+        } catch (error) {
+            console.error('Toggle payment method status error:', error);
+            showToast('An error occurred while updating the status.', 'error');
+        }
     };
 
     // ============================================================================
-    // TOAST NOTIFICATION FUNCTION
+    // TOAST
     // ============================================================================
-    
-    /**
-     * Displays a toast notification message
-     * @param {string} message - The message to display
-     * @param {string} type - The type of toast ('success' or 'error')
-     */
+
     function showToast(message, type = 'success') {
-        const container = document.getElementById('toast-container') || document.body;
+        let container = document.getElementById('toast-container');
+
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed bottom-5 right-5 z-[9999] space-y-2';
+            container.setAttribute('aria-live', 'polite');
+            document.body.appendChild(container);
+        }
+
         const toast = document.createElement('div');
-        
-        // Set background color based on type
-        let bgColor = type === 'success' ? 'bg-forest-green' : 'bg-warm-coral';
-        
-        toast.className = `p-4 rounded-lg shadow-lg text-white ${bgColor} fixed bottom-6 right-6 z-50 animate-fade-in`;
+        const colorClass = type === 'success' ? 'bg-forest-green' : 'bg-warm-coral';
+
+        toast.className = `rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-lg transition ${colorClass}`;
         toast.textContent = message;
+
         container.appendChild(toast);
 
-        // Auto-remove toast after 5 seconds
         setTimeout(() => {
             toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.3s ease-out';
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
+            toast.style.transform = 'translateY(6px)';
+
+            setTimeout(() => {
+                toast.remove();
+            }, 250);
+        }, 3500);
     }
 
     // ============================================================================
-    // CLOSE MODALS ON ESCAPE KEY
+    // MODAL CLOSE EVENTS
     // ============================================================================
-    
+
     document.addEventListener('keydown', function (event) {
         if (event.key === 'Escape') {
             closeCreateModal();
@@ -310,10 +370,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // ============================================================================
-    // CLOSE MODALS ON OUTSIDE CLICK
-    // ============================================================================
-    
     document.getElementById('createModal')?.addEventListener('click', function (event) {
         if (event.target === this) {
             closeCreateModal();
@@ -325,4 +381,7 @@ document.addEventListener('DOMContentLoaded', function () {
             closeEditModal();
         }
     });
+
+    // Keeps old references from other scripts safe if needed.
+    window.__paymentMethodPageReady = true;
 });

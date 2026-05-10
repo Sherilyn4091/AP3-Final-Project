@@ -23,7 +23,20 @@ document.addEventListener('DOMContentLoaded', function() {
     window.submitGenre = submitGenre;
 });
 
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+/**
+ * Escape values before placing them inside modal HTML.
+ * This prevents quotes or HTML-like text from breaking the edit modal.
+ */
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 
 /**
  * Open modal to add new genre
@@ -32,16 +45,16 @@ function openAddModal() {
     const modal = document.getElementById('genre-modal');
     
     modal.innerHTML = `
-        <div class="bg-white rounded-lg max-w-xl w-full p-6 shadow-2xl animate-fade-in">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-2xl font-bold text-primary-dark">Add new genre</h2>
+        <div class="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-xl animate-fade-in">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-primary-dark">Add new genre</h2>
                 <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
             </div>
             
             <form onsubmit="submitGenre(event, 'create')">
-                <div class="space-y-4">
+                <div class="space-y-3">
                     <div>
                         <label class="block font-semibold text-gray-700 mb-2">Genre name *</label>
                         <input type="text" id="genre-name" required maxlength="100" 
@@ -52,18 +65,18 @@ function openAddModal() {
                     
                     <div>
                         <label class="block font-semibold text-gray-700 mb-2">Description (optional)</label>
-                        <textarea id="genre-description" rows="3" maxlength="500"
+                        <textarea id="genre-description" rows="2" maxlength="500"
                                   placeholder="Brief description of this genre..."
                                   class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue"></textarea>
                         <p class="text-xs text-gray-500 mt-1">Maximum 500 characters</p>
                     </div>
                 </div>
                 
-                <div class="flex gap-3 mt-6">
-                    <button type="submit" class="bg-forest-green text-white px-6 py-3 rounded-lg hover:bg-forest-green-dark flex-1 font-semibold">
+                <div class="flex gap-3 mt-5">
+                    <button type="submit" class="bg-forest-green text-white px-4 py-2.5 rounded-lg hover:bg-forest-green-dark flex-1 font-semibold">
                         Create genre
                     </button>
-                    <button type="button" onclick="closeModal()" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 flex-1 font-semibold">
+                    <button type="button" onclick="closeModal()" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-300 flex-1 font-semibold">
                         Cancel
                     </button>
                 </div>
@@ -94,31 +107,33 @@ async function editGenre(genreId) {
         }
         
         const genre = data.genre;
+        const safeGenreName = escapeHtml(genre.genre_name || '');
+        const safeDescription = escapeHtml(genre.description || '');
         
         const modal = document.getElementById('genre-modal');
         modal.innerHTML = `
-            <div class="bg-white rounded-lg max-w-xl w-full p-6 shadow-2xl animate-fade-in">
-                <div class="flex items-center justify-between mb-6">
-                    <h2 class="text-2xl font-bold text-primary-dark">Edit genre</h2>
+            <div class="bg-white rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-5 shadow-xl animate-fade-in">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-primary-dark">Edit genre</h2>
                     <button onclick="closeModal()" class="text-gray-500 hover:text-gray-700">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
                 
                 <form onsubmit="submitGenre(event, 'update', ${genreId})">
-                    <div class="space-y-4">
+                    <div class="space-y-3">
                         <div>
                             <label class="block font-semibold text-gray-700 mb-2">Genre name *</label>
                             <input type="text" id="genre-name" required maxlength="100" 
-                                   value="${genre.genre_name}"
+                                   value="${safeGenreName}"
                                    class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">
                             <p class="text-xs text-gray-500 mt-1">Maximum 100 characters</p>
                         </div>
                         
                         <div>
                             <label class="block font-semibold text-gray-700 mb-2">Description (optional)</label>
-                            <textarea id="genre-description" rows="3" maxlength="500"
-                                      class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">${genre.description || ''}</textarea>
+                            <textarea id="genre-description" rows="2" maxlength="500"
+                                      class="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:border-secondary-blue focus:ring-2 focus:ring-secondary-blue">${safeDescription}</textarea>
                             <p class="text-xs text-gray-500 mt-1">Maximum 500 characters</p>
                         </div>
                         
@@ -128,11 +143,11 @@ async function editGenre(genreId) {
                         </div>
                     </div>
                     
-                    <div class="flex gap-3 mt-6">
-                        <button type="submit" class="bg-secondary-blue text-white px-6 py-3 rounded-lg hover:bg-secondary-blue-dark flex-1 font-semibold">
+                    <div class="flex gap-3 mt-5">
+                        <button type="submit" class="bg-secondary-blue text-white px-4 py-2.5 rounded-lg hover:bg-secondary-blue-dark flex-1 font-semibold">
                             Save changes
                         </button>
-                        <button type="button" onclick="closeModal()" class="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 flex-1 font-semibold">
+                        <button type="button" onclick="closeModal()" class="bg-gray-200 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-300 flex-1 font-semibold">
                             Cancel
                         </button>
                     </div>
@@ -186,12 +201,11 @@ async function submitGenre(event, action, genreId = null) {
     } else {
         url = `/admin/genres/${genreId}`;
         method = 'PUT';
-        payload._method = 'PUT';
     }
     
     try {
         const response = await fetch(url, {
-            method: 'POST',
+            method: method,
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': csrfToken,
@@ -301,22 +315,22 @@ async function viewStudents(genreId) {
         
         const modal = document.getElementById('student-list-modal');
         modal.innerHTML = `
-            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[80vh] overflow-hidden shadow-2xl animate-fade-in">
-                <div class="bg-gradient-to-r from-secondary-blue to-forest-green p-6 text-white">
+            <div class="bg-white rounded-lg max-w-2xl w-full max-h-[85vh] overflow-hidden shadow-xl animate-fade-in">
+                <div class="bg-gradient-to-r from-secondary-blue to-forest-green p-4 text-white">
                     <div class="flex items-center justify-between">
-                        <h2 class="text-2xl font-bold">Students who prefer this genre</h2>
-                        <button onclick="closeStudentModal()" class="text-black hover:bg-white hover:bg-opacity-50 rounded-full p-2 transition-all">
+                        <h2 class="text-xl font-bold">Students who prefer this genre</h2>
+                        <button onclick="closeStudentModal()" class="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                         </button>
                     </div>
                     <p class="text-sm opacity-90 mt-1">${data.students.length} student(s) prefer this genre</p>
                 </div>
                 
-                <div class="p-6 overflow-y-auto" style="max-height: calc(80vh - 150px);">
+                <div class="p-4 overflow-y-auto" style="max-height: calc(85vh - 130px);">
                     ${data.students.length > 0 ? `
                         <div class="space-y-3">
                             ${data.students.map(student => `
-                                <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-secondary-blue transition-all">
+                                <div class="border border-gray-200 rounded-lg p-3 hover:border-secondary-blue transition-all">
                                     <div class="flex items-start justify-between">
                                         <div class="flex-1">
                                             <div class="flex items-center gap-2 mb-2">
