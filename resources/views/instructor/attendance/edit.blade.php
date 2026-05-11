@@ -30,10 +30,10 @@
 
                     <div class="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_220px] lg:items-center">
                         <div>
-                            <p class="font-bold text-[#272829]" style="font-family: 'Sora', sans-serif;">{{ $schedule->instrument_name ?? 'Lesson' }} â€¢ {{ $schedule->lesson_topic ?? 'No topic' }}</p>
+                            <p class="font-bold text-[#272829]" style="font-family: 'Sora', sans-serif;">{{ $schedule->instrument_name ?? 'Lesson' }} • {{ $schedule->lesson_topic ?? 'No topic' }}</p>
                             <p class="mt-1 text-sm text-[#61677A]">
-                                <span style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($schedule->schedule_date)->format('M d, Y') }} â€¢ {{ \Carbon\Carbon::parse($schedule->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($schedule->end_time)->format('h:i A') }}</span>
-                                â€¢ Room {{ $schedule->room_number ?? 'â€”' }}
+                                <span style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($schedule->schedule_date)->format('M d, Y') }} • {{ \Carbon\Carbon::parse($schedule->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($schedule->end_time)->format('h:i A') }}</span>
+                                • Room {{ $schedule->room_number ?? '—' }}
                             </p>
                             <p class="mt-1 text-xs font-semibold text-[#523D35]">Enrollment: {{ $schedule->completed_sessions ?? 0 }}/{{ $schedule->total_sessions ?? 0 }} completed, {{ $schedule->remaining_sessions ?? 0 }} remaining</p>
                         </div>

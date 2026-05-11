@@ -124,12 +124,12 @@
             <section class="instructor-card p-5">
                 <h2 class="instructor-heading text-xl font-bold text-[#2F4F4F]">Employment Summary</h2>
                 <div class="mt-5 space-y-3 text-sm">
-                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Employee ID</span><strong class="text-right text-[#2F4F4F]">{{ $instructor->employee_id ?? 'â€”' }}</strong></div>
-                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Hire date</span><strong class="text-right text-[#2F4F4F]">{{ $instructor->hire_date ? \Carbon\Carbon::parse($instructor->hire_date)->format('M d, Y') : 'â€”' }}</strong></div>
-                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Status</span><strong class="text-right text-[#2F4F4F]">{{ ucfirst(str_replace('_', ' ', $instructor->employment_status ?? 'â€”')) }}</strong></div>
-                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Contract</span><strong class="text-right text-[#2F4F4F]">{{ ucfirst($instructor->contract_type ?? 'â€”') }}</strong></div>
-                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Hourly rate</span><strong class="instructor-mono text-right text-[#2F4F4F]">{{ $instructor->hourly_rate ? 'â‚±' . number_format($instructor->hourly_rate, 2) : 'â€”' }}</strong></div>
-                    <div class="flex justify-between gap-3"><span class="text-[#61677A]">Monthly salary</span><strong class="instructor-mono text-right text-[#2F4F4F]">{{ $instructor->monthly_salary ? 'â‚±' . number_format($instructor->monthly_salary, 2) : 'â€”' }}</strong></div>
+                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Employee ID</span><strong class="text-right text-[#2F4F4F]">{{ $instructor->employee_id ?? '—' }}</strong></div>
+                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Hire date</span><strong class="text-right text-[#2F4F4F]">{{ $instructor->hire_date ? \Carbon\Carbon::parse($instructor->hire_date)->format('M d, Y') : '—' }}</strong></div>
+                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Status</span><strong class="text-right text-[#2F4F4F]">{{ ucfirst(str_replace('_', ' ', $instructor->employment_status ?? '—')) }}</strong></div>
+                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Contract</span><strong class="text-right text-[#2F4F4F]">{{ ucfirst($instructor->contract_type ?? '—') }}</strong></div>
+                    <div class="flex justify-between gap-3 border-b border-[#D8D9DA] pb-2"><span class="text-[#61677A]">Hourly rate</span><strong class="instructor-mono text-right text-[#2F4F4F]">{{ $instructor->hourly_rate ? '₱' . number_format($instructor->hourly_rate, 2) : '—' }}</strong></div>
+                    <div class="flex justify-between gap-3"><span class="text-[#61677A]">Monthly salary</span><strong class="instructor-mono text-right text-[#2F4F4F]">{{ $instructor->monthly_salary ? '₱' . number_format($instructor->monthly_salary, 2) : '—' }}</strong></div>
                 </div>
             </section>
 
@@ -137,7 +137,7 @@
                 <h2 class="instructor-heading text-xl font-bold text-[#2F4F4F]">Performance</h2>
                 <div class="mt-5 grid grid-cols-2 gap-3">
                     <div class="rounded-2xl border border-[#D8D9DA] bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Students</p><p class="instructor-mono mt-1 text-2xl font-black text-[#2F4F4F]">{{ $instructor->total_students_taught ?? 0 }}</p></div>
-                    <div class="rounded-2xl border border-[#D8D9DA] bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Rating</p><p class="instructor-mono mt-1 text-2xl font-black text-[#2F4F4F]">{{ $instructor->average_rating ? number_format($instructor->average_rating, 2) : 'â€”' }}</p></div>
+                    <div class="rounded-2xl border border-[#D8D9DA] bg-[#fcf3e3] p-3"><p class="text-xs font-bold uppercase text-[#61677A]">Rating</p><p class="instructor-mono mt-1 text-2xl font-black text-[#2F4F4F]">{{ $instructor->average_rating ? number_format($instructor->average_rating, 2) : '—' }}</p></div>
                 </div>
             </section>
 

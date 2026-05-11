@@ -35,7 +35,7 @@
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p class="font-bold text-[#272829]">{{ $schedule->lesson_topic ?? 'No topic' }}</p>
-                                <p class="text-sm text-[#61677A]">{{ $schedule->room_number ?? 'No room' }} • {{ ucfirst(str_replace('_', ' ', $schedule->schedule_status)) }}</p>
+                                <p class="text-sm text-[#61677A]">{{ $schedule->room_number ?? 'No room' }} • {{ ucfirst(str_replace('_', ' ', ($schedule->schedule_status ?? $schedule->status ?? 'scheduled'))) }}</p>
                             </div>
                             <div class="text-left sm:text-right">
                                 <p class="font-bold text-[#2F4F4F]" style="font-family: 'JetBrains Mono', monospace;">{{ \Carbon\Carbon::parse($schedule->schedule_date)->format('M d, Y') }}</p>
